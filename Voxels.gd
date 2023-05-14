@@ -215,6 +215,8 @@ func remesh():
         var surface_builder = SurfaceTool.new()
         surface_builder.begin(Mesh.PRIMITIVE_TRIANGLES)
         var material = SpatialMaterial.new()
+        material.roughness = 1.0
+        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         
         var is_side = info[1]

@@ -10,9 +10,9 @@ class VoxMat extends Reference:
         top = _top
 
 var mats = [
-VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
-VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png")),
-VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png")),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png")),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png")),
 ]
 
 func get_default_voxmat():
@@ -83,7 +83,22 @@ func estimate_viewport_mouse_scale():
     var size = get_viewport().size
     return 1.0/size.y
 
-func _input(_event):
+func _unhandled_input(_event):
+    if Input.is_action_just_pressed("m1"):
+        draw_mode = true
+    elif !Input.is_action_pressed("m1"):
+        draw_mode = false
+    
+    if Input.is_action_just_pressed("m2"):
+        erase_mode = true
+    elif !Input.is_action_pressed("m2"):
+        erase_mode = false
+    
+    if Input.is_action_just_pressed("m3"):
+        camera_mode = true
+    elif !Input.is_action_pressed("m3"):
+        camera_mode = false
+    
     estimate_viewport_mouse_scale()
     if _event is InputEventMouseMotion:
         if !camera_mode:
@@ -265,22 +280,6 @@ func _process(delta):
             $CameraHolder.global_transform.origin += rightwards * delta * 16.0
         if Input.is_action_pressed("ui_left"):
             $CameraHolder.global_transform.origin -= rightwards * delta * 16.0
-    
-    # FIXME move to an _unhandled_input function or w/e
-    if Input.is_action_just_pressed("m1"):
-        draw_mode = true
-    elif !Input.is_action_pressed("m1"):
-        draw_mode = false
-    
-    if Input.is_action_just_pressed("m2"):
-        erase_mode = true
-    elif !Input.is_action_pressed("m2"):
-        erase_mode = false
-    
-    if Input.is_action_just_pressed("m3"):
-        camera_mode = true
-    elif !Input.is_action_pressed("m3"):
-        camera_mode = false
     
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
