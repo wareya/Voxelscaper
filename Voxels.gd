@@ -275,8 +275,7 @@ func remesh():
     
     for info in face_tex:
         var texture = info[0]
-        #var surface_builder = SurfaceTool.new()
-        #surface_builder.begin(Mesh.PRIMITIVE_TRIANGLES)
+        
         var material = SpatialMaterial.new()
         material.roughness = 1.0
         material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
@@ -285,6 +284,7 @@ func remesh():
         var verts = PoolVector3Array()
         var tex_uvs = PoolVector2Array()
         var normals = PoolVector3Array()
+        var indexes = PoolIntArray()
         
         var is_side = info[1]
         
@@ -313,17 +313,16 @@ func remesh():
                         var neighbor_pos = pos + test_dir
                         var neighbor = voxels.get(neighbor_pos)
                         var neighbor_test = neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top)
-                        # FIXME take specific edge into account in disconnection test
+                        
                         var is_match = false
                         if neighbor_test:
                             is_match = matching_edges_match(pos, neighbor_pos, dir)
                         
-                        if neighbor_test and is_match:#!face_is_disconnected(pos, dir, test_dir):
+                        if neighbor_test and is_match:
                             bitmask |= bit
-                        #if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
                         if voxels.get(neighbor_pos + dir):
                             bitmask &= ~bit
-                        # FIXME handle floor-wall transitions better
+                        # FIXME handle floor-wall transitions better if material asks for it
                     
                     bitmask |= TileSet.BIND_CENTER
                     
@@ -376,7 +375,9 @@ func remesh():
                     
                     normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
                 
-                for i in order:
+                var index_base = verts.size()
+                
+                for i in [0, 1, 2, 3]:
                     tex_uvs.push_back(uvs[i])
                     var vert = dir_verts[dir][i]
                     for etc in vox_corners:
@@ -384,21 +385,21 @@ func remesh():
                             vert = etc[1]/2.0
                     verts.push_back(vert + pos)
                     normals.push_back(normal)
+                
+                for i in order:
+                    indexes.push_back(i + index_base)
         
         var end = OS.get_ticks_usec()
-        
         
         var arrays = []
         arrays.resize(Mesh.ARRAY_MAX)
         arrays[Mesh.ARRAY_VERTEX] = verts
         arrays[Mesh.ARRAY_TEX_UV] = tex_uvs
         arrays[Mesh.ARRAY_NORMAL] = normals
-        #surface_builder.generate_normals()
-        #var arrays = surface_builder.commit_to_arrays()
+        arrays[Mesh.ARRAY_INDEX]  = indexes
         if arrays[Mesh.ARRAY_VERTEX].size() > 0:
             mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             mesh.surface_set_material(mesh.get_surface_count() - 1, material)
-        
         
         var time = (end-start)/1000000.0
         if time > 0.01:

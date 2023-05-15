@@ -3,12 +3,13 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - save/load voxel format (json?)
-# - save gltf (might need to port to godot 4)
+# - save/load textual map format
 # - deform tool
 # - deleting and modifying existing materials
 # - billboard and biplane "meshes"
-# - importing meshes somehow
+# - decals
+# - save gltf (might need to port to godot 4)
+# - importing real meshes somehow maybe?
 
 class VoxMat extends Reference:
     var sides : Texture
