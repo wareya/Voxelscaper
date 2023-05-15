@@ -312,6 +312,8 @@ func remesh():
                     uv_data_cache[pos][dir] = uvs
                 
                 # swap triangulation order if we're warped and need to swap to connect-shortest
+                # also recalculate normal for warped faces
+                var normal = dir
                 var order = [0, 1, 2, 2, 1, 3]
                 if vox_corners.size() > 0:
                     var temp = []
@@ -327,6 +329,8 @@ func remesh():
                     
                     if dist_b > dist_a:
                         order = [0, 1, 3, 3, 2, 0]
+                    
+                    normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
                 
                 for i in order:
                     tex_uvs.push_back(uvs[i])
@@ -335,7 +339,7 @@ func remesh():
                         if (vert*2.0).round() == etc[0]:
                             vert = etc[1]/2.0
                     verts.push_back(vert + pos)
-                    normals.push_back(dir)
+                    normals.push_back(normal)
         
         var end = OS.get_ticks_usec()
         
