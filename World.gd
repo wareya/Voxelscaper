@@ -96,7 +96,18 @@ func _ready():
     $ButtonGrid.add_item("Hide Grid", 1)
     $ButtonGrid.add_item("Grid When Drawing", 2)
     
-    pass # Replace with function body.
+    for vox in [
+            [Vector3( 0, 0,  0), get_default_voxmat()],
+            [Vector3( 1, 0,  0), get_default_voxmat()],
+            [Vector3( 1, 0,  1), get_default_voxmat()],
+            [Vector3( 0, 0,  1), get_default_voxmat()],
+            [Vector3(-1, 0,  0), get_default_voxmat()],
+            [Vector3(-1, 0, -1), get_default_voxmat()],
+            [Vector3( 0, 0, -1), get_default_voxmat()],
+            [Vector3(-1, 0,  1), get_default_voxmat()],
+            [Vector3( 1, 0, -1), get_default_voxmat()],
+        ]:
+        $Voxels.place_voxel(vox[0], vox[1])
 
 var draw_mode = false
 var erase_mode = false
@@ -187,20 +198,7 @@ func _unhandled_input(_event):
                 pass
     
     estimate_viewport_mouse_scale()
-    if _event is InputEventMouseMotion:
-        if !camera_mode:
-            return
-        var event : InputEventMouseMotion = _event
-        if event.shift:
-            print(event.relative.x)
-            var upwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.UP)
-            var rightwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.RIGHT)
-            var speed = camera_intended_scale * estimate_viewport_mouse_scale() * 5.0
-            $CameraHolder.global_transform.origin += event.relative.y * upwards * speed
-            $CameraHolder.global_transform.origin += event.relative.x * -rightwards * speed
-        else:
-            $CameraHolder.rotation_degrees.y -= 0.22 * event.relative.x
-            $CameraHolder.rotation_degrees.x -= 0.22 * event.relative.y
+    
     if _event is InputEventMouseButton:
         
         $Voxels.scale.y = 1.0
@@ -225,7 +223,24 @@ func _unhandled_input(_event):
         if $CameraHolder.scale.length() > 0.001:
             $CameraHolder.scale = Vector3.ONE.normalized() * camera_intended_scale
         $CameraHolder/Camera.size = 5.0 * camera_intended_scale
-        #$CameraHolder.scale *=
+
+func _input(_event):
+    estimate_viewport_mouse_scale()
+    
+    if _event is InputEventMouseMotion:
+        if !camera_mode:
+            return
+        var event : InputEventMouseMotion = _event
+        if event.shift:
+            print(event.relative.x)
+            var upwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.UP)
+            var rightwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.RIGHT)
+            var speed = camera_intended_scale * estimate_viewport_mouse_scale() * 5.0
+            $CameraHolder.global_transform.origin += event.relative.y * upwards * speed
+            $CameraHolder.global_transform.origin += event.relative.x * -rightwards * speed
+        else:
+            $CameraHolder.rotation_degrees.y -= 0.22 * event.relative.x
+            $CameraHolder.rotation_degrees.x -= 0.22 * event.relative.y
 
 var prev_fps_mode = false
 
@@ -490,7 +505,8 @@ func _process(delta):
             [Vector3(-1,  1,  1), Vector3(-1, -1,  1)],
         ]
         #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
-        $Voxels.place_voxel(new_point, current_mat, [])
+        #$Voxels.place_voxel(new_point, current_mat, [])
+        $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
         
         if $ButtonTool.selected == 0:
             draw_mode = false

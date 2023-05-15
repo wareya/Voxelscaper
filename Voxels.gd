@@ -3,17 +3,7 @@ extends MeshInstance
 
 onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 
-onready var voxels = {
-    Vector3( 0, 0,  0) : editor.get_default_voxmat(),
-    Vector3( 1, 0,  0) : editor.get_default_voxmat(),
-    Vector3( 1, 0,  1) : editor.get_default_voxmat(),
-    Vector3( 0, 0,  1) : editor.get_default_voxmat(),
-    Vector3(-1, 0,  0) : editor.get_default_voxmat(),
-    Vector3(-1, 0, -1) : editor.get_default_voxmat(),
-    Vector3( 0, 0, -1) : editor.get_default_voxmat(),
-    Vector3(-1, 0,  1) : editor.get_default_voxmat(),
-    Vector3( 1, 0, -1) : editor.get_default_voxmat(),
-}
+onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
 onready var voxel_corners = {   
 }
@@ -223,6 +213,17 @@ func face_is_shifted(pos, face_normal):
             return true
     return false
 
+func face_is_disconnected(pos, face_normal, test_dir):
+    if !pos in voxel_corners:
+        return false
+    for corner in voxel_corners[pos]:
+        # FIXME replace with actual sew test
+        if corner[0].dot(test_dir) > 0.0:
+            var offset = corner[1] - corner[0]
+            if (offset * face_normal).length_squared() == 0.0:
+                return true
+    return false
+
 var uv_data_cache = {}
 
 func remesh():
@@ -274,11 +275,15 @@ func remesh():
                         var bitmask = 0
                         
                         for bit in bitmask_bindings:
-                            var neighbor_pos = pos + bitmask_dirs_by_dir[dir][bit]
+                            var test_dir = bitmask_dirs_by_dir[dir][bit]
+                            var neighbor_pos = pos + test_dir
                             var neighbor = voxels.get(neighbor_pos)
-                            if neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top):
+                            var neighbor_test = neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top)
+                            # FIXME take specific edge into account in disconnection test
+                            if neighbor_test and !face_is_disconnected(pos, dir, test_dir):
                                 bitmask |= bit
-                            if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
+                            #if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
+                            if voxels.get(neighbor_pos + dir):
                                 bitmask &= ~bit
                             # FIXME handle floor-wall transitions better
                         
@@ -306,7 +311,24 @@ func remesh():
                         uv_data_cache[pos] = {}
                     uv_data_cache[pos][dir] = uvs
                 
-                for i in [0, 1, 2, 2, 1, 3]:
+                # swap triangulation order if we're warped and need to swap to connect-shortest
+                var order = [0, 1, 2, 2, 1, 3]
+                if vox_corners.size() > 0:
+                    var temp = []
+                    for i in [0, 1, 2, 3]:
+                        var vert = dir_verts[dir][i]
+                        for etc in vox_corners:
+                            if (vert*2.0).round() == etc[0]:
+                                vert = etc[1]/2.0
+                        temp.push_back(vert)
+                    
+                    var dist_a = temp[0].distance_squared_to(temp[3])
+                    var dist_b = temp[1].distance_squared_to(temp[2])
+                    
+                    if dist_b > dist_a:
+                        order = [0, 1, 3, 3, 2, 0]
+                
+                for i in order:
                     tex_uvs.push_back(uvs[i])
                     var vert = dir_verts[dir][i]
                     for etc in vox_corners:

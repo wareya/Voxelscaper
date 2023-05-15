@@ -24,7 +24,7 @@ own_world = true
 world = SubResource( 2 )
 transparent_bg = true
 handle_input_locally = false
-render_target_update_mode = 1
+render_target_update_mode = 3
 
 [node name="DirectionalLight" type="DirectionalLight" parent="Viewport"]
 transform = Transform( -0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769938, -0.0408419, 0, 2.26911, 2.99581 )
