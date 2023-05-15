@@ -15,9 +15,11 @@ ambient_light_energy = 0.1
 ambient_light_sky_contribution = 0.0
 
 [sub_resource type="SpatialMaterial" id=13]
+params_diffuse_mode = 1
 albedo_texture = ExtResource( 2 )
 
 [sub_resource type="SpatialMaterial" id=14]
+params_diffuse_mode = 1
 albedo_texture = ExtResource( 3 )
 
 [sub_resource type="ArrayMesh" id=15]
@@ -110,9 +112,8 @@ script = ExtResource( 5 )
 transform = Transform( 0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5 )
 shadow_enabled = true
 shadow_bias = 0.0
-shadow_contact = 0.5
-shadow_reverse_cull_face = true
-directional_shadow_normal_bias = 0.0
+directional_shadow_normal_bias = 0.25
+directional_shadow_depth_range = 1
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource( 3 )
@@ -123,6 +124,7 @@ transform = Transform( 0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.70710
 [node name="Camera" type="Camera" parent="CameraHolder"]
 transform = Transform( 1, 0, 0, 0, 1, -8.34465e-07, 0, 8.04663e-07, 1, 0, 0, 10 )
 projection = 1
+current = true
 fov = 45.0
 size = 10.0
 
@@ -174,7 +176,6 @@ margin_bottom = 37.0
 text = "Camera"
 
 [node name="CursorBox" type="CSGBox" parent="."]
-visible = false
 width = 1.1
 height = 1.1
 depth = 1.1

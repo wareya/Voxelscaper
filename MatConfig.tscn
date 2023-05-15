@@ -1,10 +1,90 @@
-[gd_scene format=2]
+[gd_scene load_steps=3 format=2]
 
-[node name="MatConfig" type="Control"]
+[ext_resource path="res://MatConfig.gd" type="Script" id=1]
+[ext_resource path="res://CubePreview.tscn" type="PackedScene" id=2]
+
+[node name="MatConfig" type="Control" groups=["MatConfig"]]
 anchor_right = 1.0
 anchor_bottom = 1.0
+script = ExtResource( 1 )
 
 [node name="ClickBlocker" type="ColorRect" parent="."]
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color( 0, 0, 0, 0.376471 )
+color = Color( 0, 0, 0, 0.827451 )
+
+[node name="UI" type="HSplitContainer" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_left = 14.0
+margin_right = -13.0
+
+[node name="Images" type="VBoxContainer" parent="UI"]
+margin_right = 150.0
+margin_bottom = 600.0
+rect_min_size = Vector2( 150, 0 )
+
+[node name="Label2" type="Label" parent="UI/Images"]
+margin_right = 150.0
+margin_bottom = 48.0
+text = "
+Material Editor
+"
+align = 1
+autowrap = true
+
+[node name="SideL" type="Label" parent="UI/Images"]
+margin_top = 52.0
+margin_right = 150.0
+margin_bottom = 66.0
+text = "Side:"
+
+[node name="SideI" type="TextureRect" parent="UI/Images"]
+margin_top = 70.0
+margin_right = 150.0
+margin_bottom = 134.0
+rect_min_size = Vector2( 0, 64 )
+expand = true
+stretch_mode = 6
+
+[node name="TopL" type="Label" parent="UI/Images"]
+margin_top = 138.0
+margin_right = 150.0
+margin_bottom = 152.0
+text = "Top: (none)"
+
+[node name="TopI" type="TextureRect" parent="UI/Images"]
+margin_top = 156.0
+margin_right = 150.0
+margin_bottom = 220.0
+rect_min_size = Vector2( 0, 64 )
+expand = true
+stretch_mode = 6
+
+[node name="Label" type="Label" parent="UI/Images"]
+margin_top = 224.0
+margin_right = 150.0
+margin_bottom = 323.0
+text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top after adding the Top."
+autowrap = true
+
+[node name="Swap" type="Button" parent="UI/Images"]
+visible = false
+margin_top = 327.0
+margin_right = 150.0
+margin_bottom = 347.0
+text = "Swap"
+
+[node name="Done" type="Button" parent="UI/Images"]
+visible = false
+margin_top = 327.0
+margin_right = 150.0
+margin_bottom = 347.0
+text = "Done"
+
+[node name="CubePreview" parent="UI" instance=ExtResource( 2 )]
+anchor_right = 0.0
+anchor_bottom = 0.0
+margin_left = 162.0
+margin_right = 997.0
+margin_bottom = 600.0

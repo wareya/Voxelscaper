@@ -23,24 +23,50 @@ var current_mat = mats[0]
 func set_current_mat(new_current):
     current_mat = new_current 
 
+func _on_files_dropped(files, _screen):
+    var fname = files[0]
+    var image = Image.new()
+    image.load(fname)
+    
+    var existant = get_tree().get_nodes_in_group("MatConfig")
+    if existant.size() > 0:
+        existant[0].set_top(image)
+        return
+    
+    var matconf = preload("res://MatConfig.tscn").instance()
+    matconf.set_side(image)
+    add_child(matconf)
+    
+    var mat = yield(matconf, "done")
+    if mat:
+        add_mat(VoxMat.new(mat[0], mat[1]))
+
+
+func add_mat(mat : VoxMat):
+    mats.push_back(mat)
+    
+    var button = Button.new()
+    $Mats/List.add_child(button)
+    
+    var preview = preload("res://CubePreview.tscn").instance()
+    preview.inform_mats(MatConfig.make_mat(mat.sides), MatConfig.make_mat(mat.top))
+    preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    
+    button.add_child(preview)
+    button.rect_min_size = Vector2(64, 48)
+    button.connect("pressed", self, "set_current_mat", [mat])
+
 # Called when the node enters the scene tree for the first time.
 func _ready():
     if Engine.editor_hint:
         return
-    for mat in mats:
-        var button = Button.new()
-        $Mats/List.add_child(button)
-        var tex = AtlasTexture.new()
-        tex.atlas = mat.sides
-        tex.region = Rect2(9*16, 2*16, 16, 16)
-        var tex_rect = TextureRect.new()
-        tex_rect.expand = true
-        tex_rect.texture = tex
-        button.add_child(tex_rect)
-        tex_rect.rect_min_size = Vector2(48, 48)
-        tex_rect.rect_position = Vector2(8, 8)
-        button.rect_min_size = Vector2(64, 48)
-        button.connect("pressed", self, "set_current_mat", [mat])
+        
+    get_tree().connect("files_dropped", self, "_on_files_dropped")
+    
+    var mats_copy = mats
+    mats = []
+    for mat in mats_copy:
+        add_mat(mat)
     
     
     $CameraHolder.scale = $CameraHolder.scale.normalized() * 2.0
@@ -83,6 +109,8 @@ func estimate_viewport_mouse_scale():
     var size = get_viewport().size
     return 1.0/size.y
 
+
+var lock_mode = 0
 func _unhandled_input(_event):
     if Input.is_action_just_pressed("m1"):
         draw_mode = true
@@ -98,6 +126,65 @@ func _unhandled_input(_event):
         camera_mode = true
     elif !Input.is_action_pressed("m3"):
         camera_mode = false
+        
+    if _event is InputEventKey:
+        var event : InputEventKey = _event
+        if event.pressed and event.scancode == KEY_J:
+            if lock_mode == 0:
+                lock_mode = 1
+                $Voxels.scale.y = 1.0
+                $Voxels.scale.x = 1.0 / sqrt(2.0)
+                $Voxels.scale.z = 1.0
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder.rotation_degrees.x = -45.0
+                $CameraHolder.rotation_degrees.y = 0.0
+            elif lock_mode == 1:
+                lock_mode = 2
+                $Voxels.scale.y = 1.0
+                $Voxels.scale.x = 1.0
+                $Voxels.scale.z = 1.0 / sqrt(2.0)
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder.rotation_degrees.x = -45.0
+                $CameraHolder.rotation_degrees.y = 90.0
+            elif lock_mode == 2:
+                lock_mode = 3
+                $Voxels.scale.y = 1.0
+                $Voxels.scale.x = 1.0 / sqrt(2.0)
+                $Voxels.scale.z = 1.0
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder.rotation_degrees.x = -45.0
+                $CameraHolder.rotation_degrees.y = 180.0
+            elif lock_mode == 3:
+                lock_mode = 4
+                $Voxels.scale.y = 1.0
+                $Voxels.scale.x = 1.0
+                $Voxels.scale.z = 1.0 / sqrt(2.0)
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder.rotation_degrees.x = -45.0
+                $CameraHolder.rotation_degrees.y = 270.0
+            else:
+                $Voxels.scale.y = 1.0
+                $Voxels.scale.x = 1.0
+                $Voxels.scale.z = 1.0
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(30))
+                $CameraHolder.rotation_degrees.x = -30.0
+                if lock_mode == 4:
+                    lock_mode = 5
+                    $CameraHolder.rotation_degrees.y = -45
+                elif lock_mode == 5:
+                    lock_mode = 6
+                    $CameraHolder.rotation_degrees.y = 45
+                elif lock_mode == 6:
+                    lock_mode = 7
+                    $CameraHolder.rotation_degrees.y = 135
+                elif lock_mode == 7:
+                    lock_mode = 8
+                    $CameraHolder.rotation_degrees.y = -135
+                else:
+                    lock_mode = 0
+                    $CameraHolder.rotation_degrees.y = -45
+                    $CameraHolder/Camera.size = 5.0 * camera_intended_scale
+                pass
     
     estimate_viewport_mouse_scale()
     if _event is InputEventMouseMotion:
@@ -115,6 +202,11 @@ func _unhandled_input(_event):
             $CameraHolder.rotation_degrees.y -= 0.22 * event.relative.x
             $CameraHolder.rotation_degrees.x -= 0.22 * event.relative.y
     if _event is InputEventMouseButton:
+        
+        $Voxels.scale.y = 1.0
+        $Voxels.scale.x = 1.0
+        $Voxels.scale.z = 1.0
+        
         var event : InputEventMouseButton = _event
         if $ButtonPerspective.selected == 2:
             var dir = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD) 
@@ -258,6 +350,7 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
             ret[0].x = clamp(ret[0].x, offset.x - 0.499, offset.x + 0.499)
             ret[0].y = clamp(ret[0].y, offset.y - 0.499, offset.y + 0.499)
             ret[0].z = clamp(ret[0].z, offset.z - 0.499, offset.z + 0.499)
+            
             return ret
         ray_origin += ray_normal
     return null
@@ -297,7 +390,15 @@ func _process(delta):
     var raw_collision_point = null
     var collision_point = null
     var collision_normal = null
+    
+    var start = OS.get_ticks_usec()
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0)
+    var end = OS.get_ticks_usec()
+    
+    var time = (end-start)/1000000.0
+    if time > 0.1:
+        print("raycast time: ", time)
+    
     #if cast.is_colliding():
     if collision_data:
         #collision_normal = cast.get_collision_normal()
@@ -388,6 +489,7 @@ func _process(delta):
             [Vector3( 1,  1,  1), Vector3( 1, -1,  1)],
             [Vector3(-1,  1,  1), Vector3(-1, -1,  1)],
         ]
+        #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
         $Voxels.place_voxel(new_point, current_mat, [])
         
         if $ButtonTool.selected == 0:

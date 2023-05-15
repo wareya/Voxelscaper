@@ -26,8 +26,22 @@ var is_dirty = false
 func _process(delta):
     if is_dirty:
         is_dirty = false
+        
+        var start = OS.get_ticks_usec()
         refresh_surface_mapping()
+        var end = OS.get_ticks_usec()
+        
+        var time = (end-start)/1000000.0
+        if time > 0.1:
+            print("refresh time: ", time)
+        
+        start = OS.get_ticks_usec()
         remesh()
+        end = OS.get_ticks_usec()
+        
+        time = (end-start)/1000000.0
+        if time > 0.1:
+            print("remesh time: ", time)
 
 var directions = [
     Vector3.UP,
@@ -131,7 +145,7 @@ func get_bitmask_bit(tile : Vector2, which : int):
         bit.x += 1
     return bitmask_stuff[bit.x + bit.y*12*3]
 
-var bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+const bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
 var bitmask_dirs = {
     TileSet.BIND_TOPLEFT     : Vector2(-1, -1),
@@ -180,6 +194,7 @@ func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners =
         voxel_corners[position.round()] = ramp_corners.duplicate(true)
     is_dirty = true
     
+    dirtify_bitmask(position)
 
 func erase_voxel(position : Vector3):
     if voxels.size() <= 1:
@@ -189,7 +204,16 @@ func erase_voxel(position : Vector3):
     if voxel_corners.has(position.round()):
         voxel_corners.erase(position.round())
     is_dirty = true
+    
+    dirtify_bitmask(position)
 
+func dirtify_bitmask(position : Vector3):
+    for z in [-1, 0, 1]:
+        for y in [-1, 0, 1]:
+            for x in [-1, 0, 1]:
+                var key = (position + Vector3(x, y, z)).round()
+                if key in uv_data_cache:
+                    uv_data_cache.erase(key)
 
 func face_is_shifted(pos, face_normal):
     if !pos in voxel_corners:
@@ -199,9 +223,9 @@ func face_is_shifted(pos, face_normal):
             return true
     return false
 
+var uv_data_cache = {}
+
 func remesh():
-    #print(bitmask_uvs)
-    #print(bitmask_uvs[Vector2(0, 0)])
     mesh = ArrayMesh.new()
     
     var face_tex = []
@@ -212,16 +236,22 @@ func remesh():
     
     for info in face_tex:
         var texture = info[0]
-        var surface_builder = SurfaceTool.new()
-        surface_builder.begin(Mesh.PRIMITIVE_TRIANGLES)
+        #var surface_builder = SurfaceTool.new()
+        #surface_builder.begin(Mesh.PRIMITIVE_TRIANGLES)
         var material = SpatialMaterial.new()
         material.roughness = 1.0
         material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         
+        var verts = PoolVector3Array()
+        var tex_uvs = PoolVector2Array()
+        var normals = PoolVector3Array()
+        
         var is_side = info[1]
         
         var list = info[2]
+        
+        var start = OS.get_ticks_usec()
         
         for pos in list:
             var vox = voxels[pos]
@@ -229,63 +259,80 @@ func remesh():
             for dir in sides if is_side else unsides:
                 if voxels.has(pos+dir) and !face_is_shifted(pos+dir, -dir) and !face_is_shifted(pos, dir):
                     continue
+                
                 var unit_uv = Vector2(1.0/12.0, 1/4.0)
                 var uvs = ref_uvs.duplicate()
-                for i in range(uvs.size()):
-                    uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
-                    uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
+                if pos in uv_data_cache and dir in uv_data_cache[pos]:
+                    uvs = uv_data_cache[pos][dir]
+                else:
+                    for i in range(uvs.size()):
+                        uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
+                        uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
+                        
+                        uvs[i].y = 1.0-uvs[i].y
+                        
+                        var bitmask = 0
+                        
+                        for bit in bitmask_bindings:
+                            var neighbor_pos = pos + bitmask_dirs_by_dir[dir][bit]
+                            var neighbor = voxels.get(neighbor_pos)
+                            if neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top):
+                                bitmask |= bit
+                            if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
+                                bitmask &= ~bit
+                            # FIXME handle floor-wall transitions better
+                        
+                        bitmask |= TileSet.BIND_CENTER
+                        
+                        var smart_bind_sets = {
+                            TileSet.BIND_TOPLEFT     : TileSet.BIND_TOP    | TileSet.BIND_LEFT,
+                            TileSet.BIND_TOPRIGHT    : TileSet.BIND_TOP    | TileSet.BIND_RIGHT,
+                            TileSet.BIND_BOTTOMLEFT  : TileSet.BIND_BOTTOM | TileSet.BIND_LEFT,
+                            TileSet.BIND_BOTTOMRIGHT : TileSet.BIND_BOTTOM | TileSet.BIND_RIGHT,
+                        }
+                        for bind in smart_bind_sets.keys():
+                            var other = smart_bind_sets[bind]
+                            if bitmask & other != other:
+                                bitmask &= ~bind
+                        
+                        if bitmask in bitmask_uvs:
+                            uvs[i] += bitmask_uvs[bitmask]
+                        else:
+                            uvs[i] += bitmask_uvs[TileSet.BIND_CENTER]
+                        
+                        uvs[i] = unit_uv * uvs[i]
                     
-                    uvs[i].y = 1.0-uvs[i].y
-                    var bitmask = 0
-                    for bit in bitmask_bindings:
-                        var neighbor_pos = pos + bitmask_dirs_by_dir[dir][bit]
-                        var neighbor = voxels.get(neighbor_pos)
-                        if neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top):
-                            bitmask |= bit
-                        if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
-                            bitmask &= ~bit
-                        # FIXME handle floor-wall transitions
-                    
-                    bitmask |= TileSet.BIND_CENTER
-                    
-                    var smart_bind_sets = {
-                        TileSet.BIND_TOPLEFT     : TileSet.BIND_TOP    | TileSet.BIND_LEFT,
-                        TileSet.BIND_TOPRIGHT    : TileSet.BIND_TOP    | TileSet.BIND_RIGHT,
-                        TileSet.BIND_BOTTOMLEFT  : TileSet.BIND_BOTTOM | TileSet.BIND_LEFT,
-                        TileSet.BIND_BOTTOMRIGHT : TileSet.BIND_BOTTOM | TileSet.BIND_RIGHT,
-                    }
-                    for bind in smart_bind_sets.keys():
-                        var other = smart_bind_sets[bind]
-                        if bitmask & other != other:
-                            bitmask &= ~bind
-                    
-                    #if bitmask & TileSet.BIND_TOPLEFT and (bitmask & TileSet.BIND_LEFT or bitmask & TileSet.BIND_TOP):
-                    #    bitmask |= TileSet.BIND_LEFT
-                    #    bitmask |= TileSet.BIND_TOP
-                    if bitmask in bitmask_uvs:
-                        uvs[i] += bitmask_uvs[bitmask]
-                    else:
-                        uvs[i] += bitmask_uvs[TileSet.BIND_CENTER]
-                    #if is_side:
-                    #    uvs[i] += bitmask_uvs[511] # all bindings
-                    #else:
-                    #    uvs[i] += bitmask_uvs[TileSet.BIND_CENTER]
-                    uvs[i] = unit_uv * uvs[i]
+                    if not pos in uv_data_cache:
+                        uv_data_cache[pos] = {}
+                    uv_data_cache[pos][dir] = uvs
                 
-                #for i in [0, 2, 1, 1, 2, 3]:
                 for i in [0, 1, 2, 2, 1, 3]:
-                    surface_builder.add_uv(uvs[i])
+                    tex_uvs.push_back(uvs[i])
                     var vert = dir_verts[dir][i]
                     for etc in vox_corners:
                         if (vert*2.0).round() == etc[0]:
                             vert = etc[1]/2.0
-                    surface_builder.add_vertex(vert + pos)
-                    
-        surface_builder.generate_normals()
-        var arrays = surface_builder.commit_to_arrays()
-        if arrays[ArrayMesh.ARRAY_FORMAT_VERTEX].size() > 0:
+                    verts.push_back(vert + pos)
+                    normals.push_back(dir)
+        
+        var end = OS.get_ticks_usec()
+        
+        
+        var arrays = []
+        arrays.resize(Mesh.ARRAY_MAX)
+        arrays[Mesh.ARRAY_VERTEX] = verts
+        arrays[Mesh.ARRAY_TEX_UV] = tex_uvs
+        arrays[Mesh.ARRAY_NORMAL] = normals
+        #surface_builder.generate_normals()
+        #var arrays = surface_builder.commit_to_arrays()
+        if arrays[Mesh.ARRAY_VERTEX].size() > 0:
             mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+        
+        
+        var time = (end-start)/1000000.0
+        if time > 0.01:
+            print("dummy  time: ", time)
     
     #var owner = $StaticBody.get_shape_owners()[0]
     #$StaticBody.shape_owner_clear_shapes(owner)
