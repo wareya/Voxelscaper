@@ -224,6 +224,44 @@ func face_is_disconnected(pos, face_normal, test_dir):
                 return true
     return false
 
+var ref_corners = [
+    Vector3(-0.5, -0.5, -0.5),
+    Vector3( 0.5, -0.5, -0.5),
+    Vector3(-0.5,  0.5, -0.5),
+    Vector3( 0.5,  0.5, -0.5),
+    Vector3(-0.5, -0.5,  0.5),
+    Vector3( 0.5, -0.5,  0.5),
+    Vector3(-0.5,  0.5,  0.5),
+    Vector3( 0.5,  0.5,  0.5),
+]
+
+func get_effective_vert(pos, vert):
+    if !pos in voxel_corners:
+        return vert
+    for corner in voxel_corners[pos]:
+        if vert.round() == corner[0]:
+            return corner[1]
+    return vert
+
+func matching_edges_match(pos, next_pos, dir):
+    var axis = next_pos - pos
+    var cross = axis.cross(dir)
+    
+    if axis.length() > 1:
+        # diagonal case
+        var near_a = pos + get_effective_vert(pos, dir + axis)
+        var far_a = next_pos + get_effective_vert(next_pos, dir - axis) + axis
+        #print(near_a, far_a, far_a - near_a)
+        return near_a.distance_squared_to(far_a) < 0.001
+    else:
+        # axial case
+        var near_a = get_effective_vert(pos, dir + axis + cross)
+        var near_b = get_effective_vert(pos, dir + axis - cross)
+        var far_a = get_effective_vert(next_pos, dir - axis + cross) + axis*2.0
+        var far_b = get_effective_vert(next_pos, dir - axis - cross) + axis*2.0
+        #print(near_a, far_a, far_a - near_a)
+        return near_a.distance_squared_to(far_a) < 0.001 and near_b.distance_squared_to(far_b) < 0.001
+
 var uv_data_cache = {}
 
 func remesh():
@@ -266,39 +304,45 @@ func remesh():
                 if pos in uv_data_cache and dir in uv_data_cache[pos]:
                     uvs = uv_data_cache[pos][dir]
                 else:
+                    var bitmask = 0
+                    
+                    for bit in bitmask_bindings:
+                        var test_dir = bitmask_dirs_by_dir[dir][bit]
+                        if test_dir == Vector3():
+                            continue
+                        var neighbor_pos = pos + test_dir
+                        var neighbor = voxels.get(neighbor_pos)
+                        var neighbor_test = neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top)
+                        # FIXME take specific edge into account in disconnection test
+                        var is_match = false
+                        if neighbor_test:
+                            is_match = matching_edges_match(pos, neighbor_pos, dir)
+                        
+                        if neighbor_test and is_match:#!face_is_disconnected(pos, dir, test_dir):
+                            bitmask |= bit
+                        #if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
+                        if voxels.get(neighbor_pos + dir):
+                            bitmask &= ~bit
+                        # FIXME handle floor-wall transitions better
+                    
+                    bitmask |= TileSet.BIND_CENTER
+                    
+                    var smart_bind_sets = {
+                        TileSet.BIND_TOPLEFT     : TileSet.BIND_TOP    | TileSet.BIND_LEFT,
+                        TileSet.BIND_TOPRIGHT    : TileSet.BIND_TOP    | TileSet.BIND_RIGHT,
+                        TileSet.BIND_BOTTOMLEFT  : TileSet.BIND_BOTTOM | TileSet.BIND_LEFT,
+                        TileSet.BIND_BOTTOMRIGHT : TileSet.BIND_BOTTOM | TileSet.BIND_RIGHT,
+                    }
+                    for bind in smart_bind_sets.keys():
+                        var other = smart_bind_sets[bind]
+                        if bitmask & other != other:
+                            bitmask &= ~bind
                     for i in range(uvs.size()):
                         uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
                         uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
                         
                         uvs[i].y = 1.0-uvs[i].y
                         
-                        var bitmask = 0
-                        
-                        for bit in bitmask_bindings:
-                            var test_dir = bitmask_dirs_by_dir[dir][bit]
-                            var neighbor_pos = pos + test_dir
-                            var neighbor = voxels.get(neighbor_pos)
-                            var neighbor_test = neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top)
-                            # FIXME take specific edge into account in disconnection test
-                            if neighbor_test and !face_is_disconnected(pos, dir, test_dir):
-                                bitmask |= bit
-                            #if voxels.get(neighbor_pos + dir) and !face_is_shifted(neighbor_pos + dir, -dir) and !face_is_shifted(pos, dir):
-                            if voxels.get(neighbor_pos + dir):
-                                bitmask &= ~bit
-                            # FIXME handle floor-wall transitions better
-                        
-                        bitmask |= TileSet.BIND_CENTER
-                        
-                        var smart_bind_sets = {
-                            TileSet.BIND_TOPLEFT     : TileSet.BIND_TOP    | TileSet.BIND_LEFT,
-                            TileSet.BIND_TOPRIGHT    : TileSet.BIND_TOP    | TileSet.BIND_RIGHT,
-                            TileSet.BIND_BOTTOMLEFT  : TileSet.BIND_BOTTOM | TileSet.BIND_LEFT,
-                            TileSet.BIND_BOTTOMRIGHT : TileSet.BIND_BOTTOM | TileSet.BIND_RIGHT,
-                        }
-                        for bind in smart_bind_sets.keys():
-                            var other = smart_bind_sets[bind]
-                            if bitmask & other != other:
-                                bitmask &= ~bind
                         
                         if bitmask in bitmask_uvs:
                             uvs[i] += bitmask_uvs[bitmask]

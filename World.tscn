@@ -196,14 +196,14 @@ texture = ExtResource( 4 )
 script = SubResource( 12 )
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
-margin_top = 149.0
+margin_top = 148.0
 margin_right = 168.0
-margin_bottom = 186.0
+margin_bottom = 185.0
 
 [node name="ButtonWarp" type="OptionButton" parent="."]
-margin_top = 112.0
+margin_top = 111.0
 margin_right = 168.0
-margin_bottom = 149.0
+margin_bottom = 148.0
 
 [node name="ButtonTool" type="OptionButton" parent="."]
 margin_top = 74.0
