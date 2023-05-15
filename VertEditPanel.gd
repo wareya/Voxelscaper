@@ -5,15 +5,92 @@ extends Control
 # var a = 2
 # var b = "text"
 
+func axialize(n : Vector3) -> Vector3:
+    n = n.normalized()
+    var closest_dist_sq = n.distance_squared_to(Vector3.UP)
+    var ret = Vector3.UP
+    for dir in [Vector3.DOWN, Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+        var d2 = n.distance_squared_to(dir)
+        if d2 < closest_dist_sq:
+            closest_dist_sq = d2
+            ret = dir
+    return ret
+
+func flush_negative_zero(n : Vector3) -> Vector3:
+    if n.x == 0.0:
+        n.x = 0.0
+    if n.y == 0.0:
+        n.y = 0.0
+    if n.z == 0.0:
+        n.z = 0.0
+    return n
+
+func action(which):
+    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    
+    print()
+    
+    var copy = {}
+    for vert in ref_verts:
+        copy[vert] = get_override(vert)
+    
+    var right : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.RIGHT))
+    var up : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.UP))
+    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+    
+    if which == "left" or which == "right":
+        var _sign = 1.0 if which == "left" else -1.0
+        for vert in ref_verts:
+            var modified = copy[vert.rotated(front, -PI*0.5*_sign).round()*0.5]
+            var new_modified = (modified as Vector3).rotated(front, PI*0.5*_sign)
+            print(vert, " ", modified, " ", new_modified)
+            set_override(vert, new_modified)
+    
+    if which == "fliph" or which == "flipv":
+        var _dir : Vector3 = (-up.abs()) if which == "flipv" else (-right.abs())
+        print("dir:")
+        print(_dir)
+        _dir = Vector3.ONE - Vector3.ONE*_dir.abs() + _dir
+        print(_dir)
+        for vert in ref_verts:
+            var opposite = vert * _dir
+            var modified = copy[opposite] * _dir
+            #print(vert, " ", modified)
+            set_override(vert, modified)
+    
+    if which == "reset":
+        for vert in ref_verts:
+            set_override(vert, vert)
+    
+    if which == "resetcam":
+        $Frame/VertEditViewport/CameraHolder.rotation_degrees = $"../CameraHolder".rotation_degrees
+    
+    for vert in vert_overrides.keys():
+        vert_overrides[vert] = (vert_overrides[vert]*rounding_amount).round()/rounding_amount
+    
+    prepare_overrides()
+
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    $Frame/VertEditViewport/Voxel
+    $Buttons/Left.connect("pressed", self, "action", ["left"])
+    $Buttons/Right.connect("pressed", self, "action", ["right"])
+    $Buttons/FlipH.connect("pressed", self, "action", ["fliph"])
+    $Buttons/FlipV.connect("pressed", self, "action", ["flipv"])
+    $Buttons/Reset.connect("pressed", self, "action", ["reset"])
+    $Buttons/ResetCamera.connect("pressed", self, "action", ["resetcam"])
     pass # Replace with function body.
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(delta):
+    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+    $Frame/VertEditViewport/Grid.global_translation = -front*0.51
+    if front.abs() != Vector3.UP:
+        $Frame/VertEditViewport/Grid.look_at(-front, Vector3.UP)
+    else:
+        $Frame/VertEditViewport/Grid.look_at(-front, Vector3.FORWARD)
     update()
 
 var ref_verts = [
@@ -39,6 +116,7 @@ func get_override(vert):
 
 var drag_depth = 0.0
 var drag_target = null
+var drag_initial_value = null
 var drag_mode = false
 var camera_mode = false
 
@@ -62,6 +140,7 @@ func _indirect_input(_event):
                 drag_depth = depth
         
         if drag_target:
+            drag_initial_value = get_override(drag_target)
             drag_mode = true
     elif !Input.is_action_pressed("m1"):
         if drag_target:
@@ -71,11 +150,12 @@ func _indirect_input(_event):
         
         prepare_overrides()
         
+        drag_initial_value = null
         drag_target = null
         drag_mode = false
     
     if _event.is_action_pressed("m3") and Input.is_action_just_pressed("m3"):
-        print(_event.is_action_pressed("m3"))
+        #print(_event.is_action_pressed("m3"))
         camera_mode = true
     elif !Input.is_action_pressed("m3"):
         camera_mode = false
@@ -96,6 +176,28 @@ func _indirect_input(_event):
             pos.y = clamp(pos.y, 0.0, rect.size.y)
             
             var new_vert : Vector3 = cam.project_position(pos, depth)
+            var cam_normal = cam.project_ray_normal(pos)
+            
+            if $Frame/VertEditViewport/PlaneLock.pressed:
+                var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+                var positive = front.abs()
+                var diff = drag_initial_value*front - new_vert*front
+                
+                # positive = on screen side of intended plane, negative = opposite
+                var dist = diff.x + diff.y + diff.z
+                
+                var normal_locked = cam_normal * front
+                var normal_lock_dist = normal_locked.x + normal_locked.y + normal_locked.z
+                cam_normal /= normal_lock_dist
+                
+                var fudge = dist * cam_normal
+                
+                new_vert += fudge
+            
+            new_vert.x = clamp(new_vert.x, -1.0, 1.0)
+            new_vert.y = clamp(new_vert.y, -1.0, 1.0)
+            new_vert.z = clamp(new_vert.z, -1.0, 1.0)
+            
             set_override(drag_target, new_vert)
             
             prepare_overrides()
@@ -116,15 +218,24 @@ func prepare_overrides():
         var vert = get_override(_vert)
         vert = (vert*rounding_amount).round()/rounding_amount
         
-        if vert.x == 0.0:
-            vert.x = 0.0
-        if vert.y == 0.0:
-            vert.y = 0.0
-        if vert.z == 0.0:
-            vert.z = 0.0
+        #if drag_target == _vert and $Frame/VertEditViewport/PlaneLock.pressed:
+        #    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+        #    
+        #    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+        #    var positive = front.abs()
+        #    var negative = Vector3.ONE - positive
+        #    print(positive, negative)
+        #    vert = vert * negative + drag_initial_value * positive
+        #    print(drag_initial_value, vert)
+        
+        vert = flush_negative_zero(vert)
         
         if _vert != vert:
             prepared_overrides.push_back([_vert*2.0, vert*2.0])
+    
+    #print()
+    #for v in prepared_overrides:
+    #    print(v)
 
 var rounding_amount = 8.0
 

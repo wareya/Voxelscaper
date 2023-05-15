@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=2]
+[gd_scene load_steps=24 format=2]
 
 [ext_resource path="res://Voxels.tscn" type="PackedScene" id=1]
 [ext_resource path="res://art/brickwall.png" type="Texture" id=2]
@@ -7,7 +7,9 @@
 [ext_resource path="res://World.gd" type="Script" id=5]
 [ext_resource path="res://art/grid.png" type="Texture" id=6]
 [ext_resource path="res://VertEditPanel.gd" type="Script" id=7]
+[ext_resource path="res://font/IBMPlexSans-Medium.ttf" type="DynamicFontData" id=8]
 [ext_resource path="res://VertEditInputCatcher.gd" type="Script" id=9]
+[ext_resource path="res://art/minigrid.png" type="Texture" id=10]
 
 [sub_resource type="Environment" id=3]
 background_mode = 1
@@ -148,6 +150,12 @@ surfaces/1 = {
 "vertex_count": 12
 }
 
+[sub_resource type="DynamicFont" id=27]
+size = 18
+use_mipmaps = true
+use_filter = true
+font_data = ExtResource( 8 )
+
 [node name="World" type="Spatial" groups=["VoxEditor"]]
 script = ExtResource( 5 )
 
@@ -242,13 +250,15 @@ texture = ExtResource( 6 )
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -256.0
-margin_bottom = 256.0
+margin_bottom = 287.0
+rect_clip_content = true
 script = ExtResource( 7 )
 
 [node name="Frame" type="ViewportContainer" parent="VertEditPanel"]
 show_behind_parent = true
 anchor_right = 1.0
 anchor_bottom = 1.0
+margin_bottom = -31.0
 stretch = true
 
 [node name="VertEditViewport" type="Viewport" parent="VertEditPanel/Frame"]
@@ -262,11 +272,16 @@ render_target_update_mode = 3
 transform = Transform( -0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581 )
 
 [node name="CameraHolder" type="Spatial" parent="VertEditPanel/Frame/VertEditViewport"]
-transform = Transform( 0.866025, 0.25, -0.433013, 0, 0.866025, 0.5, 0.5, -0.433013, 0.75, 0, 0, 0 )
+transform = Transform( 0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 0, 0 )
 
 [node name="VertEditCamera" type="Camera" parent="VertEditPanel/Frame/VertEditViewport/CameraHolder"]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4 )
-fov = 30.0
+fov = 35.0
+
+[node name="Grid" type="Sprite3D" parent="VertEditPanel/Frame/VertEditViewport"]
+transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.51 )
+pixel_size = 0.0078
+texture = ExtResource( 10 )
 
 [node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource( 1 )]
 mesh = SubResource( 26 )
@@ -276,3 +291,63 @@ skeleton = NodePath("../../../..")
 anchor_right = 1.0
 anchor_bottom = 1.0
 script = ExtResource( 9 )
+
+[node name="PlaneLock" type="Button" parent="VertEditPanel/Frame/VertEditViewport"]
+toggle_mode = true
+pressed = true
+text = "Plane Lock"
+
+[node name="Buttons" type="HBoxContainer" parent="VertEditPanel"]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+margin_top = -31.0
+
+[node name="Label" type="Label" parent="VertEditPanel/Buttons"]
+margin_right = 46.0
+margin_bottom = 31.0
+text = "Vertex
+Control"
+align = 1
+
+[node name="Left" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 50.0
+margin_right = 77.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "↶"
+
+[node name="Right" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 81.0
+margin_right = 108.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "↷"
+
+[node name="FlipH" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 112.0
+margin_right = 139.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "↔"
+
+[node name="FlipV" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 143.0
+margin_right = 170.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "↕"
+
+[node name="Reset" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 174.0
+margin_right = 202.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "❌"
+
+[node name="ResetCamera" type="Button" parent="VertEditPanel/Buttons"]
+margin_left = 206.0
+margin_right = 229.0
+margin_bottom = 31.0
+custom_fonts/font = SubResource( 27 )
+text = "¬"
