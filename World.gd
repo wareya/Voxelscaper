@@ -69,10 +69,7 @@ func _on_files_dropped(files, _screen):
     if mat:
         add_mat(VoxMat.new(mat[0], mat[1]))
 
-
-func add_mat(mat : VoxMat):
-    mats.push_back(mat)
-    
+func add_mat_button(mat : VoxMat):
     var button = Button.new()
     $Mats/List.add_child(button)
     
@@ -83,6 +80,18 @@ func add_mat(mat : VoxMat):
     button.add_child(preview)
     button.rect_min_size = Vector2(64, 48)
     button.connect("pressed", self, "set_current_mat", [mat])
+
+func rebuild_mat_buttons():
+    for child in $Mats/List.get_children():
+        child.hide()
+        child.queue_free()
+    
+    for mat in mats:
+        add_mat_button(mat)
+
+func add_mat(mat : VoxMat):
+    mats.push_back(mat)
+    add_mat_button(mat)
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
@@ -101,12 +110,6 @@ func _ready():
     $ButtonPerspective.add_item("Orthographic", 0)
     $ButtonPerspective.add_item("Perspective (Orbit)", 1)
     $ButtonPerspective.add_item("Perspective (FPS)", 2)
-    
-    #$ButtonOrientation.add_item("Follow Face", 0)
-    #$ButtonOrientation.add_item("Follow Camera", 1)
-    #$ButtonOrientation.add_item("X axis (vertical)", 2)
-    #$ButtonOrientation.add_item("Y axis (horizontal)", 3)
-    #$ButtonOrientation.add_item("Z axis (vertical)", 4)
     
     $ButtonMode.add_item("Add", 0)
     $ButtonMode.add_item("Replace", 1)
@@ -136,10 +139,72 @@ func _ready():
         ]:
         $Voxels.place_voxel(vox[0], vox[1])
     
-    $MenuBar.connect("file_save", self, "save_map")
+    $MenuBar.connect("file_save", self, "default_save")
+    $MenuBar.connect("file_save_as", self, "save_map")
+    $MenuBar.connect("file_open", self, "open_map")
+
+func default_save():
+    if prev_save_target != "":
+        var data = $Voxels.serialize()
+        save_data_to(prev_save_target, data)
+    else:
+        save_map()
+
+var prev_save_target = ""
+func save_data_to(fname, data):
+    prev_save_target = fname
+    
+    var out = File.new()
+    out.open(fname, File.WRITE)
+    var text = JSON.print(data, " ")
+    out.store_string(text)
+    out.close()
 
 func save_map():
-    print($Voxels.serialize())
+    var data = $Voxels.serialize()
+    
+    var dialog = FileDialog.new()
+    dialog.resizable = true
+    dialog.access = FileDialog.ACCESS_FILESYSTEM
+    dialog.mode = FileDialog.MODE_SAVE_FILE
+    dialog.add_filter("*.json ; Voxel Map JSON Files")
+    dialog.current_file = "voxel_map.json"
+    add_child(dialog)
+    dialog.popup_centered_ratio()
+    
+    dialog.connect("file_selected", self, "save_data_to", [data])
+    yield(dialog, "visibility_changed")
+    remove_child(dialog)
+
+func open_data_from(fname):
+    prev_save_target = fname
+    
+    var file = File.new()
+    file.open(fname, File.READ)
+    var json = file.get_as_text()
+    file.close()
+    var result : JSONParseResult = JSON.parse(json)
+    if !result.error:
+        $Voxels.deserialize(result.result)
+    else:
+        var dialog = AcceptDialog.new()
+        dialog.dialog_text = "File is malformed, failed to open."
+        dialog.popup_centered_ratio()
+        remove_child(dialog)
+        yield(dialog, "visibility_changed")
+
+func open_map():
+    var dialog = FileDialog.new()
+    dialog.resizable = true
+    dialog.access = FileDialog.ACCESS_FILESYSTEM
+    dialog.mode = FileDialog.MODE_OPEN_FILE
+    dialog.add_filter("*.json ; Voxel Map JSON Files")
+    add_child(dialog)
+    dialog.popup_centered_ratio()
+    
+    dialog.connect("file_selected", self, "open_data_from")
+    yield(dialog, "visibility_changed")
+    remove_child(dialog)
 
 var draw_mode = false
 var erase_mode = false
@@ -155,6 +220,8 @@ func estimate_viewport_mouse_scale():
 
 var lock_mode = 0
 func _unhandled_input(_event):
+    $VertEditPanel/Frame/VertEditViewport.handle_input_locally = false
+    
     if Input.is_action_just_pressed("m1"):
         draw_mode = true
     elif !Input.is_action_pressed("m1"):
@@ -169,6 +236,9 @@ func _unhandled_input(_event):
         camera_mode = true
     elif !Input.is_action_pressed("m3"):
         camera_mode = false
+    
+    if draw_mode or erase_mode or camera_mode:
+        $VertEditPanel/Frame/VertEditViewport.handle_input_locally = true
         
     if _event is InputEventKey:
         var event : InputEventKey = _event

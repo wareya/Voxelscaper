@@ -1,6 +1,12 @@
 tool
 extends MeshInstance
 
+func vec_to_array(vec : Vector3) -> Array:
+    return [vec.x, vec.y, vec.z]
+
+func array_to_vec(array : Array) -> Vector3:
+    return Vector3(array[0], array[1], array[2])
+
 onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 
 onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
@@ -19,25 +25,57 @@ func serialize() -> Dictionary:
             save_mats[mat_counter] = mat.encode()
             mat_counter += 1
     
-    var save_voxels = {}
+    var save_voxels = []
     for coord in voxels:
-        var save_coord = [coord.x, coord.y, coord.z]
+        var save_coord = vec_to_array(coord)
         var mat = voxels[coord]
         if not mat in mats:
             mats[mat] = mat_counter
             save_mats[mat_counter] = mat.encode()
             mat_counter += 1
-        save_voxels[save_coord] = mats[mat]
+        save_voxels.push_back([save_coord, mats[mat]])
     
-    var save_corners = {}
+    var save_corners = []
     for coord in voxel_corners:
-        var save_coord = [coord.x, coord.y, coord.z]
-        save_corners[save_coord] = voxel_corners[coord].duplicate()
+        var save_coord = vec_to_array(coord)
+        var bwuh = []
+        for corner in voxel_corners[coord]:
+            var from_corner = vec_to_array(corner)
+            var to_corner = vec_to_array(voxel_corners[coord][corner])
+            bwuh.push_back([from_corner, to_corner])
+        save_corners.push_back([save_coord, bwuh])
     
     return {"voxels" : save_voxels, "mats" : save_mats, "corners" : save_corners}
 
-func deserialize(_data : Dictionary):
-    pass
+func deserialize(data : Dictionary):
+    voxel_corners = {}
+    for vertex in data.corners:
+        var vec = array_to_vec(vertex[0])
+        voxel_corners[vec] = {}
+        for corner in vertex[1]:
+            var from_corner = array_to_vec(corner[0])
+            var to_corner = array_to_vec(corner[1])
+            voxel_corners[vec][from_corner] = to_corner
+    
+    var opened_mats = {}
+    editor.mats = []
+    var mat_keys : Array = data.mats.keys()
+    mat_keys.sort()
+    for mat_key in mat_keys:
+        var mat = editor.VoxMat.decode(data.mats[mat_key])
+        editor.mats.push_back(mat)
+        opened_mats[int(mat_key)] = mat
+    
+    print(opened_mats)
+    
+    voxels = {}
+    for voxel in data.voxels:
+        var vec = array_to_vec(voxel[0])
+        voxels[vec] = opened_mats[int(voxel[1])]
+    
+    full_remesh()
+    
+    editor.rebuild_mat_buttons()
 
 func _ready():
     refresh_surface_mapping()
@@ -316,6 +354,11 @@ func matching_edges_match(pos, next_pos, dir):
     
 
 var uv_data_cache = {}
+
+func full_remesh():
+    uv_data_cache = {}
+    refresh_surface_mapping()
+    remesh()
 
 func remesh():
     mesh = ArrayMesh.new()
