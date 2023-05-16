@@ -83,7 +83,7 @@ func _ready():
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
+func _process(_delta):
     var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
     $Frame/VertEditViewport/Grid.global_translation = -front*0.51
@@ -180,7 +180,7 @@ func _indirect_input(_event):
             
             if $Frame/VertEditViewport/PlaneLock.pressed:
                 var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
-                var positive = front.abs()
+                #var positive = front.abs()
                 var diff = drag_initial_value*front - new_vert*front
                 
                 # positive = on screen side of intended plane, negative = opposite
@@ -267,8 +267,8 @@ func _draw():
     
     var voxels = $Frame/VertEditViewport/Voxel
     #voxels.place_voxel(Vector3(), voxels.voxels.values()[0], overrides_copy)
-    $Frame/VertEditViewport/Voxel.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
-    $Frame/VertEditViewport/Voxel.remesh()
+    voxels.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
+    voxels.remesh()
     
     verts.sort_custom(Sorter.new(), "compare")
     
@@ -278,7 +278,7 @@ func _draw():
         #cam.project_position(
         var color = Color(1.0, 0.5, 0.0)
         
-        var pos_dist = get_local_mouse_position().distance_to(pos)
+        #var pos_dist = get_local_mouse_position().distance_to(pos)
         if drag_target == _vert[1]:
             color = Color.aquamarine
             
@@ -286,6 +286,6 @@ func _draw():
             color = Color.yellow
         
         #draw_circle(pos, 4.0, color)
-        draw_arc(pos, 2.0, 0.0, PI*2.01, 24.0, Color.black, 5.4, true)
-        draw_arc(pos, 2.0, 0.0, PI*2.01, 24.0, color, 4.0, true)
+        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, Color.black, 5.4, true)
+        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, color, 4.0, true)
     pass

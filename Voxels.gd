@@ -8,11 +8,18 @@ onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 onready var voxel_corners = {   
 }
 
-func structify():
-    var save_voxels = {}
+func serialize() -> Dictionary:
     var mats = {}
     var save_mats = {}
     var mat_counter = 0
+    
+    for mat in editor.mats:
+        if not mat in mats:
+            mats[mat] = mat_counter
+            save_mats[mat_counter] = mat.encode()
+            mat_counter += 1
+    
+    var save_voxels = {}
     for coord in voxels:
         var save_coord = [coord.x, coord.y, coord.z]
         var mat = voxels[coord]
@@ -22,6 +29,14 @@ func structify():
             mat_counter += 1
         save_voxels[save_coord] = mats[mat]
     
+    var save_corners = {}
+    for coord in voxel_corners:
+        var save_coord = [coord.x, coord.y, coord.z]
+        save_corners[save_coord] = voxel_corners[coord].duplicate()
+    
+    return {"voxels" : save_voxels, "mats" : save_mats, "corners" : save_corners}
+
+func deserialize(_data : Dictionary):
     pass
 
 func _ready():
@@ -29,7 +44,7 @@ func _ready():
     remesh()
 
 var is_dirty = false
-func _process(delta):
+func _process(_delta):
     if is_dirty:
         is_dirty = false
         

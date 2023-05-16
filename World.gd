@@ -22,15 +22,15 @@ class VoxMat extends Reference:
         top = _top
     
     func encode() -> Dictionary:
-        var top_png = top.get_data().save_png_to_buffer()
-        var sides_png = sides.get_data().save_png_to_buffer()
+        var top_png = Marshalls.raw_to_base64(top.get_data().save_png_to_buffer())
+        var sides_png = Marshalls.raw_to_base64(sides.get_data().save_png_to_buffer())
         return {"top": top_png, "sides": sides_png}
     
     static func decode(dict : Dictionary) -> VoxMat:
         var top_image = Image.new()
-        top_image.load_png_from_buffer(dict["top"])
+        top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
         var sides_image = Image.new()
-        sides_image.load_png_from_buffer(dict["sides"])
+        sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
         var top_tex = ImageTexture.new()
         top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
         var sides_tex = ImageTexture.new()
@@ -96,7 +96,6 @@ func _ready():
     for mat in mats_copy:
         add_mat(mat)
     
-    
     $CameraHolder.scale = $CameraHolder.scale.normalized() * 2.0
     
     $ButtonPerspective.add_item("Orthographic", 0)
@@ -136,6 +135,11 @@ func _ready():
             [Vector3( 1, 0, -1), get_default_voxmat()],
         ]:
         $Voxels.place_voxel(vox[0], vox[1])
+    
+    $MenuBar.connect("file_save", self, "save_map")
+
+func save_map():
+    print($Voxels.serialize())
 
 var draw_mode = false
 var erase_mode = false
@@ -378,7 +382,7 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
     #var tested = {}
     #for i in range(num_steps):
     if true:
-        var rounded = ray_origin.round()
+        #var rounded = ray_origin.round()
         var closest = null
         #var remaining_distance = ray_normal.length() * (num_steps - i)
         var distance_limit = ray_normal.length()
@@ -483,8 +487,8 @@ func handle_voxel_input():
             collision_normal = null
     
     if collision_point != null:
-        var origin = collision_point if ref_point == null else ref_point
-        var normal = collision_normal if ref_normal == null else ref_normal
+        #var origin = collision_point if ref_point == null else ref_point
+        #var normal = collision_normal if ref_normal == null else ref_normal
         
         $CursorBox.show()
         $CursorBox.global_transform.origin = collision_point
@@ -530,16 +534,16 @@ func handle_voxel_input():
             elif $ButtonMode.selected == 3 and abs(collision_normal.y) == 0.0:
                 new_point += collision_normal
         
-        var asdf =  [
-            [Vector3( 1,  1,  1), Vector3( 1,  0,  1)],
-            [Vector3(-1,  1,  1), Vector3(-1,  0,  1)],
-        ]
-        var asdf2 =  [
-            [Vector3( 1,  1, -1), Vector3( 1,  0, -1)],
-            [Vector3(-1,  1, -1), Vector3(-1,  0, -1)],
-            [Vector3( 1,  1,  1), Vector3( 1, -1,  1)],
-            [Vector3(-1,  1,  1), Vector3(-1, -1,  1)],
-        ]
+        #var asdf =  [
+        #    [Vector3( 1,  1,  1), Vector3( 1,  0,  1)],
+        #    [Vector3(-1,  1,  1), Vector3(-1,  0,  1)],
+        #]
+        #var asdf2 =  [
+        #    [Vector3( 1,  1, -1), Vector3( 1,  0, -1)],
+        #    [Vector3(-1,  1, -1), Vector3(-1,  0, -1)],
+        #    [Vector3( 1,  1,  1), Vector3( 1, -1,  1)],
+        #    [Vector3(-1,  1,  1), Vector3(-1, -1,  1)],
+        #]
         #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
         #$Voxels.place_voxel(new_point, current_mat, [])
         $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)

@@ -57,5 +57,5 @@ func _ready():
     $UI/CubePreview.force_update()
 
 
-func _process(delta):
+func _process(_delta):
     $UI/CubePreview.inform_mats(side_mat, top_mat)

@@ -30,6 +30,10 @@ config/name="New Voxels"
 run/main_scene="res://World.tscn"
 config/icon="res://icon.png"
 
+[debug]
+
+gdscript/warnings/return_value_discarded=false
+
 [input]
 
 ui_left={
@@ -75,6 +79,11 @@ m3={
 "events": [ Object(InputEventMouseButton,"resource_local_to_scene":false,"resource_name":"","device":0,"alt":false,"shift":false,"control":false,"meta":false,"command":false,"button_mask":0,"position":Vector2( 0, 0 ),"global_position":Vector2( 0, 0 ),"factor":1.0,"button_index":3,"pressed":false,"doubleclick":false,"script":null)
  ]
 }
+
+[network]
+
+limits/debugger_stdout/max_chars_per_second=20480
+limits/debugger_stdout/max_messages_per_frame=100
 
 [physics]
 
