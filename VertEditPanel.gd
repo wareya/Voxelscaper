@@ -28,7 +28,7 @@ func flush_negative_zero(n : Vector3) -> Vector3:
 func action(which):
     var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     
-    print()
+    #print()
     
     var copy = {}
     for vert in ref_verts:
@@ -39,19 +39,19 @@ func action(which):
     var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
     
     if which == "left" or which == "right":
-        var _sign = 1.0 if which == "left" else -1.0
+        var _sign = -1.0 if which == "left" else 1.0
         for vert in ref_verts:
             var modified = copy[vert.rotated(front, -PI*0.5*_sign).round()*0.5]
             var new_modified = (modified as Vector3).rotated(front, PI*0.5*_sign)
-            print(vert, " ", modified, " ", new_modified)
+            #print(vert, " ", modified, " ", new_modified)
             set_override(vert, new_modified)
     
     if which == "fliph" or which == "flipv":
         var _dir : Vector3 = (-up.abs()) if which == "flipv" else (-right.abs())
-        print("dir:")
-        print(_dir)
+        #print("dir:")
+        #print(_dir)
         _dir = Vector3.ONE - Vector3.ONE*_dir.abs() + _dir
-        print(_dir)
+        #print(_dir)
         for vert in ref_verts:
             var opposite = vert * _dir
             var modified = copy[opposite] * _dir
@@ -210,10 +210,10 @@ class Sorter:
     func compare(a, b):
         return a[1] > b[1]
 
-var prepared_overrides = []
+var prepared_overrides = {}
 
 func prepare_overrides():
-    prepared_overrides = []
+    prepared_overrides = {}
     for _vert in ref_verts:
         var vert = get_override(_vert)
         vert = (vert*rounding_amount).round()/rounding_amount
@@ -231,7 +231,7 @@ func prepare_overrides():
         vert = flush_negative_zero(vert)
         
         if _vert != vert:
-            prepared_overrides.push_back([_vert*2.0, vert*2.0])
+            prepared_overrides[_vert*2.0] = vert*2.0
     
     #print()
     #for v in prepared_overrides:

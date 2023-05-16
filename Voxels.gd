@@ -8,6 +8,22 @@ onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 onready var voxel_corners = {   
 }
 
+func structify():
+    var save_voxels = {}
+    var mats = {}
+    var save_mats = {}
+    var mat_counter = 0
+    for coord in voxels:
+        var save_coord = [coord.x, coord.y, coord.z]
+        var mat = voxels[coord]
+        if not mat in mats:
+            mats[mat] = mat_counter
+            save_mats[mat_counter] = mat.encode()
+            mat_counter += 1
+        save_voxels[save_coord] = mats[mat]
+    
+    pass
+
 func _ready():
     refresh_surface_mapping()
     remesh()
@@ -209,7 +225,7 @@ func face_is_shifted(pos, face_normal):
     if !pos in voxel_corners:
         return false
     for corner in voxel_corners[pos]:
-        if corner[0].dot(face_normal) > 0.0:
+        if corner.dot(face_normal) > 0.0:
             return true
     return false
 
@@ -218,8 +234,9 @@ func face_is_disconnected(pos, face_normal, test_dir):
         return false
     for corner in voxel_corners[pos]:
         # FIXME replace with actual sew test
-        if corner[0].dot(test_dir) > 0.0:
-            var offset = corner[1] - corner[0]
+        if corner.dot(test_dir) > 0.0:
+            var new = voxel_corners[pos][corner]
+            var offset = new - corner
             if (offset * face_normal).length_squared() == 0.0:
                 return true
     return false
@@ -239,9 +256,20 @@ func get_effective_vert(pos, vert):
     if !pos in voxel_corners:
         return vert
     for corner in voxel_corners[pos]:
-        if vert.round() == corner[0]:
-            return corner[1]
+        if vert.round() == corner:
+            return voxel_corners[pos][corner]
     return vert
+
+func axialize(n : Vector3) -> Vector3:
+    n = n.normalized()
+    var closest_dist_sq = n.distance_squared_to(Vector3.UP)
+    var ret = Vector3.UP
+    for dir in [Vector3.DOWN, Vector3.LEFT, Vector3.RIGHT, Vector3.FORWARD, Vector3.BACK]:
+        var d2 = n.distance_squared_to(dir)
+        if d2 < closest_dist_sq:
+            closest_dist_sq = d2
+            ret = dir
+    return ret
 
 func matching_edges_match(pos, next_pos, dir):
     var axis = next_pos - pos
@@ -251,16 +279,26 @@ func matching_edges_match(pos, next_pos, dir):
         # diagonal case
         var near_a = pos + get_effective_vert(pos, dir + axis)
         var far_a = next_pos + get_effective_vert(next_pos, dir - axis) + axis
-        #print(near_a, far_a, far_a - near_a)
-        return near_a.distance_squared_to(far_a) < 0.001
+        
+        if not near_a.distance_squared_to(far_a) < 0.001:
+            return false
+        
+        var axis_a = axialize(axis)
+        var axis_b = axis - axis_a
+        if not matching_edges_match(pos + axis_a, next_pos, dir):
+            return false
+        if not matching_edges_match(pos + axis_b, next_pos, dir):
+            return false
+        return true
     else:
         # axial case
         var near_a = get_effective_vert(pos, dir + axis + cross)
         var near_b = get_effective_vert(pos, dir + axis - cross)
         var far_a = get_effective_vert(next_pos, dir - axis + cross) + axis*2.0
         var far_b = get_effective_vert(next_pos, dir - axis - cross) + axis*2.0
-        #print(near_a, far_a, far_a - near_a)
+        
         return near_a.distance_squared_to(far_a) < 0.001 and near_b.distance_squared_to(far_b) < 0.001
+    
 
 var uv_data_cache = {}
 
@@ -362,9 +400,11 @@ func remesh():
                     var temp = []
                     for i in [0, 1, 2, 3]:
                         var vert = dir_verts[dir][i]
-                        for etc in vox_corners:
-                            if (vert*2.0).round() == etc[0]:
-                                vert = etc[1]/2.0
+                        
+                        var b = (vert*2.0).round()
+                        if b in vox_corners:
+                            vert = vox_corners[b]/2.0
+                        
                         temp.push_back(vert)
                     
                     var dist_a = temp[0].distance_squared_to(temp[3])
@@ -380,9 +420,11 @@ func remesh():
                 for i in [0, 1, 2, 3]:
                     tex_uvs.push_back(uvs[i])
                     var vert = dir_verts[dir][i]
-                    for etc in vox_corners:
-                        if (vert*2.0).round() == etc[0]:
-                            vert = etc[1]/2.0
+                    
+                    var b = (vert*2.0).round()
+                    if b in vox_corners:
+                        vert = vox_corners[b]/2.0
+                    
                     verts.push_back(vert + pos)
                     normals.push_back(normal)
                 

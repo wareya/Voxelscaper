@@ -5,6 +5,8 @@ class_name VoxEditor
 ### TODO LIST
 # - save/load textual map format
 # - deform tool
+# - shape picking/eyedropper
+# - material picking/eyedropper
 # - deleting and modifying existing materials
 # - billboard and biplane "meshes"
 # - decals
@@ -14,9 +16,26 @@ class_name VoxEditor
 class VoxMat extends Reference:
     var sides : Texture
     var top   : Texture
+    
     func _init(_sides : Texture, _top : Texture):
         sides = _sides
         top = _top
+    
+    func encode() -> Dictionary:
+        var top_png = top.get_data().save_png_to_buffer()
+        var sides_png = sides.get_data().save_png_to_buffer()
+        return {"top": top_png, "sides": sides_png}
+    
+    static func decode(dict : Dictionary) -> VoxMat:
+        var top_image = Image.new()
+        top_image.load_png_from_buffer(dict["top"])
+        var sides_image = Image.new()
+        sides_image.load_png_from_buffer(dict["sides"])
+        var top_tex = ImageTexture.new()
+        top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+        var sides_tex = ImageTexture.new()
+        sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+        return VoxMat.new(sides_tex, top_tex)
 
 var mats = [
     VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
@@ -150,6 +169,7 @@ func _unhandled_input(_event):
     if _event is InputEventKey:
         var event : InputEventKey = _event
         if event.pressed and event.scancode == KEY_J:
+            # stretched ortho
             if lock_mode == 0:
                 lock_mode = 1
                 $Voxels.scale.y = 1.0
@@ -183,11 +203,16 @@ func _unhandled_input(_event):
                 $CameraHolder.rotation_degrees.x = -45.0
                 $CameraHolder.rotation_degrees.y = 270.0
             else:
-                $Voxels.scale.y = 1.0
+                var cos_30 = cos(deg2rad(30))
+                var cos_45 = cos(deg2rad(45))
+                
+                $Voxels.scale.y = cos_45 / cos_30
                 $Voxels.scale.x = 1.0
                 $Voxels.scale.z = 1.0
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(30))
+                
+                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos_45
                 $CameraHolder.rotation_degrees.x = -30.0
+                # isometric
                 if lock_mode == 4:
                     lock_mode = 5
                     $CameraHolder.rotation_degrees.y = -45
@@ -201,6 +226,10 @@ func _unhandled_input(_event):
                     lock_mode = 8
                     $CameraHolder.rotation_degrees.y = -135
                 else:
+                    $Voxels.scale.y = 1.0
+                    $Voxels.scale.x = 1.0
+                    $Voxels.scale.z = 1.0
+                    # default
                     lock_mode = 0
                     $CameraHolder.rotation_degrees.y = -45
                     $CameraHolder/Camera.size = 5.0 * camera_intended_scale
@@ -398,6 +427,9 @@ func _process(delta):
         if Input.is_action_pressed("ui_left"):
             $CameraHolder.global_transform.origin -= rightwards * delta * 16.0
     
+    handle_voxel_input()
+
+func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
     var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
@@ -406,11 +438,6 @@ func _process(delta):
     if !view_rect.has_point(m_pos):
         return
     
-    #var cast : RayCast = RayCast.new()
-    #add_child(cast)
-    #cast.global_transform.origin = cast_start
-    #cast.cast_to = cast_normal * 1000.0
-    #cast.force_raycast_update()
     var raw_collision_point = null
     var collision_point = null
     var collision_normal = null
