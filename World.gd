@@ -446,8 +446,8 @@ func update_camera():
 var ref_point = null
 var ref_normal = null
 
-func ray_point_distance(ray_origin : Vector3, ray_normal : Vector3, point : Vector3):
-    return ray_normal.normalized().cross(point - ray_origin).length()
+func ray_point_distance_squared(ray_origin : Vector3, ray_normal : Vector3, point : Vector3):
+    return ray_normal.normalized().cross(point - ray_origin).length_squared()
 
 func ray_plane_intersection (
     ray_origin : Vector3, ray_normal : Vector3,
@@ -524,9 +524,9 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
         var distance_limit = ray_normal.length()
         #for z in [1, 0]: for y in [1, 0]: for x in [1, 0]:
         #    var offset = (rounded + Vector3(x, y, z)*ray_normal.sign()).round()
-        for voxel in $Voxels.voxels:
+        for voxel in $Voxels.voxels.keys() + ($Voxels.decals.keys() if current_mat is DecalMat else []):
             var offset = voxel.round() + Vector3.ONE - Vector3.ONE
-            if ray_point_distance(ray_origin, ray_normal, offset) > 2.0:
+            if ray_point_distance_squared(ray_origin, ray_normal, offset) > 2.0*2.0:
                 continue
             #if offset in tested:
             #    continue
@@ -537,6 +537,7 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
                 var distance = ray_origin.distance_to(collision_data[0])
                 if closest == null or distance < closest[1]:
                     closest = [collision_data, distance, offset]
+        
         if closest != null:
             var ret = closest[0]
             var offset = closest[2]
@@ -735,7 +736,10 @@ func handle_voxel_input():
     
     if erase_mode and collision_normal != null and collision_point != null:
         var new_point = collision_point
-        $Voxels.erase_voxel(new_point)
+        if current_mat is VoxMat:
+            $Voxels.erase_voxel(new_point)
+        elif current_mat is DecalMat:
+            $Voxels.erase_decal(new_point, collision_normal)
         
         if $ButtonTool.selected == 0:
             erase_mode = false
