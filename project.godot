@@ -10,6 +10,16 @@ config_version=4
 
 _global_script_classes=[ {
 "base": "Control",
+"class": "DecalConfig",
+"language": "GDScript",
+"path": "res://DecalConfig.gd"
+}, {
+"base": "Reference",
+"class": "Helpers",
+"language": "GDScript",
+"path": "res://Helpers.gd"
+}, {
+"base": "Control",
 "class": "MatConfig",
 "language": "GDScript",
 "path": "res://MatConfig.gd"
@@ -20,6 +30,8 @@ _global_script_classes=[ {
 "path": "res://World.gd"
 } ]
 _global_script_class_icons={
+"DecalConfig": "",
+"Helpers": "",
 "MatConfig": "",
 "VoxEditor": ""
 }

@@ -11,6 +11,9 @@ onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 
 onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
+onready var decals = {}
+onready var meshes = {}
+
 onready var voxel_corners = {   
 }
 
@@ -75,6 +78,8 @@ func deserialize(data : Dictionary):
     
     full_remesh()
     
+    editor.current_mat = editor.mats[0]
+    
     editor.rebuild_mat_buttons()
 
 func _ready():
@@ -121,6 +126,8 @@ var unsides = [
     Vector3.DOWN,
 ]
 
+var decals_by_mat = {}
+
 var voxels_by_sides = {}
 var voxels_by_top   = {}
 func refresh_surface_mapping():
@@ -135,7 +142,16 @@ func refresh_surface_mapping():
         if not voxels_by_top.has(vox.top):
             voxels_by_top[vox.top] = []
         voxels_by_top[vox.top].push_back(pos)
-
+    
+    decals_by_mat = {}
+    for pos in decals.keys():
+        var dirs = decals[pos]
+        for dir in decals[pos].keys():
+            var decal = decals[pos][dir]
+            if not decals_by_mat.has(decal):
+                decals_by_mat[decal] = []
+        
+            decals_by_mat[decal].push_back([pos, dir])
 
 var ref_verts = [
     Vector3(-0.5, -0.5, -0.5),
@@ -246,6 +262,23 @@ func build_uvs():
     return uvs
 
 var bitmask_uvs = build_uvs()
+
+func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMat):
+    position = position.round()
+    if not position in decals:
+        decals[position] = {}
+    
+    decals[position][dir] = material
+    is_dirty = true
+
+func erase_decal(position : Vector3, dir : Vector3):
+    position = position.round()
+    if position in decals:
+        decals[position].erase(dir.round())
+        if decals[position].size() == 0:
+            decals.erase(position)
+    
+    is_dirty = true
 
 func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = []):
     voxels[position.round()] = material
@@ -362,6 +395,90 @@ func full_remesh():
 
 func remesh():
     mesh = ArrayMesh.new()
+    
+    for mat in decals_by_mat.keys():
+        var texture = mat.tex
+        var tex_size = texture.get_size()
+        var grid_size = mat.grid_size
+        var icon_coord = mat.icon_coord
+        
+        var material = SpatialMaterial.new()
+        material.roughness = 1.0
+        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
+        material.albedo_texture = texture
+        material.params_use_alpha_scissor = true
+        
+        var verts = PoolVector3Array()
+        var tex_uvs = PoolVector2Array()
+        var normals = PoolVector3Array()
+        var indexes = PoolIntArray()
+        
+        for decal in decals_by_mat[mat]:
+            var pos = decal[0]
+            var dir = decal[1]
+            
+            var unit_uv = grid_size/tex_size
+            var uvs = ref_uvs.duplicate()
+            
+            var index_base = verts.size()
+            
+            var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
+            
+            for i in range(uvs.size()):
+                uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
+                uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
+                
+                uvs[i].y = 1.0-uvs[i].y
+                
+                uvs[i] *= unit_uv
+                
+                uvs[i] += (icon_coord*grid_size)/tex_size
+            
+            var normal = dir
+            var order = [0, 1, 2, 2, 1, 3]
+            if vox_corners.size() > 0:
+                var temp = []
+                for i in [0, 1, 2, 3]:
+                    var vert = dir_verts[dir][i]
+                    
+                    var b = (vert*2.0).round()
+                    if b in vox_corners:
+                        vert = vox_corners[b]/2.0
+                    
+                    temp.push_back(vert)
+                
+                var dist_a = temp[0].distance_squared_to(temp[3])
+                var dist_b = temp[1].distance_squared_to(temp[2])
+                
+                if dist_b > dist_a:
+                    order = [0, 1, 3, 3, 2, 0]
+                
+                normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
+            
+            for i in [0, 1, 2, 3]:
+                tex_uvs.push_back(uvs[i] )
+                var vert = dir_verts[dir][i]
+                 
+                var b = (vert*2.0).round()
+                if b in vox_corners:
+                    vert = vox_corners[b]/2.0
+                
+                verts.push_back(vert + pos + normal*0.0005)
+                normals.push_back(normal)
+                
+            for i in order:
+                indexes.push_back(i + index_base)
+            
+        var arrays = []
+        arrays.resize(Mesh.ARRAY_MAX)
+        arrays[Mesh.ARRAY_VERTEX] = verts
+        arrays[Mesh.ARRAY_TEX_UV] = tex_uvs
+        arrays[Mesh.ARRAY_NORMAL] = normals
+        arrays[Mesh.ARRAY_INDEX]  = indexes
+        if arrays[Mesh.ARRAY_VERTEX].size() > 0:
+            mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+            mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+        
     
     var face_tex = []
     for tex in voxels_by_sides.keys():

@@ -3,7 +3,6 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - save/load textual map format
 # - deform tool
 # - shape picking/eyedropper
 # - material picking/eyedropper
@@ -37,6 +36,35 @@ class VoxMat extends Reference:
         sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
         return VoxMat.new(sides_tex, top_tex)
 
+class DecalMat extends Reference:
+    var tex : Texture
+    var grid_size : Vector2
+    var icon_coord : Vector2
+    
+    func _init(_tex : Texture, _grid_size : Vector2, _icon_coord : Vector2):
+        tex = _tex
+        grid_size = _grid_size
+        icon_coord = _icon_coord
+    
+    func encode() -> Dictionary:
+        var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
+        return {
+            "tex": png,
+            "grid_size": Helpers.vec2_to_array(grid_size),
+            "icon_coord": Helpers.vec2_to_array(icon_coord)
+        }
+    
+    static func decode(dict : Dictionary) -> DecalMat:
+        var image = Image.new()
+        image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
+        var tex = ImageTexture.new()
+        tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+        return DecalMat.new(
+            tex,
+            Helpers.array_to_vec2(dict.grid_size),
+            Helpers.array_to_vec2(dict.icon_coord)
+        )
+
 var mats = [
     VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
     VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png")),
@@ -61,24 +89,58 @@ func _on_files_dropped(files, _screen):
         existant[0].set_top(image)
         return
     
-    var matconf = preload("res://MatConfig.tscn").instance()
-    matconf.set_side(image)
-    add_child(matconf)
+    if get_tree().get_nodes_in_group("DecalConfig").size() > 0:
+        return
     
-    var mat = yield(matconf, "done")
-    if mat:
-        add_mat(VoxMat.new(mat[0], mat[1]))
+    var picker = preload("res://MaterialModePicker.tscn").instance()
+    add_child(picker)
+    var which = yield(picker, "done")
+    
+    if which == "voxel":
+        var matconf = preload("res://MatConfig.tscn").instance()
+        matconf.set_side(image)
+        add_child(matconf)
+        
+        var mat = yield(matconf, "done")
+        if mat:
+            add_mat(VoxMat.new(mat[0], mat[1]))
+    
+    elif which == "decal":
+        var config = preload("res://DecalConfig.tscn").instance()
+        config.set_mat(image)
+        add_child(config)
+        
+        var info = yield(config, "done")
+        if info:
+            var mat = info[0]
+            var grid_size = info[1]
+            var icon_coord = info[2]
+            add_mat(DecalMat.new(mat, grid_size, icon_coord))
+        
+        #var tex = ImageTexture.new()
+        #tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+        #add_mat(DecalMat.new(tex))
+    
+    elif which == "cancel":
+        print("cancelled")
 
-func add_mat_button(mat : VoxMat):
+func add_mat_button(mat):
     var button = Button.new()
     $Mats/List.add_child(button)
     
-    var preview = preload("res://CubePreview.tscn").instance()
-    preview.inform_mats(MatConfig.make_mat(mat.sides), MatConfig.make_mat(mat.top))
-    preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    if mat is VoxMat:
+        var preview = preload("res://CubePreview.tscn").instance()
+        preview.inform_mats(MatConfig.make_mat(mat.sides), MatConfig.make_mat(mat.top))
+        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        button.add_child(preview)
+    elif mat is DecalMat:
+        var preview = preload("res://CubePreview.tscn").instance()
+        preview.inform_decal(mat)
+        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+        button.add_child(preview)
     
-    button.add_child(preview)
     button.rect_min_size = Vector2(64, 48)
+    button.toggle_mode = true
     button.connect("pressed", self, "set_current_mat", [mat])
 
 func rebuild_mat_buttons():
@@ -89,7 +151,7 @@ func rebuild_mat_buttons():
     for mat in mats:
         add_mat_button(mat)
 
-func add_mat(mat : VoxMat):
+func add_mat(mat):
     mats.push_back(mat)
     add_mat_button(mat)
 
@@ -501,6 +563,14 @@ func _process(delta):
         if Input.is_action_pressed("ui_left"):
             $CameraHolder.global_transform.origin -= rightwards * delta * 16.0
     
+    var i = 0
+    for button in $Mats/List.get_children():
+        var mat_index = mats.find(current_mat)
+        button.pressed = false
+        if i == mat_index:
+            button.pressed = true
+        i += 1
+    
     handle_voxel_input()
 
 func handle_voxel_input():
@@ -616,7 +686,10 @@ func handle_voxel_input():
         #]
         #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
         #$Voxels.place_voxel(new_point, current_mat, [])
-        $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
+        if current_mat is VoxMat:
+            $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
+        elif current_mat is DecalMat:
+            $Voxels.place_decal(collision_point, collision_normal, current_mat)
         
         if $ButtonTool.selected == 0:
             draw_mode = false

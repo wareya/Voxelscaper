@@ -197,20 +197,23 @@ texture = ExtResource( 4 )
 script = SubResource( 12 )
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
+margin_left = 8.0
 margin_top = 190.0
-margin_right = 168.0
+margin_right = 176.0
 margin_bottom = 227.0
 hint_tooltip = "Grid rendering"
 
 [node name="ButtonWarp" type="OptionButton" parent="."]
+margin_left = 8.0
 margin_top = 153.0
-margin_right = 168.0
+margin_right = 176.0
 margin_bottom = 190.0
 hint_tooltip = "Cursor alignment technique when using \"Add\" mode with \"Draw\""
 
 [node name="ButtonTool" type="OptionButton" parent="."]
+margin_left = 8.0
 margin_top = 116.0
-margin_right = 168.0
+margin_right = 176.0
 margin_bottom = 153.0
 hint_tooltip = "Drawing tool placement mode.
 Place: Place a single block, like minecraft.
@@ -219,8 +222,9 @@ Draw: Continuously draw, like an image editor.
 HINT: Draw mode direction follows the face you click down on to start drawing."
 
 [node name="ButtonMode" type="OptionButton" parent="."]
+margin_left = 8.0
 margin_top = 79.0
-margin_right = 168.0
+margin_right = 176.0
 margin_bottom = 116.0
 hint_tooltip = "Drawing mode
 Add: Place a block on top of the surface.
@@ -229,8 +233,9 @@ Add (vertical only): Add but vertically aligned \"draw\" mode.
 Add (horizontal only): Add but horizontally aligned \"draw\" mode."
 
 [node name="ButtonPerspective" type="OptionButton" parent="."]
+margin_left = 8.0
 margin_top = 42.0
-margin_right = 168.0
+margin_right = 176.0
 margin_bottom = 79.0
 hint_tooltip = "Camera perspective type.
 Orthographic: Like a 2d game.
@@ -287,6 +292,7 @@ stretch = true
 size = Vector2( 256, 256 )
 own_world = true
 world = SubResource( 20 )
+handle_input_locally = false
 render_target_update_mode = 3
 
 [node name="DirectionalLight" type="DirectionalLight" parent="VertEditPanel/Frame/VertEditViewport"]
@@ -380,8 +386,10 @@ custom_fonts/font = SubResource( 27 )
 text = "¬"
 
 [node name="MenuBar" type="HBoxContainer" parent="."]
-margin_right = 75.0
-margin_bottom = 22.0
+margin_left = 8.0
+margin_top = 8.0
+margin_right = 83.0
+margin_bottom = 30.0
 script = ExtResource( 11 )
 
 [node name="File" type="MenuButton" parent="MenuBar"]

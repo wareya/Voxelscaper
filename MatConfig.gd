@@ -38,6 +38,10 @@ func done():
     emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture])
     queue_free()
 
+func cancel():
+    emit_signal("done", null)
+    queue_free()
+
 func swap():
     var temp = side
     side = top
@@ -54,8 +58,16 @@ func _ready():
     $UI/Images/Swap.connect("pressed", self, "swap")
     $UI/Images/Done.connect("pressed", self, "done")
     yield(get_tree(), "idle_frame")
-    $UI/CubePreview.force_update()
+    $UI/CubePreview.anchor_right = 1.0
+    $UI/CubePreview.anchor_right = 0.0
+    $UI/Images/Cancel.connect("pressed", self, "cancel")
 
 
 func _process(_delta):
     $UI/CubePreview.inform_mats(side_mat, top_mat)
+
+func _input(_event):
+    if _event is InputEventKey:
+        var event : InputEventKey = _event
+        if event.pressed and event.scancode == KEY_ESCAPE:
+            cancel()
