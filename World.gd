@@ -8,6 +8,8 @@ class_name VoxEditor
 # - material picking/eyedropper (per mat type - one for voxels, one for decals, one for meshes)
 # - deleting and modifying existing materials
 # - billboard and biplane "meshes"
+# - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
+# - decal rotation (by repeatedly clicking on the same decal?)
 # - save gltf (might need to port to godot 4)
 # - importing real meshes somehow maybe?
 
@@ -22,18 +24,21 @@ class VoxMat extends Reference:
     func encode() -> Dictionary:
         var top_png = Marshalls.raw_to_base64(top.get_data().save_png_to_buffer())
         var sides_png = Marshalls.raw_to_base64(sides.get_data().save_png_to_buffer())
-        return {"top": top_png, "sides": sides_png}
+        return {"type": "voxel", "top": top_png, "sides": sides_png}
     
-    static func decode(dict : Dictionary) -> VoxMat:
-        var top_image = Image.new()
-        top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
-        var sides_image = Image.new()
-        sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
-        var top_tex = ImageTexture.new()
-        top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-        var sides_tex = ImageTexture.new()
-        sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-        return VoxMat.new(sides_tex, top_tex)
+    static func decode(dict : Dictionary):
+        if not "type" in dict or dict.type == "voxel":
+            var top_image = Image.new()
+            top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
+            var sides_image = Image.new()
+            sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
+            var top_tex = ImageTexture.new()
+            top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var sides_tex = ImageTexture.new()
+            sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            return VoxMat.new(sides_tex, top_tex)
+        elif dict.type == "decal":
+            return DecalMat.decode(dict)
 
 class DecalMat extends Reference:
     var tex : Texture
@@ -50,24 +55,28 @@ class DecalMat extends Reference:
     func encode() -> Dictionary:
         var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
         return {
+            "type": "decal",
             "tex": png,
             "grid_size": Helpers.vec2_to_array(grid_size),
             "icon_coord": Helpers.vec2_to_array(icon_coord),
             "current_coord": Helpers.vec2_to_array(current_coord)
         }
     
-    static func decode(dict : Dictionary) -> DecalMat:
-        var image = Image.new()
-        image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
-        var tex = ImageTexture.new()
-        tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-        var ret = DecalMat.new(
-            tex,
-            Helpers.array_to_vec2(dict.grid_size),
-            Helpers.array_to_vec2(dict.icon_coord)
-        )
-        ret.current_coord = Helpers.array_to_vec2(dict.current_coord)
-        return ret
+    static func decode(dict : Dictionary):
+        if "type" in dict and dict.type == "decal":
+            var image = Image.new()
+            image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
+            var tex = ImageTexture.new()
+            tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var ret = DecalMat.new(
+                tex,
+                Helpers.array_to_vec2(dict.grid_size),
+                Helpers.array_to_vec2(dict.icon_coord)
+            )
+            ret.current_coord = Helpers.array_to_vec2(dict.current_coord)
+            return ret
+        elif dict.type == "voxel":
+            return VoxMat.decode(dict)
 
 var mats = [
     VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
@@ -84,9 +93,13 @@ func set_current_mat(new_current):
     current_mat = new_current 
 
 func _on_files_dropped(files, _screen):
-    var fname = files[0]
+    var fname : String = files[0]
     var image = Image.new()
-    image.load(fname)
+    var error = image.load(fname)
+    
+    if error and fname.ends_with(".json"):
+        open_data_from(fname)
+        return
     
     var existant = get_tree().get_nodes_in_group("MatConfig")
     if existant.size() > 0:

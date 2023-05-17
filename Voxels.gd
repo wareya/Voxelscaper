@@ -48,7 +48,24 @@ func serialize() -> Dictionary:
             bwuh.push_back([from_corner, to_corner])
         save_corners.push_back([save_coord, bwuh])
     
-    return {"voxels" : save_voxels, "mats" : save_mats, "corners" : save_corners}
+    var save_decals = []
+    for coord in decals:
+        var save_coord = vec_to_array(coord)
+        var bwuh = []
+        for dir in decals[coord]:
+            var save_dir = vec_to_array(dir)
+            
+            var mat = decals[coord][dir][0]
+            if not mat in mats:
+                mats[mat] = mat_counter
+                save_mats[mat_counter] = mat.encode()
+                mat_counter += 1
+            
+            var tile_coord = Helpers.vec2_to_array(decals[coord][dir][1])
+            bwuh.push_back([save_dir, mats[mat], tile_coord])
+        save_decals.push_back([save_coord, bwuh])
+    
+    return {"voxels" : save_voxels, "decals" : save_decals, "mats" : save_mats, "corners" : save_corners}
 
 func deserialize(data : Dictionary):
     voxel_corners = {}
@@ -69,12 +86,22 @@ func deserialize(data : Dictionary):
         editor.mats.push_back(mat)
         opened_mats[int(mat_key)] = mat
     
-    print(opened_mats)
-    
     voxels = {}
     for voxel in data.voxels:
         var vec = array_to_vec(voxel[0])
         voxels[vec] = opened_mats[int(voxel[1])]
+    
+    decals = {}
+    if "decals" in data:
+        for info in data.decals:
+            var coord = array_to_vec(info[0])
+            var dirs = info[1]
+            decals[coord] = {}
+            for info2 in dirs:
+                var dir = array_to_vec(info2[0])
+                var mat = info2[1]
+                var tile_coord = Helpers.array_to_vec2(info2[2])
+                decals[coord][dir] = [opened_mats[int(mat)], tile_coord]
     
     full_remesh()
     
@@ -457,7 +484,7 @@ func remesh():
                 normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
             
             for i in [0, 1, 2, 3]:
-                tex_uvs.push_back(uvs[i] )
+                tex_uvs.push_back(uvs[i])
                 var vert = dir_verts[dir][i]
                  
                 var b = (vert*2.0).round()
