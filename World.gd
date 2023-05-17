@@ -3,12 +3,11 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - deform tool
+# - deform tool (modifying existing geometry vertex offsets)
 # - shape picking/eyedropper
-# - material picking/eyedropper
+# - material picking/eyedropper (per mat type - one for voxels, one for decals, one for meshes)
 # - deleting and modifying existing materials
 # - billboard and biplane "meshes"
-# - decals
 # - save gltf (might need to port to godot 4)
 # - importing real meshes somehow maybe?
 
@@ -647,6 +646,12 @@ func handle_voxel_input():
         
         $CursorBox.show()
         $CursorBox.global_transform.origin = collision_point
+        $CursorBox.scale = Vector3.ONE
+        if current_mat is DecalMat:
+            var positive = collision_normal.abs()
+            var negative : Vector3 = Vector3.ONE - positive
+            $CursorBox.scale = negative.linear_interpolate(Vector3.ONE, 0.2)
+            $CursorBox.global_transform.origin -= collision_normal*0.4
         
         if $ButtonGrid.selected == 0 or ($ButtonGrid.selected == 2 and draw_mode):
             $Grid.show()
