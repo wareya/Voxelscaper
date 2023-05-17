@@ -11,7 +11,18 @@ var icon_coord = Vector2(0, 0)
 
 var next_coord = null
 
+var scale = 1.0
+var offset = Vector2()
+
 func _input(_event):
+    if !visible:
+        return
+    
+    if _event is InputEventMouse:
+        var pos : Vector2 = get_local_mouse_position()
+        if !rect.has_point(pos):
+            return
+    
     if _event is InputEventMouseButton:
         var event : InputEventMouseButton = _event
         if event.button_index == 1 and event.pressed:
@@ -26,6 +37,16 @@ func _input(_event):
             pos.y = clamp(pos.y, 0, tile_count.y-1)
             if pos == old_pos:
                 next_coord = pos
+        
+        elif event.button_index == 5 and event.pressed:
+            scale /= sqrt(sqrt(2.0))
+        elif event.button_index == 4 and event.pressed:
+            scale *= sqrt(sqrt(2.0))
+    
+    if _event is InputEventMouseMotion:
+        var event : InputEventMouseMotion = _event
+        if event.button_mask & BUTTON_MASK_MIDDLE:
+            offset += event.relative / scale
 
 func think():
     tex_size = tex.get_size()
@@ -51,6 +72,15 @@ func think():
     new_rect.position.x += (rect.size.x - new_rect.size.x)/2.0
     new_rect.position.y += (rect.size.y - new_rect.size.y)/2.0
     
+    var unscaled_rect = new_rect
+    
+    new_rect.size *= scale
+    
+    new_rect.position += offset*scale
+    
+    new_rect.position += (rect.size/2.0 - unscaled_rect.position)
+    new_rect.position -= (rect.size/2.0 - unscaled_rect.position)*scale
+    
     grid_size.x = min(grid_size.x, tex_size.x)
     grid_size.y = min(grid_size.y, tex_size.y)
     
@@ -71,6 +101,8 @@ func _draw():
         nonlinear_tex = ImageTexture.new()
         nonlinear_tex.create_from_image(image, 0)
         prev_tex = tex
+        scale = 1.0
+        offset = Vector2()
     
     if nonlinear_tex:
         draw_texture_rect(nonlinear_tex, new_rect, false)

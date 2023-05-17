@@ -121,6 +121,8 @@ var drag_mode = false
 var camera_mode = false
 
 func _indirect_input(_event):
+    if !visible:
+        return
     var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     if _event.is_action_pressed("m1") and Input.is_action_just_pressed("m1"):
         drag_target = null
