@@ -147,7 +147,7 @@ func refresh_surface_mapping():
     for pos in decals.keys():
         var dirs = decals[pos]
         for dir in decals[pos].keys():
-            var decal = decals[pos][dir]
+            var decal = decals[pos][dir][0]
             if not decals_by_mat.has(decal):
                 decals_by_mat[decal] = []
         
@@ -268,7 +268,7 @@ func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMa
     if not position in decals:
         decals[position] = {}
     
-    decals[position][dir] = material
+    decals[position][dir] = [material, material.current_coord]
     is_dirty = true
 
 func erase_decal(position : Vector3, dir : Vector3):
@@ -400,7 +400,6 @@ func remesh():
         var texture = mat.tex
         var tex_size = texture.get_size()
         var grid_size = mat.grid_size
-        var icon_coord = mat.icon_coord
         
         var material = SpatialMaterial.new()
         material.roughness = 1.0
@@ -417,6 +416,8 @@ func remesh():
             var pos = decal[0]
             var dir = decal[1]
             
+            var tile_coord = decals[pos][dir][1]
+            
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
             
@@ -432,7 +433,7 @@ func remesh():
                 
                 uvs[i] *= unit_uv
                 
-                uvs[i] += (icon_coord*grid_size)/tex_size
+                uvs[i] += (tile_coord*grid_size)/tex_size
             
             var normal = dir
             var order = [0, 1, 2, 2, 1, 3]

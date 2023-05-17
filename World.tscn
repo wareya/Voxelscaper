@@ -1,4 +1,4 @@
-[gd_scene load_steps=25 format=2]
+[gd_scene load_steps=26 format=2]
 
 [ext_resource path="res://Voxels.tscn" type="PackedScene" id=1]
 [ext_resource path="res://art/brickwall.png" type="Texture" id=2]
@@ -11,6 +11,7 @@
 [ext_resource path="res://VertEditInputCatcher.gd" type="Script" id=9]
 [ext_resource path="res://art/minigrid.png" type="Texture" id=10]
 [ext_resource path="res://MenuBar.gd" type="Script" id=11]
+[ext_resource path="res://Mat2dTilePicker.gd" type="Script" id=12]
 
 [sub_resource type="Environment" id=3]
 background_mode = 1
@@ -384,6 +385,18 @@ margin_bottom = 31.0
 hint_tooltip = "Reset Camera"
 custom_fonts/font = SubResource( 27 )
 text = "¬"
+
+[node name="Mat2dTilePicker" type="Control" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -256.0
+margin_bottom = 256.0
+script = ExtResource( 12 )
+
+[node name="Panel" type="Panel" parent="Mat2dTilePicker"]
+show_behind_parent = true
+anchor_right = 1.0
+anchor_bottom = 1.0
 
 [node name="MenuBar" type="HBoxContainer" parent="."]
 margin_left = 8.0

@@ -9,6 +9,8 @@ var tex : Texture = null
 var grid_size = Vector2(16, 16)
 var icon_coord = Vector2(0, 0)
 
+var next_coord = null
+
 func _input(_event):
     if _event is InputEventMouseButton:
         var event : InputEventMouseButton = _event
@@ -23,9 +25,9 @@ func _input(_event):
             pos.x = clamp(pos.x, 0, tile_count.x-1)
             pos.y = clamp(pos.y, 0, tile_count.y-1)
             if pos == old_pos:
-                icon_coord = pos
+                next_coord = pos
 
-func _process(delta):
+func think():
     tex_size = tex.get_size()
     rect = get_rect()
     rect.position = Vector2()
@@ -49,19 +51,29 @@ func _process(delta):
     new_rect.position.x += (rect.size.x - new_rect.size.x)/2.0
     new_rect.position.y += (rect.size.y - new_rect.size.y)/2.0
     
-    grid_size.x = $"../Images/Config/XSize".value
-    grid_size.y = $"../Images/Config/YSize".value
-    
     grid_size.x = min(grid_size.x, tex_size.x)
     grid_size.y = min(grid_size.y, tex_size.y)
     
     tile_count = (tex_size/grid_size).floor()
     
+    if next_coord != null:
+        icon_coord = next_coord
+        next_coord = null
+    
     update()
 
+var prev_tex = null
+var nonlinear_tex = null
 
 func _draw():
-    draw_texture_rect(tex, new_rect, false)
+    if prev_tex != tex:
+        var image = tex.get_data()
+        nonlinear_tex = ImageTexture.new()
+        nonlinear_tex.create_from_image(image, 0)
+        prev_tex = tex
+    
+    if nonlinear_tex:
+        draw_texture_rect(nonlinear_tex, new_rect, false)
     
     var top_left = new_rect.position
     var top_right = new_rect.position + new_rect.size * Vector2(1, 0)
@@ -70,11 +82,11 @@ func _draw():
     
     for x in range(grid_size.x, tex_size.x, grid_size.x):
         var i = x / tex_size.x
-        draw_line(lerp(top_left, top_right, i), lerp(bottom_left, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 2.0)
+        draw_line(lerp(top_left, top_right, i), lerp(bottom_left, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 1.0)
     
     for y in range(grid_size.y, tex_size.y, grid_size.y):
         var i = y / tex_size.y
-        draw_line(lerp(top_left, bottom_left, i), lerp(top_right, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 2.0)
+        draw_line(lerp(top_left, bottom_left, i), lerp(top_right, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 1.0)
     
     var icon_pos = Rect2(icon_coord, new_rect.size/tile_count)
     icon_pos.position *= new_rect.size/tile_count

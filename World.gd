@@ -40,18 +40,21 @@ class DecalMat extends Reference:
     var tex : Texture
     var grid_size : Vector2
     var icon_coord : Vector2
+    var current_coord : Vector2
     
     func _init(_tex : Texture, _grid_size : Vector2, _icon_coord : Vector2):
         tex = _tex
         grid_size = _grid_size
         icon_coord = _icon_coord
+        current_coord = icon_coord
     
     func encode() -> Dictionary:
         var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
         return {
             "tex": png,
             "grid_size": Helpers.vec2_to_array(grid_size),
-            "icon_coord": Helpers.vec2_to_array(icon_coord)
+            "icon_coord": Helpers.vec2_to_array(icon_coord),
+            "current_coord": Helpers.vec2_to_array(current_coord)
         }
     
     static func decode(dict : Dictionary) -> DecalMat:
@@ -59,11 +62,13 @@ class DecalMat extends Reference:
         image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
         var tex = ImageTexture.new()
         tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-        return DecalMat.new(
+        var ret = DecalMat.new(
             tex,
             Helpers.array_to_vec2(dict.grid_size),
             Helpers.array_to_vec2(dict.icon_coord)
         )
+        ret.current_coord = Helpers.array_to_vec2(dict.current_coord)
+        return ret
 
 var mats = [
     VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
@@ -570,6 +575,16 @@ func _process(delta):
         if i == mat_index:
             button.pressed = true
         i += 1
+    
+    $VertEditPanel.visible = current_mat is VoxMat
+    $Mat2dTilePicker.visible = current_mat is DecalMat
+    
+    if current_mat is DecalMat:
+        $Mat2dTilePicker.tex = current_mat.tex
+        $Mat2dTilePicker.grid_size = current_mat.grid_size
+        $Mat2dTilePicker.icon_coord = current_mat.current_coord
+        $Mat2dTilePicker.think()
+        current_mat.current_coord = $Mat2dTilePicker.icon_coord
     
     handle_voxel_input()
 
