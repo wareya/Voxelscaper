@@ -62,7 +62,8 @@ func serialize() -> Dictionary:
                 mat_counter += 1
             
             var tile_coord = Helpers.vec2_to_array(decals[coord][dir][1])
-            bwuh.push_back([save_dir, mats[mat], tile_coord])
+            var orientation = decals[coord][dir][2]
+            bwuh.push_back([save_dir, mats[mat], tile_coord, orientation])
         save_decals.push_back([save_coord, bwuh])
     
     return {"voxels" : save_voxels, "decals" : save_decals, "mats" : save_mats, "corners" : save_corners}
@@ -101,7 +102,10 @@ func deserialize(data : Dictionary):
                 var dir = array_to_vec(info2[0])
                 var mat = info2[1]
                 var tile_coord = Helpers.array_to_vec2(info2[2])
-                decals[coord][dir] = [opened_mats[int(mat)], tile_coord]
+                var orientation = 0
+                if info2.size() > 3:
+                    orientation = info2[3]
+                decals[coord][dir] = [opened_mats[int(mat)], tile_coord, orientation]
     
     full_remesh()
     
@@ -290,12 +294,24 @@ func build_uvs():
 
 var bitmask_uvs = build_uvs()
 
-func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMat):
+func get_decal_uv_scale(i : int) -> Transform2D:
+    var ret : Transform2D = Transform2D.IDENTITY
+    
+    var trans = Transform2D(0, Vector2(-0.5, -0.5))
+    ret = trans * ret
+    if i >= 4:
+        ret = ret.scaled(Vector2(-1, 1))
+    ret = ret.rotated(PI*0.5 * (i%4))
+    ret = trans.affine_inverse() * ret
+    
+    return ret
+
+func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMat, scale_id : int):
     position = position.round()
     if not position in decals:
         decals[position] = {}
     
-    decals[position][dir] = [material, material.current_coord]
+    decals[position][dir] = [material, material.current_coord, scale_id%8]
     is_dirty = true
 
 func erase_decal(position : Vector3, dir : Vector3):
@@ -444,6 +460,10 @@ func remesh():
             var dir = decal[1]
             
             var tile_coord = decals[pos][dir][1]
+            var orientation_id = decals[pos][dir][2]
+            var uv_xform = get_decal_uv_scale(orientation_id)
+            print(uv_xform)
+            print(orientation_id)
             
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
@@ -453,6 +473,8 @@ func remesh():
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
             
             for i in range(uvs.size()):
+                uvs[i] = uv_xform.xform(uvs[i])
+                
                 uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
                 uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
                 

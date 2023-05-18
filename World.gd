@@ -221,6 +221,17 @@ func _ready():
     $MenuBar.connect("file_save", self, "default_save")
     $MenuBar.connect("file_save_as", self, "save_map")
     $MenuBar.connect("file_open", self, "open_map")
+    
+    $Mat2dOrientation.add_item("0 deg", 0)
+    $Mat2dOrientation.add_item("90 deg", 1)
+    $Mat2dOrientation.add_item("180 deg", 2)
+    $Mat2dOrientation.add_item("270 deg", 3)
+    $Mat2dOrientation.add_item("0 deg flip", 4)
+    $Mat2dOrientation.add_item("90 deg flip", 5)
+    $Mat2dOrientation.add_item("180 deg flip", 6)
+    $Mat2dOrientation.add_item("270 deg flip", 7)
+    
+    $Mat2dOrientation.selected = 0
 
 func default_save():
     if prev_save_target != "":
@@ -591,6 +602,7 @@ func _process(delta):
     
     $VertEditPanel.visible = current_mat is VoxMat
     $Mat2dTilePicker.visible = current_mat is DecalMat
+    $Mat2dOrientation.visible = current_mat is DecalMat
     
     if current_mat is DecalMat:
         $Mat2dTilePicker.tex = current_mat.tex
@@ -723,7 +735,9 @@ func handle_voxel_input():
         if current_mat is VoxMat:
             $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
         elif current_mat is DecalMat:
-            $Voxels.place_decal(collision_point, collision_normal, current_mat)
+            var idx = $Mat2dOrientation.selected
+            #var id = $Mat2dOrientation.get_item_id(idx)
+            $Voxels.place_decal(collision_point, collision_normal, current_mat, idx)
         
         if $ButtonTool.selected == 0:
             draw_mode = false
