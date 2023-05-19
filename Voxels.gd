@@ -12,9 +12,9 @@ onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
 onready var decals = {}
-onready var meshes = {}
+onready var models = {}
 
-onready var voxel_corners = {   
+onready var voxel_corners = {
 }
 
 func serialize() -> Dictionary:
@@ -158,6 +158,7 @@ var unsides = [
 ]
 
 var decals_by_mat = {}
+var models_by_mat = {}
 
 var voxels_by_sides = {}
 var voxels_by_top   = {}
@@ -183,6 +184,14 @@ func refresh_surface_mapping():
                 decals_by_mat[decal] = []
         
             decals_by_mat[decal].push_back([pos, dir])
+    
+    models_by_mat = {}
+    for pos in models.keys():
+        var mat = models[pos][0]
+        if not models_by_mat.has(mat):
+            models_by_mat[mat] = []
+        
+        models_by_mat[mat].push_back(pos)
 
 var ref_verts = [
     Vector3(-0.5, -0.5, -0.5),
@@ -323,6 +332,18 @@ func erase_decal(position : Vector3, dir : Vector3):
     
     is_dirty = true
 
+func place_model(position : Vector3, material : VoxEditor.DecalMat, mode_id : int, floor_mode : int, offset_x : int, offset_y : int, offset_z : int):
+    position = position.round()
+    if not position in models:
+        models[position] = {}
+    
+    models[position] = [material, material.current_coord, mode_id, floor_mode, offset_x, offset_y, offset_z]
+    is_dirty = true
+
+func erase_model(position : Vector3):
+    models.erase(position.round())
+    is_dirty = true
+
 func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = []):
     voxels[position.round()] = material
     if ramp_corners.size() > 0:
@@ -377,6 +398,13 @@ var ref_corners = [
     Vector3( 0.5,  0.5, -0.5),
     Vector3(-0.5, -0.5,  0.5),
     Vector3( 0.5, -0.5,  0.5),
+    Vector3(-0.5,  0.5,  0.5),
+    Vector3( 0.5,  0.5,  0.5),
+]
+
+var top_corners = [
+    Vector3(-0.5,  0.5, -0.5),
+    Vector3( 0.5,  0.5, -0.5),
     Vector3(-0.5,  0.5,  0.5),
     Vector3( 0.5,  0.5,  0.5),
 ]
@@ -436,9 +464,7 @@ func full_remesh():
     refresh_surface_mapping()
     remesh()
 
-func remesh():
-    mesh = ArrayMesh.new()
-    
+func add_decals(mesh):
     for mat in decals_by_mat.keys():
         var texture = mat.tex
         var tex_size = texture.get_size()
@@ -474,14 +500,10 @@ func remesh():
             
             for i in range(uvs.size()):
                 uvs[i] = uv_xform.xform(uvs[i])
-                
                 uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
                 uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
-                
                 uvs[i].y = 1.0-uvs[i].y
-                
                 uvs[i] *= unit_uv
-                
                 uvs[i] += (tile_coord*grid_size)/tex_size
             
             var normal = dir
@@ -528,8 +550,162 @@ func remesh():
         if arrays[Mesh.ARRAY_VERTEX].size() > 0:
             mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+
+func _add_model_quad(verts, uvs, normals, normal_sign = 1.0, angle = 0.0, x_scale = 1.0, z_offset = 0.0):
+    for i in [0, 1, 2, 3]:
+        uvs.push_back(Vector2(1.0 - ref_uvs[i].x, ref_uvs[i].y))
         
+        var vert : Vector3 = ref_verts[i] * Vector3(x_scale, 1, z_offset)
+        var normal : Vector3 = Vector3(0, 0, -1) * normal_sign
+        vert = vert.rotated(Vector3.UP, angle)
+        normal = normal.rotated(Vector3.UP, angle)
+        
+        verts.push_back(vert)
+        normals.push_back(normal)
+
+func model_get_verts_etc(mode_id : int):
+    var verts = []
+    var uvs = []
+    var normals = []
+    var indexes = []
     
+    if mode_id >= 0 and mode_id <= 5:
+        var angle = [0, 45, 45, 90, 135, 135][mode_id] * PI / 180.0
+        var x_scale = [1, 1, sqrt(2), 1, 1, sqrt(2)][mode_id]
+        _add_model_quad(verts, uvs, normals, 1.0, angle, x_scale)
+        for i in [0, 1, 2, 2, 1, 3]:
+            indexes.push_back(i)
+    
+    elif mode_id >= 6 and mode_id <= 8:
+        var angle = [0, 45, 45][mode_id-6] * PI / 180.0
+        var x_scale = [1, 1, sqrt(2)][mode_id-6]
+        
+        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale)
+        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale)
+        
+        for j in 2:
+            for i in [0, 1, 2, 2, 1, 3]:
+                indexes.push_back(i + j*4)
+    
+    elif mode_id >= 9 and mode_id <= 14:
+        #var off_scale = 1.0/(sqrt(0.5) / (1.0 - sqrt(0.5)*0.5))
+        var off_scale = 1.0/(sqrt(0.5) * 1.5)
+        var angle = [0, 45, 45, 90, 135, 135][mode_id - 9] * PI / 180.0
+        var x_scale = [1, off_scale, sqrt(2), 1, off_scale, sqrt(2)][mode_id - 9]
+        var z_offset = [0.5, 0.5 * off_scale, 0.5 * sqrt(2), 0.5, 0.5 * off_scale, 0.5 * sqrt(2)][mode_id - 9]
+        _add_model_quad(verts, uvs, normals, 1.0,  angle, x_scale, -z_offset)
+        _add_model_quad(verts, uvs, normals, 1.0,  angle, x_scale,  z_offset)
+        for j in 2:
+            for i in [0, 1, 2, 2, 1, 3]:
+                indexes.push_back(i + j*4)
+    
+    elif mode_id >= 15 and mode_id <= 17:
+        #var off_scale = 1.0/(sqrt(0.5) / (1.0 - sqrt(0.5)*0.5))
+        var off_scale = 1.0/(sqrt(0.5) * 1.5)
+        var angle = [0, 45, 45][mode_id-15] * PI / 180.0
+        var x_scale = [1, off_scale, sqrt(2)][mode_id-15]
+        #var z_offset = [0.5, 0.5, 0.5 * sqrt(2)][mode_id-15]
+        var z_offset = [0.5, 0.5 * off_scale, 0.5 * sqrt(2)][mode_id-15]
+        
+        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale, -z_offset)
+        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale,  z_offset)
+        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale, -z_offset)
+        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale,  z_offset)
+        for j in 4:
+            for i in [0, 1, 2, 2, 1, 3]:
+                indexes.push_back(i + j*4)
+    
+    return [verts, uvs, normals, indexes]
+
+func add_models(mesh):
+    for mat in models_by_mat.keys():
+        var texture = mat.tex
+        var tex_size = texture.get_size()
+        var grid_size = mat.grid_size
+        
+        var material = SpatialMaterial.new()
+        material.roughness = 1.0
+        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
+        material.albedo_texture = texture
+        material.params_use_alpha_scissor = true
+        material.params_cull_mode = SpatialMaterial.CULL_DISABLED
+        
+        var verts = PoolVector3Array()
+        var tex_uvs = PoolVector2Array()
+        var normals = PoolVector3Array()
+        var indexes = PoolIntArray()
+        
+        for model in models_by_mat[mat]:
+            var pos = model
+            var tile_coord = models[pos][1]
+            var mode_id = models[pos][2]
+            var floor_mode = models[pos][3]
+            var offset_x = models[pos][4]
+            var offset_y = models[pos][5]
+            var offset_z = models[pos][6]
+            
+            var unit_uv = grid_size/tex_size
+            var uvs = ref_uvs.duplicate()
+            
+            var index_base = verts.size()
+            
+            var below = pos + Vector3(0, -1, 0)
+            var vox_corners = voxel_corners[below] if below in voxel_corners else {}
+            
+            var pure_offset = Vector3()
+            if (floor_mode == 1 or floor_mode == 2) and vox_corners.size() > 0:
+                var corners = top_corners.duplicate()
+                for i in 4:
+                    corners[i] = get_effective_vert(below, corners[i]*2.0)
+                
+                var dist_a = (corners[0] - corners[3]).length()
+                var dist_b = (corners[1] - corners[2]).length()
+                var mid = ((corners[0] + corners[3]) if dist_b > dist_a else (corners[1] + corners[2]))/2.0
+                
+                pure_offset = mid * 0.5 - Vector3(0, 0.5, 0)
+            
+            pure_offset.x += offset_x / 8.0 * 0.998
+            pure_offset.z += offset_z / 8.0 * 0.998
+            
+            #print(pure_offset)
+            
+            #for i in range(uvs.size()):
+            #    uvs[i] = uv_xform.xform(uvs[i])
+            #    uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
+            #    uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
+            #    uvs[i].y = 1.0-uvs[i].y
+            #    uvs[i] *= unit_uv
+            #    uvs[i] += (tile_coord*grid_size)/tex_size
+            
+            var stuff = model_get_verts_etc(mode_id)
+            
+            for i in stuff[0].size():
+                var uv = stuff[1][i]
+                
+                uv.x = lerp(0.5, uv.x, uv_shrink)
+                uv.y = lerp(0.5, uv.y, uv_shrink)
+                uv.y = 1.0-uv.y
+                uv *= unit_uv
+                uv += (tile_coord*grid_size)/tex_size
+                
+                verts.push_back(stuff[0][i] + pos + pure_offset)
+                tex_uvs.push_back(uv)
+                normals.push_back(stuff[2][i])
+            
+            for i in stuff[3].size():
+                indexes.push_back(stuff[3][i] + index_base)
+            
+        var arrays = []
+        arrays.resize(Mesh.ARRAY_MAX)
+        arrays[Mesh.ARRAY_VERTEX] = verts
+        arrays[Mesh.ARRAY_TEX_UV] = tex_uvs
+        arrays[Mesh.ARRAY_NORMAL] = normals
+        arrays[Mesh.ARRAY_INDEX]  = indexes
+        if arrays[Mesh.ARRAY_VERTEX].size() > 0:
+            mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+            mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+
+func add_voxels(mesh):
     var face_tex = []
     for tex in voxels_by_sides.keys():
         face_tex.push_back([tex, true, voxels_by_sides[tex]])
@@ -672,6 +848,10 @@ func remesh():
         if time > 0.01:
             print("dummy  time: ", time)
     
-    #var owner = $StaticBody.get_shape_owners()[0]
-    #$StaticBody.shape_owner_clear_shapes(owner)
-    #$StaticBody.shape_owner_add_shape(owner, mesh.create_trimesh_shape())
+
+func remesh():
+    mesh = ArrayMesh.new()
+    
+    add_decals(mesh)
+    add_models(mesh)
+    add_voxels(mesh)

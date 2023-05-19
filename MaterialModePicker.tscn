@@ -17,24 +17,30 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="List" type="VBoxContainer" parent="Center"]
-margin_left = 437.0
-margin_top = 266.0
-margin_right = 586.0
-margin_bottom = 334.0
+margin_left = 435.0
+margin_top = 254.0
+margin_right = 588.0
+margin_bottom = 346.0
 
 [node name="MakeVoxel" type="Button" parent="Center/List"]
-margin_right = 149.0
+margin_right = 153.0
 margin_bottom = 20.0
 text = "Create Voxel Material"
 
 [node name="MakeDecal" type="Button" parent="Center/List"]
 margin_top = 24.0
-margin_right = 149.0
+margin_right = 153.0
 margin_bottom = 44.0
 text = "Create Decal Material"
 
-[node name="Cancel" type="Button" parent="Center/List"]
+[node name="MakeModel" type="Button" parent="Center/List"]
 margin_top = 48.0
-margin_right = 149.0
+margin_right = 153.0
 margin_bottom = 68.0
+text = "Create Model Material"
+
+[node name="Cancel" type="Button" parent="Center/List"]
+margin_top = 72.0
+margin_right = 153.0
+margin_bottom = 92.0
 text = "Cancel"
