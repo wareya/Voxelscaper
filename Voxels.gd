@@ -616,13 +616,6 @@ func model_get_verts_etc(mode_id : int):
     var rot_y = ((mode_id >> 9) & 7)
     var rot_z = ((mode_id >> 12) & 7)
     
-    #int($ModelWiden.pressed) |
-    #(int($ModelSpacing.value) << 1) |
-    #(int($ModelTurnCount.value - 1) << 4) |
-    #(int($ModelRotationX.value) << 6) |
-    #(int($ModelRotationY.value) << 9) |
-    #(int($ModelRotationZ.value) << 12)
-    
     var width = 1.0 if !widen else sqrt(2.0)
     var current_angle = 0.0 + rot_y * PI*0.25
     for _turn in turns:
@@ -638,55 +631,6 @@ func model_get_verts_etc(mode_id : int):
                 indexes.push_back(i + base)
         
         current_angle += PI / float(turns)
-        pass
-    
-    return [verts, uvs, normals, indexes]
-    
-    if mode_id >= 0 and mode_id <= 5:
-        var angle = [0, 45, 45, 90, 135, 135][mode_id] * PI / 180.0
-        var x_scale = [1, 1, sqrt(2), 1, 1, sqrt(2)][mode_id]
-        _add_model_quad(verts, uvs, normals, 1.0, angle, x_scale)
-        for i in [0, 1, 2, 2, 1, 3]:
-            indexes.push_back(i)
-    
-    elif mode_id >= 6 and mode_id <= 8:
-        var angle = [0, 45, 45][mode_id-6] * PI / 180.0
-        var x_scale = [1, 1, sqrt(2)][mode_id-6]
-        
-        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale)
-        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale)
-        
-        for j in 2:
-            for i in [0, 1, 2, 2, 1, 3]:
-                indexes.push_back(i + j*4)
-    
-    elif mode_id >= 9 and mode_id <= 14:
-        #var off_scale = 1.0/(sqrt(0.5) / (1.0 - sqrt(0.5)*0.5))
-        var off_scale = 1.0/(sqrt(0.5) * 1.5)
-        var angle = [0, 45, 45, 90, 135, 135][mode_id - 9] * PI / 180.0
-        var x_scale = [1, off_scale, sqrt(2), 1, off_scale, sqrt(2)][mode_id - 9]
-        var z_offset = [0.5, 0.5 * off_scale, 0.5 * sqrt(2), 0.5, 0.5 * off_scale, 0.5 * sqrt(2)][mode_id - 9]
-        _add_model_quad(verts, uvs, normals, 1.0,  angle, x_scale, -z_offset)
-        _add_model_quad(verts, uvs, normals, 1.0,  angle, x_scale,  z_offset)
-        for j in 2:
-            for i in [0, 1, 2, 2, 1, 3]:
-                indexes.push_back(i + j*4)
-    
-    elif mode_id >= 15 and mode_id <= 17:
-        #var off_scale = 1.0/(sqrt(0.5) / (1.0 - sqrt(0.5)*0.5))
-        var off_scale = 1.0/(sqrt(0.5) * 1.5)
-        var angle = [0, 45, 45][mode_id-15] * PI / 180.0
-        var x_scale = [1, off_scale, sqrt(2)][mode_id-15]
-        #var z_offset = [0.5, 0.5, 0.5 * sqrt(2)][mode_id-15]
-        var z_offset = [0.5, 0.5 * off_scale, 0.5 * sqrt(2)][mode_id-15]
-        
-        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale, -z_offset)
-        _add_model_quad(verts, uvs, normals, 1.0, angle         , x_scale,  z_offset)
-        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale, -z_offset)
-        _add_model_quad(verts, uvs, normals, 1.0, angle + PI*0.5, x_scale,  z_offset)
-        for j in 4:
-            for i in [0, 1, 2, 2, 1, 3]:
-                indexes.push_back(i + j*4)
     
     return [verts, uvs, normals, indexes]
 
