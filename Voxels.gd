@@ -653,6 +653,8 @@ func add_models(mesh):
             var vox_corners = voxel_corners[below] if below in voxel_corners else {}
             
             var pure_offset = Vector3()
+            var normal = Vector3.UP
+            var tangent = Vector3.FORWARD
             if (floor_mode == 1 or floor_mode == 2) and vox_corners.size() > 0:
                 var corners = top_corners.duplicate()
                 for i in 4:
@@ -662,22 +664,41 @@ func add_models(mesh):
                 var dist_b = (corners[1] - corners[2]).length()
                 var mid = ((corners[0] + corners[3]) if dist_b > dist_a else (corners[1] + corners[2]))/2.0
                 
+                if floor_mode == 2:
+                    normal = (-(corners[3] - corners[0]).cross(corners[2] - corners[1])).normalized()
+                    
+                    # front and right vectors, which might be skew
+                    var tx_a : Vector3 = (corners[0] + corners[1] - corners[2] - corners[3]).normalized()
+                    var tx_b : Vector3 = (corners[0] + corners[2] - corners[1] - corners[3]).normalized()
+                    # diagonals of those two vectors, which will not be skew
+                    var dx_a : Vector3 = (tx_a + tx_b).normalized()
+                    var dx_b : Vector3 = (tx_a - tx_b).normalized()
+                    # diagonal of those diagonals, which will not be skew
+                    tangent = (dx_a + dx_b).normalized()
+                    # (the normalizations are responsible for this working properly)
+                
                 pure_offset = mid * 0.5 - Vector3(0, 0.5, 0)
+            
+            var corners = top_corners.duplicate()
+            if floor_mode == 3:
+                for i in 4:
+                    corners[i] -= get_effective_vert(below, corners[i]*2.0) * 0.5
+            for i in corners.size():
+                corners[i] *= Vector3(1.0, 1.0, 1.0)
             
             pure_offset.x += offset_x / 8.0 * 0.998
             pure_offset.z += offset_z / 8.0 * 0.998
             
-            #print(pure_offset)
-            
-            #for i in range(uvs.size()):
-            #    uvs[i] = uv_xform.xform(uvs[i])
-            #    uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
-            #    uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
-            #    uvs[i].y = 1.0-uvs[i].y
-            #    uvs[i] *= unit_uv
-            #    uvs[i] += (tile_coord*grid_size)/tex_size
+            var bitangent = tangent.cross(normal)
+            var rot : Transform = Transform(Basis(bitangent, normal, tangent), Vector3())
+            var xform : Transform = Transform.IDENTITY
+            xform = xform * Transform(Basis.IDENTITY, Vector3(0, -0.5, 0))
+            xform = xform * rot
+            xform = xform * Transform(Basis.IDENTITY, Vector3(0, 0.5, 0))
             
             var stuff = model_get_verts_etc(mode_id)
+            
+            print(corners)
             
             for i in stuff[0].size():
                 var uv = stuff[1][i]
@@ -688,7 +709,19 @@ func add_models(mesh):
                 uv *= unit_uv
                 uv += (tile_coord*grid_size)/tex_size
                 
-                verts.push_back(stuff[0][i] + pos + pure_offset)
+                var vert = stuff[0][i]
+                vert = xform * vert
+                if floor_mode == 3:
+                    var t_x = vert.x + 0.5
+                    var t_z = vert.z + 0.5
+                    var x_a = lerp(corners[0], corners[1], t_x)
+                    var x_b = lerp(corners[2], corners[3], t_x)
+                    var vert_offset = lerp(x_a, x_b, t_z)
+                    print(vert, vert_offset)
+                    vert -= vert_offset
+                vert = vert + pos + pure_offset
+                
+                verts.push_back(vert)
                 tex_uvs.push_back(uv)
                 normals.push_back(stuff[2][i])
             

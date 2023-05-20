@@ -9,7 +9,6 @@ class_name VoxEditor
 # - deleting and modifying existing materials
 # - billboard and biplane "meshes"
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
-# - decal rotation (by repeatedly clicking on the same decal?)
 # - save gltf (might need to port to godot 4)
 # - importing real meshes somehow maybe?
 
