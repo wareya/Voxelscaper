@@ -3,12 +3,14 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - deform tool (modifying existing geometry vertex offsets)
 # - shape picking/eyedropper
 # - material picking/eyedropper (per mat type - one for voxels, one for decals, one for meshes)
 # - deleting and modifying existing materials
+# - undo/redo
+# - save gltf (need to port to godot 4)
+
+# - deform tool (modifying existing geometry vertex offsets)
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
-# - save gltf (might need to port to godot 4)
 # - importing real meshes somehow maybe?
 
 class VoxMat extends Reference:
@@ -266,25 +268,27 @@ func _ready():
     $Mat2dOrientation.add_item("270 deg flip", 7)
     $Mat2dOrientation.selected = 0
     
-    $ModelPlaceMode.add_item("single 0 deg", 0)
-    $ModelPlaceMode.add_item("single 45 deg", 1)
-    $ModelPlaceMode.add_item("single 45 deg wide", 2)
-    $ModelPlaceMode.add_item("single 90 deg", 3)
-    $ModelPlaceMode.add_item("single 135 deg", 4)
-    $ModelPlaceMode.add_item("single 135 deg wide", 5)
-    $ModelPlaceMode.add_item("cross 0 deg", 6)
-    $ModelPlaceMode.add_item("cross 45 deg", 7)
-    $ModelPlaceMode.add_item("cross 45 deg wide", 8)
-    $ModelPlaceMode.add_item("double 0 deg", 9)
-    $ModelPlaceMode.add_item("double 45 deg", 10)
-    $ModelPlaceMode.add_item("double 45 deg wide", 11)
-    $ModelPlaceMode.add_item("double 90 deg", 12)
-    $ModelPlaceMode.add_item("double 135 deg", 13)
-    $ModelPlaceMode.add_item("double 135 deg wide", 14)
-    $ModelPlaceMode.add_item("cross double 0 deg", 15)
-    $ModelPlaceMode.add_item("cross double 45 deg", 16)
-    $ModelPlaceMode.add_item("cross double 45 wide", 17)
-    $ModelPlaceMode.selected = 0
+    #$ModelPlaceMode.add_item("single 0 deg", 0)
+    #$ModelPlaceMode.add_item("single 45 deg", 1)
+    #$ModelPlaceMode.add_item("single 45 deg wide", 2)
+    #$ModelPlaceMode.add_item("single 90 deg", 3)
+    #$ModelPlaceMode.add_item("single 135 deg", 4)
+    #$ModelPlaceMode.add_item("single 135 deg wide", 5)
+    #$ModelPlaceMode.add_item("cross 0 deg", 6)
+    #$ModelPlaceMode.add_item("cross 45 deg", 7)
+    #$ModelPlaceMode.add_item("cross 45 deg wide", 8)
+    #$ModelPlaceMode.add_item("double 0 deg", 9)
+    #$ModelPlaceMode.add_item("double 45 deg", 10)
+    #$ModelPlaceMode.add_item("double 45 deg wide", 11)
+    #$ModelPlaceMode.add_item("double 90 deg", 12)
+    #$ModelPlaceMode.add_item("double 135 deg", 13)
+    #$ModelPlaceMode.add_item("double 135 deg wide", 14)
+    #$ModelPlaceMode.add_item("cross double 0 deg", 15)
+    #$ModelPlaceMode.add_item("cross double 45 deg", 16)
+    #$ModelPlaceMode.add_item("cross double 45 wide", 17)
+    #$ModelPlaceMode.selected = 0
+    
+    
     
     $ModelMatchFloor.add_item("no", 0)
     $ModelMatchFloor.add_item("yes", 1)
@@ -671,11 +675,19 @@ func _process(delta):
     $Mat2dTilePicker.visible = current_mat is DecalMat # want it for models too
     $Mat2dOrientation.visible = current_mat is DecalMat and not current_mat is ModelMat # but not this
     
-    $ModelPlaceMode.visible = current_mat is ModelMat
+    $ModelAdvanced.visible = current_mat is ModelMat
     $ModelMatchFloor.visible = current_mat is ModelMat
-    $ModelOffsetX.visible = current_mat is ModelMat
-    $ModelOffsetY.visible = current_mat is ModelMat
-    $ModelOffsetZ.visible = current_mat is ModelMat
+    
+    $ModelTurnCount.visible = current_mat is ModelMat
+    $ModelSpacing.visible = current_mat is ModelMat
+    $ModelRotationX.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelRotationY.visible = current_mat is ModelMat
+    $ModelRotationZ.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelWiden.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    
+    $ModelOffsetX.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelOffsetY.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelOffsetZ.visible = current_mat is ModelMat and $ModelAdvanced.pressed
     
     if current_mat is DecalMat:
         $Mat2dTilePicker.tex = current_mat.tex
@@ -808,12 +820,19 @@ func handle_voxel_input():
         if current_mat is VoxMat:
             $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
         elif current_mat is ModelMat:
-            var idx = $ModelPlaceMode.selected
+            var info = (
+                int($ModelWiden.pressed) |
+                (int($ModelSpacing.value) << 1) |
+                (int($ModelTurnCount.value - 1) << 4) |
+                (int($ModelRotationX.value) << 6) |
+                (int($ModelRotationY.value) << 9) |
+                (int($ModelRotationZ.value) << 12)
+            )
             var floor_mode = $ModelMatchFloor.selected
             var offset_x = $ModelOffsetX.value
             var offset_y = $ModelOffsetY.value
             var offset_z = $ModelOffsetZ.value
-            $Voxels.place_model(new_point, current_mat, idx, floor_mode, offset_x, offset_y, offset_z)
+            $Voxels.place_model(new_point, current_mat, info, floor_mode, offset_x, offset_y, offset_z)
         elif current_mat is DecalMat:
             var idx = $Mat2dOrientation.selected
             #var id = $Mat2dOrientation.get_item_id(idx)

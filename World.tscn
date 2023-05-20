@@ -425,9 +425,9 @@ text = "Decal Orientation"
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -175.0
-margin_top = 352.0
+margin_top = 496.0
 margin_right = -1.0
-margin_bottom = 376.0
+margin_bottom = 520.0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource( 14 )
@@ -443,9 +443,9 @@ text = "Offset Z"
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -175.0
-margin_top = 328.0
+margin_top = 472.0
 margin_right = -1.0
-margin_bottom = 352.0
+margin_bottom = 496.0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource( 14 )
@@ -461,9 +461,9 @@ text = "Offset Y"
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -175.0
-margin_top = 304.0
+margin_top = 448.0
 margin_right = -1.0
-margin_bottom = 328.0
+margin_bottom = 472.0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource( 14 )
@@ -475,13 +475,130 @@ margin_right = -4.0
 margin_bottom = 20.0
 text = "Offset X"
 
-[node name="ModelMatchFloor" type="OptionButton" parent="."]
+[node name="ModelWiden" type="CheckBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 424.0
+margin_right = -1.0
+margin_bottom = 448.0
+
+[node name="Label" type="Label" parent="ModelWiden"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Widen"
+
+[node name="ModelRotationZ" type="SpinBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 400.0
+margin_right = -1.0
+margin_bottom = 424.0
+max_value = 7.0
+script = ExtResource( 14 )
+
+[node name="Label" type="Label" parent="ModelRotationZ"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Roll"
+
+[node name="ModelRotationX" type="SpinBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 376.0
+margin_right = -1.0
+margin_bottom = 400.0
+max_value = 7.0
+script = ExtResource( 14 )
+
+[node name="Label" type="Label" parent="ModelRotationX"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Pitch"
+
+[node name="ModelAdvanced" type="CheckBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 352.0
+margin_right = -1.0
+margin_bottom = 376.0
+
+[node name="Label" type="Label" parent="ModelAdvanced"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Advanced"
+
+[node name="ModelRotationY" type="SpinBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 328.0
+margin_right = -1.0
+margin_bottom = 352.0
+max_value = 7.0
+script = ExtResource( 14 )
+
+[node name="Label" type="Label" parent="ModelRotationY"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Yaw"
+
+[node name="ModelSpacing" type="SpinBox" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 304.0
+margin_right = -1.0
+margin_bottom = 328.0
+max_value = 4.0
+script = ExtResource( 14 )
+
+[node name="Label" type="Label" parent="ModelSpacing"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Spacing"
+
+[node name="ModelTurnCount" type="SpinBox" parent="."]
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -175.0
 margin_top = 280.0
 margin_right = -1.0
 margin_bottom = 304.0
+min_value = 1.0
+max_value = 4.0
+value = 1.0
+script = ExtResource( 14 )
+
+[node name="Label" type="Label" parent="ModelTurnCount"]
+margin_left = -80.0
+margin_top = 6.0
+margin_right = -4.0
+margin_bottom = 20.0
+text = "Turn Count"
+
+[node name="ModelMatchFloor" type="OptionButton" parent="."]
+anchor_left = 1.0
+anchor_right = 1.0
+margin_left = -175.0
+margin_top = 256.0
+margin_right = -1.0
+margin_bottom = 280.0
 script = ExtResource( 13 )
 
 [node name="Label" type="Label" parent="ModelMatchFloor"]
@@ -491,7 +608,8 @@ margin_right = -4.0
 margin_bottom = 20.0
 text = "Match Floor"
 
-[node name="ModelPlaceMode" type="OptionButton" parent="."]
+[node name="ModelBasePlaneCount" type="OptionButton" parent="."]
+visible = false
 anchor_left = 1.0
 anchor_right = 1.0
 margin_left = -175.0
@@ -500,7 +618,7 @@ margin_right = -1.0
 margin_bottom = 280.0
 script = ExtResource( 13 )
 
-[node name="Label" type="Label" parent="ModelPlaceMode"]
+[node name="Label" type="Label" parent="ModelBasePlaneCount"]
 margin_left = -80.0
 margin_top = 6.0
 margin_right = -4.0

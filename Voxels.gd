@@ -598,7 +598,7 @@ func _add_model_quad(verts, uvs, normals, normal_sign = 1.0, angle = 0.0, x_scal
         var vert : Vector3 = ref_verts[i] * Vector3(x_scale, 1, z_offset)
         var normal : Vector3 = Vector3(0, 0, -1) * normal_sign
         vert = vert.rotated(Vector3.UP, angle)
-        normal = normal.rotated(Vector3.UP, angle)
+        normal = normal.rotated(Vector3.FORWARD, angle)
         
         verts.push_back(vert)
         normals.push_back(normal)
@@ -608,6 +608,39 @@ func model_get_verts_etc(mode_id : int):
     var uvs = []
     var normals = []
     var indexes = []
+    
+    var widen = mode_id & 1
+    var spacing = (mode_id >> 1) & 7
+    var turns = ((mode_id >> 4) & 3) + 1
+    var rot_x = ((mode_id >> 6) & 7)
+    var rot_y = ((mode_id >> 9) & 7)
+    var rot_z = ((mode_id >> 12) & 7)
+    
+    #int($ModelWiden.pressed) |
+    #(int($ModelSpacing.value) << 1) |
+    #(int($ModelTurnCount.value - 1) << 4) |
+    #(int($ModelRotationX.value) << 6) |
+    #(int($ModelRotationY.value) << 9) |
+    #(int($ModelRotationZ.value) << 12)
+    
+    var width = 1.0 if !widen else sqrt(2.0)
+    var current_angle = 0.0 + rot_y * PI*0.25
+    for _turn in turns:
+        var base = verts.size()
+        _add_model_quad(verts, uvs, normals, 1.0, current_angle, width, spacing * 0.25 * 0.998)
+        for i in [0, 1, 2, 2, 1, 3]:
+            indexes.push_back(i + base)
+        
+        if spacing > 0:
+            base = verts.size()
+            _add_model_quad(verts, uvs, normals, 1.0, current_angle, width, -spacing * 0.25 * 0.998)
+            for i in [0, 1, 2, 2, 1, 3]:
+                indexes.push_back(i + base)
+        
+        current_angle += PI / float(turns)
+        pass
+    
+    return [verts, uvs, normals, indexes]
     
     if mode_id >= 0 and mode_id <= 5:
         var angle = [0, 45, 45, 90, 135, 135][mode_id] * PI / 180.0
@@ -761,9 +794,13 @@ func add_models(mesh):
                     vert -= vert_offset
                 vert = vert + pos + pure_offset
                 
+                var a = stuff[0][i/4*4 + 0] - stuff[0][i/4*4 + 3]
+                var b = stuff[0][i/4*4 + 1] - stuff[0][i/4*4 + 2]
+                var model_normal = -a.cross(b).normalized()
+                
                 verts.push_back(vert)
                 tex_uvs.push_back(uv)
-                normals.push_back(stuff[2][i])
+                normals.push_back(model_normal)
             
             for i in stuff[3].size():
                 indexes.push_back(stuff[3][i] + index_base)
