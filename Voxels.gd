@@ -66,7 +66,30 @@ func serialize() -> Dictionary:
             bwuh.push_back([save_dir, mats[mat], tile_coord, orientation])
         save_decals.push_back([save_coord, bwuh])
     
-    return {"voxels" : save_voxels, "decals" : save_decals, "mats" : save_mats, "corners" : save_corners}
+    var save_models = []
+    for coord in models:
+        var save_coord = vec_to_array(coord)
+        var list = models[coord].duplicate()
+        for i in list.size():
+            if list[i] is Vector3:
+                list[i] = vec_to_array(list[i])
+            elif list[i] is Vector2:
+                list[i] = Helpers.vec2_to_array(list[i])
+        
+        var mat = list[0]
+        if not mat in mats:
+            mats[mat] = mat_counter
+            save_mats[mat_counter] = mat.encode()
+            mat_counter += 1
+        
+        list[0] = mats[mat]
+        print(list[0])
+        
+        save_models.push_back([save_coord, list])
+    
+    print(save_mats.keys())
+    
+    return {"voxels" : save_voxels, "decals" : save_decals, "models" : save_models, "mats" : save_mats, "corners" : save_corners}
 
 func deserialize(data : Dictionary):
     voxel_corners = {}
@@ -106,6 +129,23 @@ func deserialize(data : Dictionary):
                 if info2.size() > 3:
                     orientation = info2[3]
                 decals[coord][dir] = [opened_mats[int(mat)], tile_coord, orientation]
+    
+    models = {}
+    if "models" in data:
+        for info in data.models:
+            var coord = array_to_vec(info[0])
+            var stuff = info[1]
+            stuff[0] = opened_mats[int(stuff[0])]
+            for i in range(0, stuff.size()):
+                if stuff[i] is Array and stuff[i].size() == 3:
+                    stuff[i] = array_to_vec(stuff[i])
+                elif stuff[i] is Array and stuff[i].size() == 2:
+                    stuff[i] = Helpers.array_to_vec2(stuff[i])
+                elif stuff[i] is float:
+                    stuff[i] = int(stuff[i])
+            
+            
+            models[coord] = stuff
     
     full_remesh()
     

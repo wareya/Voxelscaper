@@ -7,7 +7,6 @@ class_name VoxEditor
 # - shape picking/eyedropper
 # - material picking/eyedropper (per mat type - one for voxels, one for decals, one for meshes)
 # - deleting and modifying existing materials
-# - billboard and biplane "meshes"
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
 # - save gltf (might need to port to godot 4)
 # - importing real meshes somehow maybe?
@@ -36,6 +35,8 @@ class VoxMat extends Reference:
             var sides_tex = ImageTexture.new()
             sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
             return VoxMat.new(sides_tex, top_tex)
+        elif dict.type == "model":
+            return ModelMat.decode(dict)
         elif dict.type == "decal":
             return DecalMat.decode(dict)
 
@@ -80,6 +81,32 @@ class DecalMat extends Reference:
 class ModelMat extends DecalMat:
     func _init(_tex : Texture, _grid_size : Vector2, _icon_coord : Vector2).(_tex, _grid_size, _icon_coord):
         pass
+    
+    func encode() -> Dictionary:
+        var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
+        return {
+            "type": "model",
+            "tex": png,
+            "grid_size": Helpers.vec2_to_array(grid_size),
+            "icon_coord": Helpers.vec2_to_array(icon_coord),
+            "current_coord": Helpers.vec2_to_array(current_coord)
+        }
+    
+    static func decode(dict : Dictionary):
+        if "type" in dict and dict.type == "model":
+            var image = Image.new()
+            image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
+            var tex = ImageTexture.new()
+            tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var ret = ModelMat.new(
+                tex,
+                Helpers.array_to_vec2(dict.grid_size),
+                Helpers.array_to_vec2(dict.icon_coord)
+            )
+            ret.current_coord = Helpers.array_to_vec2(dict.current_coord)
+            return ret
+        elif dict.type == "voxel":
+            return VoxMat.decode(dict)
 
 var mats = [
     VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
@@ -299,6 +326,7 @@ func save_map():
     remove_child(dialog)
 
 func open_data_from(fname):
+    print("bieueaf")
     prev_save_target = fname
     
     var file = File.new()
