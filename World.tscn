@@ -285,7 +285,8 @@ stretch = true
 size = Vector2( 256, 256 )
 own_world = true
 world = SubResource( 20 )
-render_target_update_mode = 3
+handle_input_locally = false
+render_target_update_mode = 0
 
 [node name="DirectionalLight" type="DirectionalLight" parent="VertEditPanel/Frame/VertEditViewport"]
 transform = Transform( -0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581 )
@@ -630,13 +631,6 @@ margin_right = 12.0
 margin_bottom = 64.0
 script = ExtResource( 15 )
 
-[node name="Button" type="Button" parent="."]
-margin_left = 140.0
-margin_top = 8.0
-margin_right = 204.0
-margin_bottom = 28.0
-text = "asdfasdf"
-
 [node name="MenuBar" type="HBoxContainer" parent="."]
 margin_left = 8.0
 margin_top = 8.0
@@ -656,4 +650,12 @@ margin_right = 75.0
 margin_bottom = 22.0
 focus_mode = 2
 text = "Edit"
+flat = false
+
+[node name="Controls" type="MenuButton" parent="MenuBar"]
+margin_left = 79.0
+margin_right = 144.0
+margin_bottom = 22.0
+focus_mode = 2
+text = "Controls"
 flat = false

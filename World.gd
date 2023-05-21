@@ -6,6 +6,7 @@ class_name VoxEditor
 # - modifying existing materials
 # - undo/redo
 # - save gltf (need to port to godot 4)
+# - show controls on a fade-out text overlay on boot
 
 # - material transparency modes (none, binary, transparent)
 # - deform tool (modifying existing geometry vertex offsets)
@@ -236,7 +237,7 @@ func _ready():
     if Engine.editor_hint:
         return
     
-    $Button.connect("pressed", self, "bwuhuhuh")
+    #$Button.connect("pressed", self, "bwuhuhuh")
         
     get_tree().connect("files_dropped", self, "_on_files_dropped")
     
@@ -486,6 +487,7 @@ func do_pick_vert_warp():
 var lock_mode = 0
 var input_pick_mode = false
 signal hide_menus
+var control_swap = false
 func _unhandled_input(_event):
     $VertEditPanel/Frame/VertEditViewport.handle_input_locally = false
     
@@ -495,6 +497,12 @@ func _unhandled_input(_event):
         if f:
             f.release_focus()
     
+    var main = "m1"
+    var sub = "m2"
+    if control_swap:
+        main = "m2"
+        sub = "m1"
+    
     if Input.is_action_pressed("alt"):
         input_pick_mode = true
         if Input.is_action_just_pressed("m1"):
@@ -503,14 +511,14 @@ func _unhandled_input(_event):
             do_pick_vert_warp()
     else:
         input_pick_mode = false
-        if Input.is_action_just_pressed("m1"):
+        if Input.is_action_just_pressed(main):
             draw_mode = true
-        elif !Input.is_action_pressed("m1"):
+        elif !Input.is_action_pressed(main):
             draw_mode = false
         
-        if Input.is_action_just_pressed("m2"):
+        if Input.is_action_just_pressed(sub):
             erase_mode = true
-        elif !Input.is_action_pressed("m2"):
+        elif !Input.is_action_pressed(sub):
             erase_mode = false
     
     if Input.is_action_just_pressed("m3"):
