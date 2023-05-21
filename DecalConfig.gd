@@ -7,7 +7,6 @@ static func make_mat(decalmat):
     mat.roughness = 1.0
     mat.albedo_texture = decalmat.tex
     mat.params_use_alpha_scissor = true
-    #mat.flags_unshaded = true
     
     var tex_size = decalmat.tex.get_size()
     var offset = (decalmat.icon_coord * decalmat.grid_size) / tex_size

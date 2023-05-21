@@ -3,10 +3,11 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - deleting and modifying existing materials
+# - modifying existing materials
 # - undo/redo
 # - save gltf (need to port to godot 4)
 
+# - material transparency modes (none, binary, transparent)
 # - deform tool (modifying existing geometry vertex offsets)
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
 # - importing real meshes somehow maybe?
@@ -66,10 +67,10 @@ class DecalMat extends Reference:
         if "type" in dict and dict.type == "decal":
             var image = Image.new()
             image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
-            var tex = ImageTexture.new()
-            tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var new_tex = ImageTexture.new()
+            new_tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
             var ret = DecalMat.new(
-                tex,
+                new_tex,
                 Helpers.array_to_vec2(dict.grid_size),
                 Helpers.array_to_vec2(dict.icon_coord)
             )
@@ -113,6 +114,17 @@ var mats = [
     VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png")),
     VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png")),
 ]
+
+func delete_mat(mat):
+    if mats.size() == 1:
+        return
+    var i = mats.find(mat)
+    if i >= 0:
+        mats.remove(i)
+    if mat == current_mat:
+        current_mat = mats[max(0, i-1)]
+    
+    rebuild_mat_buttons()
 
 func get_default_voxmat():
     return mats[0]
@@ -172,6 +184,8 @@ func _on_files_dropped(files, _screen):
 
 func add_mat_button(mat):
     var button = Button.new()
+    button.set_script(preload("res://MatButton.gd"))
+    button.mat = mat
     $Mats/List.add_child(button)
     
     if mat is VoxMat:
@@ -206,10 +220,23 @@ func add_mat(mat):
     mats.push_back(mat)
     add_mat_button(mat)
 
-# Called when the node enters the scene tree for the first time.
+func save_world_as_resource(fname):
+    var m : Mesh = $Voxels.mesh.duplicate(true)
+    for i in m.get_surface_count():
+        var mat : SpatialMaterial = m.surface_get_material(i).duplicate(true)
+        var stex : Texture = mat.albedo_texture.duplicate(true)
+        var img = stex.get_data()
+        var tex = ImageTexture.new()
+        tex.create_from_image(img, stex.flags)
+        mat.albedo_texture = tex
+        m.surface_set_material(i, mat)
+    var _e = ResourceSaver.save(fname, m)
+
 func _ready():
     if Engine.editor_hint:
         return
+    
+    $Button.connect("pressed", self, "bwuhuhuh")
         
     get_tree().connect("files_dropped", self, "_on_files_dropped")
     
@@ -382,9 +409,7 @@ func do_pick_material():
     var collision_point = null
     var collision_normal = null
     
-    var start = OS.get_ticks_usec()
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
-    var end = OS.get_ticks_usec()
     
     if collision_data:
         collision_normal = collision_data[1]
@@ -444,9 +469,7 @@ func do_pick_vert_warp():
     var collision_point = null
     var collision_normal = null
     
-    var start = OS.get_ticks_usec()
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
-    var end = OS.get_ticks_usec()
     
     if collision_data:
         collision_normal = collision_data[1]
@@ -462,8 +485,15 @@ func do_pick_vert_warp():
 
 var lock_mode = 0
 var input_pick_mode = false
+signal hide_menus
 func _unhandled_input(_event):
     $VertEditPanel/Frame/VertEditViewport.handle_input_locally = false
+    
+    if _event is InputEventMouseButton:
+        emit_signal("hide_menus")
+        var f = $Mats.get_focus_owner()
+        if f:
+            f.release_focus()
     
     if Input.is_action_pressed("alt"):
         input_pick_mode = true

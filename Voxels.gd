@@ -144,7 +144,6 @@ func deserialize(data : Dictionary):
                 elif stuff[i] is float:
                     stuff[i] = int(stuff[i])
             
-            
             models[coord] = stuff
     
     full_remesh()
@@ -217,7 +216,6 @@ func refresh_surface_mapping():
     
     decals_by_mat = {}
     for pos in decals.keys():
-        var dirs = decals[pos]
         for dir in decals[pos].keys():
             var decal = decals[pos][dir][0]
             if not decals_by_mat.has(decal):
@@ -612,12 +610,12 @@ func model_get_verts_etc(mode_id : int):
     var widen = mode_id & 1
     var spacing = (mode_id >> 1) & 7
     var turns = ((mode_id >> 4) & 3) + 1
-    var rot_x = ((mode_id >> 6) & 7)
-    var rot_y = ((mode_id >> 9) & 7)
-    var rot_z = ((mode_id >> 12) & 7)
+    #var rot_x = ((mode_id >> 6) & 7)
+    #var rot_y = ((mode_id >> 9) & 7)
+    #var rot_z = ((mode_id >> 12) & 7)
     
     var width = 1.0 if !widen else sqrt(2.0)
-    var current_angle = 0.0 + rot_y * PI*0.25
+    var current_angle = 0.0# + rot_y * PI*0.25
     for _turn in turns:
         var base = verts.size()
         _add_model_quad(verts, uvs, normals, 1.0, current_angle, width, spacing * 0.25 * 0.998)
@@ -706,17 +704,24 @@ func add_models(mesh):
             pure_offset.x += offset_x / 8.0 * 0.998
             pure_offset.z += offset_z / 8.0 * 0.998
             
+            var rot_x = float((mode_id >> 6) & 7) / 4.0 * PI
+            var rot_y = float((mode_id >> 9) & 7) / 4.0 * PI
+            var rot_z = float((mode_id >> 12) & 7) / 4.0 * PI
+            
             var bitangent = tangent.cross(normal)
             var rot : Transform = Transform(Basis(bitangent, normal, tangent), Vector3())
+            var rot2 : Transform = Transform(Basis(Vector3(rot_x, rot_y, rot_z)), Vector3())
             var xform : Transform = Transform.IDENTITY
             xform = xform * Transform(Basis.IDENTITY, Vector3(0, -0.5, 0))
             xform = xform * rot
+            xform = xform * rot2
             xform = xform * Transform(Basis.IDENTITY, Vector3(0, 0.5, 0))
             
             var stuff = model_get_verts_etc(mode_id)
             
             #print(corners)
             
+            var verts_temp = []
             for i in stuff[0].size():
                 var uv = stuff[1][i]
                 
@@ -737,13 +742,14 @@ func add_models(mesh):
                     #print(vert, vert_offset)
                     vert -= vert_offset
                 vert = vert + pos + pure_offset
-                
-                var a = stuff[0][i/4*4 + 0] - stuff[0][i/4*4 + 3]
-                var b = stuff[0][i/4*4 + 1] - stuff[0][i/4*4 + 2]
-                var model_normal = -a.cross(b).normalized()
-                
+                verts_temp.push_back(vert)
                 verts.push_back(vert)
                 tex_uvs.push_back(uv)
+            
+            for i in verts_temp.size():
+                var a = verts_temp[i/4*4 + 0] - verts_temp[i/4*4 + 3]
+                var b = verts_temp[i/4*4 + 1] - verts_temp[i/4*4 + 2]
+                var model_normal = -a.cross(b).normalized()
                 normals.push_back(model_normal)
             
             for i in stuff[3].size():
