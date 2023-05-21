@@ -83,11 +83,11 @@ func serialize() -> Dictionary:
             mat_counter += 1
         
         list[0] = mats[mat]
-        print(list[0])
+        #print(list[0])
         
         save_models.push_back([save_coord, list])
     
-    print(save_mats.keys())
+    #print(save_mats.keys())
     
     return {"voxels" : save_voxels, "decals" : save_decals, "models" : save_models, "mats" : save_mats, "corners" : save_corners}
 
@@ -528,8 +528,8 @@ func add_decals(mesh):
             var tile_coord = decals[pos][dir][1]
             var orientation_id = decals[pos][dir][2]
             var uv_xform = get_decal_uv_scale(orientation_id)
-            print(uv_xform)
-            print(orientation_id)
+            #print(uv_xform)
+            #print(orientation_id)
             
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
@@ -715,7 +715,7 @@ func add_models(mesh):
             
             var stuff = model_get_verts_etc(mode_id)
             
-            print(corners)
+            #print(corners)
             
             for i in stuff[0].size():
                 var uv = stuff[1][i]
@@ -734,7 +734,7 @@ func add_models(mesh):
                     var x_a = lerp(corners[0], corners[1], t_x)
                     var x_b = lerp(corners[2], corners[3], t_x)
                     var vert_offset = lerp(x_a, x_b, t_z)
-                    print(vert, vert_offset)
+                    #print(vert, vert_offset)
                     vert -= vert_offset
                 vert = vert + pos + pure_offset
                 

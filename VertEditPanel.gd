@@ -106,6 +106,15 @@ var ref_verts = [
 
 var vert_overrides = {}
 
+func set_overrides(list):
+    print(vert_overrides)
+    print(list)
+    vert_overrides = {}
+    for k in list:
+        vert_overrides[k*0.5] = list[k]*0.5
+    prepare_overrides()
+    update()
+
 func set_override(vert, new):
     vert_overrides[vert] = new
 

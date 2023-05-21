@@ -3,8 +3,6 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - shape picking/eyedropper
-# - material picking/eyedropper (per mat type - one for voxels, one for decals, one for meshes)
 # - deleting and modifying existing materials
 # - undo/redo
 # - save gltf (need to port to godot 4)
@@ -330,7 +328,7 @@ func save_map():
     remove_child(dialog)
 
 func open_data_from(fname):
-    print("bieueaf")
+    #print("bieueaf")
     prev_save_target = fname
     
     var file = File.new()
@@ -371,20 +369,119 @@ func estimate_viewport_mouse_scale():
     var size = get_viewport().size
     return 1.0/size.y
 
+func do_pick_material():
+    var view_rect : Rect2 = get_viewport().get_visible_rect()
+    var m_pos : Vector2 = get_viewport().get_mouse_position()
+    var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
+    var cast_normal : Vector3 = $CameraHolder/Camera.project_ray_normal(m_pos)
+    
+    if !view_rect.has_point(m_pos):
+        return
+    
+    var raw_collision_point = null
+    var collision_point = null
+    var collision_normal = null
+    
+    var start = OS.get_ticks_usec()
+    var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
+    var end = OS.get_ticks_usec()
+    
+    if collision_data:
+        collision_normal = collision_data[1]
+        raw_collision_point = collision_data[0]
+        collision_point = (raw_collision_point - collision_normal*0.5).round()
+        collision_point = collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
+        
+        var check_order = []
+        if current_mat is VoxMat:
+            check_order = [$Voxels.decals, $Voxels.voxels, $Voxels.models]
+        elif current_mat is ModelMat:
+            check_order = [$Voxels.decals, $Voxels.models, $Voxels.voxels]
+        elif current_mat is DecalMat:
+            check_order = [$Voxels.decals, $Voxels.voxels, $Voxels.models]
+        
+        for pool in check_order:
+            if collision_point in pool:
+                var hit = pool[collision_point]
+                if pool == $Voxels.voxels:
+                    current_mat = hit
+                    break
+                elif pool == $Voxels.decals:
+                    if collision_normal in hit:
+                        current_mat = hit[collision_normal][0]
+                        current_mat.current_coord = hit[collision_normal][1]
+                    else:
+                        current_mat = hit.values()[0][0]
+                        current_mat.current_coord = hit.values()[0][1]
+                    break
+                elif pool == $Voxels.models:
+                    current_mat = hit[0]
+                    current_mat.current_coord = hit[1]
+                    $ModelWiden.pressed = hit[2] & 1
+                    $ModelSpacing.value = (hit[2] >> 1) & 7
+                    $ModelTurnCount.value = ((hit[2] >> 4) & 3) + 1
+                    $ModelRotationX.value = (hit[2] >> 6) & 7
+                    $ModelRotationY.value = (hit[2] >> 9) & 7
+                    $ModelRotationZ.value = (hit[2] >> 12) & 7
+                    
+                    $ModelMatchFloor.selected = hit[3]
+                    $ModelOffsetX.value = hit[4]
+                    $ModelOffsetY.value = hit[5]
+                    $ModelOffsetZ.value = hit[6]
+                    
+                    break
+
+func do_pick_vert_warp():
+    var view_rect : Rect2 = get_viewport().get_visible_rect()
+    var m_pos : Vector2 = get_viewport().get_mouse_position()
+    var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
+    var cast_normal : Vector3 = $CameraHolder/Camera.project_ray_normal(m_pos)
+    
+    if !view_rect.has_point(m_pos):
+        return
+    
+    var raw_collision_point = null
+    var collision_point = null
+    var collision_normal = null
+    
+    var start = OS.get_ticks_usec()
+    var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
+    var end = OS.get_ticks_usec()
+    
+    if collision_data:
+        collision_normal = collision_data[1]
+        raw_collision_point = collision_data[0]
+        collision_point = (raw_collision_point - collision_normal*0.5).round()
+        collision_point = collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
+        
+        if collision_point in $Voxels.voxels:
+            if collision_point in $Voxels.voxel_corners:
+                $VertEditPanel.set_overrides($Voxels.voxel_corners[collision_point])
+            else:
+                $VertEditPanel.set_overrides({})
 
 var lock_mode = 0
+var input_pick_mode = false
 func _unhandled_input(_event):
     $VertEditPanel/Frame/VertEditViewport.handle_input_locally = false
     
-    if Input.is_action_just_pressed("m1"):
-        draw_mode = true
-    elif !Input.is_action_pressed("m1"):
-        draw_mode = false
-    
-    if Input.is_action_just_pressed("m2"):
-        erase_mode = true
-    elif !Input.is_action_pressed("m2"):
-        erase_mode = false
+    if Input.is_action_pressed("alt"):
+        input_pick_mode = true
+        if Input.is_action_just_pressed("m1"):
+            do_pick_material()
+        elif Input.is_action_just_pressed("m2"):
+            do_pick_vert_warp()
+    else:
+        input_pick_mode = false
+        if Input.is_action_just_pressed("m1"):
+            draw_mode = true
+        elif !Input.is_action_pressed("m1"):
+            draw_mode = false
+        
+        if Input.is_action_just_pressed("m2"):
+            erase_mode = true
+        elif !Input.is_action_pressed("m2"):
+            erase_mode = false
     
     if Input.is_action_just_pressed("m3"):
         camera_mode = true
@@ -478,7 +575,6 @@ func _unhandled_input(_event):
                 $CameraHolder.global_transform.origin += dir
             if event.button_index == 5:
                 $CameraHolder.global_transform.origin -= dir
-            print(dir)
         else:
             if event.button_index == 4:
                 camera_intended_scale /= 1.1
@@ -498,7 +594,6 @@ func _input(_event):
             return
         var event : InputEventMouseMotion = _event
         if event.shift:
-            print(event.relative.x)
             var upwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.UP)
             var rightwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.RIGHT)
             var speed = camera_intended_scale * estimate_viewport_mouse_scale() * 5.0
@@ -599,7 +694,7 @@ func cube_ray_intersection(cube_origin : Vector3, ray_origin : Vector3, ray_norm
             return stuff
     return null
 
-func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
+func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int = 0):
     #var ray_end = ray_origin + ray_normal
     #var num_steps = ceil(ray_normal.length() + 0.5) # ensure each step is at least slightly smaller than 1.0 units
     #ray_normal = ray_normal / num_steps
@@ -614,11 +709,18 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3):
         #    var offset = (rounded + Vector3(x, y, z)*ray_normal.sign()).round()
         var is_decal = current_mat is DecalMat and not current_mat is ModelMat
         var is_model = current_mat is ModelMat
-        for voxel in (
+        
+        var to_iter = []
+        if hit_mode == 0:
+            to_iter = (
                 $Voxels.voxels.keys() +
                 ($Voxels.models.keys() if is_model else []) +
                 ($Voxels.decals.keys() if is_decal else [])
-            ):
+            )
+        elif hit_mode == 1:
+            to_iter = $Voxels.voxels.keys() + $Voxels.models.keys() + $Voxels.decals.keys()
+        
+        for voxel in to_iter:
             var offset = voxel.round() + Vector3.ONE - Vector3.ONE
             if ray_point_distance_squared(ray_origin, ray_normal, offset) > 2.0*2.0:
                 continue
@@ -712,7 +814,8 @@ func handle_voxel_input():
     var collision_normal = null
     
     var start = OS.get_ticks_usec()
-    var collision_data = raycast_voxels(cast_start, cast_normal * 100.0)
+    var mode = 1 if input_pick_mode else 0
+    var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, mode)
     var end = OS.get_ticks_usec()
     
     var time = (end-start)/1000000.0
