@@ -18,12 +18,25 @@ static func make_mat(decalmat):
 
 var image = null
 var tex = null
-func set_mat(_image):
-    image = _image
-    tex = ImageTexture.new()
-    tex.create_from_image(image, 0)
-    $UI/Images/Texture.texture = tex
-    $UI/DecalTypePreview.tex = tex
+func set_mat(image):
+    if image is Image:
+        tex = ImageTexture.new()
+        tex.create_from_image(image, 0)
+        $UI/Images/Texture.texture = tex
+        $UI/DecalTypePreview.tex = tex
+    elif image is Texture:
+        tex = ImageTexture.new()
+        tex.create_from_image(image.get_data(), 0)
+        $UI/Images/Texture.texture = tex
+        $UI/DecalTypePreview.tex = tex
+    else:
+        print("?????")
+
+func set_grid_size(vec : Vector2):
+    $UI/DecalTypePreview.set_grid_size(vec)
+
+func set_icon_coord(vec : Vector2):
+    $UI/DecalTypePreview.icon_coord = vec
 
 signal done
 func done():

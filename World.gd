@@ -3,7 +3,6 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - modifying existing materials
 # - undo/redo
 # - save gltf (need to port to godot 4)
 # - show controls on a fade-out text overlay on boot
@@ -133,7 +132,40 @@ func get_default_voxmat():
 var current_mat = mats[0]
 
 func set_current_mat(new_current):
-    current_mat = new_current 
+    current_mat = new_current
+
+func modify_mat(mat):
+    if mat is VoxMat:
+        var matconf = preload("res://MatConfig.tscn").instance()
+        matconf.set_side(mat.sides)
+        matconf.set_top(mat.top)
+        add_child(matconf)
+        
+        var new_mat = yield(matconf, "done")
+        if new_mat:
+            mat.sides = new_mat[0]
+            mat.top = new_mat[1]
+    
+    elif mat is DecalMat:
+        var config = preload("res://DecalConfig.tscn").instance()
+        config.set_mat(mat.tex)
+        config.set_icon_coord(mat.icon_coord)
+        config.set_grid_size(mat.grid_size)
+        add_child(config)
+        
+        var info = yield(config, "done")
+        if info:
+            var new_mat = info[0]
+            var grid_size = info[1]
+            var icon_coord = info[2]
+            
+            mat.tex = new_mat
+            mat.grid_size = grid_size
+            mat.icon_coord = icon_coord
+            mat.current_coord = icon_coord
+    
+    rebuild_mat_buttons()
+    $Voxels.full_remesh()
 
 func _on_files_dropped(files, _screen):
     var fname : String = files[0]
@@ -149,7 +181,9 @@ func _on_files_dropped(files, _screen):
         existant[0].set_top(image)
         return
     
-    if get_tree().get_nodes_in_group("DecalConfig").size() > 0:
+    existant = get_tree().get_nodes_in_group("DecalConfig")
+    if existant.size() > 0:
+        existant[0].set_mat(image)
         return
     
     var picker = preload("res://MaterialModePicker.tscn").instance()
@@ -268,15 +302,15 @@ func _ready():
     $ButtonGrid.add_item("Grid When Drawing", 2)
     
     for vox in [
-            [Vector3( 0, 0,  0), get_default_voxmat()],
-            [Vector3( 1, 0,  0), get_default_voxmat()],
-            [Vector3( 1, 0,  1), get_default_voxmat()],
-            [Vector3( 0, 0,  1), get_default_voxmat()],
-            [Vector3(-1, 0,  0), get_default_voxmat()],
-            [Vector3(-1, 0, -1), get_default_voxmat()],
-            [Vector3( 0, 0, -1), get_default_voxmat()],
-            [Vector3(-1, 0,  1), get_default_voxmat()],
-            [Vector3( 1, 0, -1), get_default_voxmat()],
+        [Vector3( 0, 0,  0), get_default_voxmat()],
+        [Vector3( 1, 0,  0), get_default_voxmat()],
+        [Vector3( 1, 0,  1), get_default_voxmat()],
+        [Vector3( 0, 0,  1), get_default_voxmat()],
+        [Vector3(-1, 0,  0), get_default_voxmat()],
+        [Vector3(-1, 0, -1), get_default_voxmat()],
+        [Vector3( 0, 0, -1), get_default_voxmat()],
+        [Vector3(-1, 0,  1), get_default_voxmat()],
+        [Vector3( 1, 0, -1), get_default_voxmat()],
         ]:
         $Voxels.place_voxel(vox[0], vox[1])
     
@@ -608,7 +642,7 @@ func _unhandled_input(_event):
         
         var event : InputEventMouseButton = _event
         if $ButtonPerspective.selected == 2:
-            var dir = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD) 
+            var dir = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD)
             if event.button_index == 4:
                 $CameraHolder.global_transform.origin += dir
             if event.button_index == 5:

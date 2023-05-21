@@ -25,6 +25,11 @@ func _input(_event):
             if pos == old_pos:
                 icon_coord = pos
 
+func set_grid_size(vec : Vector2):
+    grid_size = vec
+    $"../Images/Config/XSize".value = grid_size.x
+    $"../Images/Config/YSize".value = grid_size.y
+
 func _process(delta):
     tex_size = tex.get_size()
     rect = get_rect()
@@ -56,6 +61,9 @@ func _process(delta):
     grid_size.y = min(grid_size.y, tex_size.y)
     
     tile_count = (tex_size/grid_size).floor()
+    
+    icon_coord.x = clamp(icon_coord.x, 0, tile_count.x-1)
+    icon_coord.y = clamp(icon_coord.y, 0, tile_count.y-1)
     
     update()
 

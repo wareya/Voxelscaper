@@ -11,27 +11,39 @@ static func make_mat(tex):
 var side = null
 var side_mat : SpatialMaterial = null
 func set_side(image):
-    side = image
-    var tex = ImageTexture.new()
-    tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-    $UI/Images/SideI.texture = tex
-    
-    side_mat = make_mat(tex)
+    if image is Image:
+        side = image
+        var tex = ImageTexture.new()
+        tex.create_from_image(image, 0)
+        $UI/Images/SideI.texture = tex
+        side_mat = make_mat(tex.duplicate())
+    elif image is Texture:
+        var tex = ImageTexture.new()
+        tex.create_from_image(image.get_data(), 0)
+        $UI/Images/SideI.texture = tex
+        side = $UI/Images/SideI.texture.get_data()
+        side_mat = make_mat(image)
 
 var top = null
 var top_mat : SpatialMaterial = null
 func set_top(image):
     $UI/Images/TopL.text = "Top:"
     
-    top = image
-    var tex = ImageTexture.new()
-    tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-    $UI/Images/TopI.texture = tex
-    
     $UI/Images/Swap.visible = true
     $UI/Images/Done.visible = true
     
-    top_mat = make_mat(tex)
+    if image is Image:
+        top = image
+        var tex = ImageTexture.new()
+        tex.create_from_image(image, 0)
+        $UI/Images/TopI.texture = tex
+        top_mat = make_mat(tex.duplicate())
+    elif image is Texture:
+        var tex = ImageTexture.new()
+        tex.create_from_image(image.get_data(), 0)
+        $UI/Images/TopI.texture = tex
+        top = $UI/Images/TopI.texture.get_data()
+        top_mat = make_mat(image)
 
 signal done
 func done():
@@ -51,8 +63,9 @@ func swap():
     $UI/Images/SideI.texture = $UI/Images/TopI.texture
     $UI/Images/TopI.texture = temp
     
-    side_mat.albedo_texture = $UI/Images/SideI.texture
-    top_mat.albedo_texture = $UI/Images/TopI.texture
+    temp = side_mat.albedo_texture
+    side_mat.albedo_texture = top_mat.albedo_texture
+    top_mat.albedo_texture = temp
 
 func _ready():
     $UI/Images/Swap.connect("pressed", self, "swap")

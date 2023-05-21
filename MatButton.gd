@@ -27,6 +27,8 @@ func delete_material():
 func picked(id : int):
     if id == 0:
         delete_conf.popup_centered_ratio(0.35)
+    elif id == 1:
+        editor.modify_mat(mat)
 
 var editor = null
 func _ready():
