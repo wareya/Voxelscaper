@@ -498,7 +498,7 @@ func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners =
     voxels[position] = material
     if ramp_corners.size() > 0:
         voxel_corners[position] = ramp_corners.duplicate(true)
-    if voxel_corners.has(position):
+    elif voxel_corners.has(position):
         voxel_corners.erase(position)
     is_dirty = true
     

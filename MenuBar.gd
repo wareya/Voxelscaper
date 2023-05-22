@@ -27,6 +27,8 @@ func pressed(id : int, which : PopupMenu):
         on = !on
         which.set_item_checked(idx, on)
         editor.control_swap = on
+    elif which == $Controls.get_popup() and id == 1:
+        editor.show_controls()
     
     if which == $Edit.get_popup() and id == 0:
         editor.perform_undo()
@@ -54,5 +56,6 @@ func _ready():
     
     var controls_popup : PopupMenu = $Controls.get_popup()
     controls_popup.hide_on_checkable_item_selection = false
-    controls_popup.add_check_item("Swap left/right click (MC style)", 0)
+    controls_popup.add_check_item("Swap Left/Right Click (MC Style)", 0)
+    controls_popup.add_item("Show Controls", 1)
     controls_popup.connect("index_pressed", self, "pressed", [controls_popup])

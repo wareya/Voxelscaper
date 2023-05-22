@@ -4,7 +4,6 @@ class_name VoxEditor
 
 ### TODO LIST
 # - save gltf (need to port to godot 4)
-# - show controls on a fade-out text overlay on boot
 
 ### long-term TODO list
 # - material transparency modes (none, binary, transparent)
@@ -826,12 +825,20 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int =
         ray_origin += ray_normal
     return null
 
-# Called every frame. 'delta' is the elapsed time since the previous frame.
+func show_controls():
+    $ControlsExplanation.modulate.a = 1.0
+
 func _process(delta):
     #print(face_ray_intersection(Vector3(), Vector3(1, 0, 0), Vector3(1, 0, 0), Vector3(-2, 0, 0)))
     if Engine.editor_hint:
         return
     update_camera()
+    
+    var mod_speed = 0.1
+    if Input.is_mouse_button_pressed(1) or Input.is_mouse_button_pressed(2) or Input.is_mouse_button_pressed(3):
+        mod_speed = 1.0
+    
+    $ControlsExplanation.modulate.a = move_toward($ControlsExplanation.modulate.a, 0.0, delta*mod_speed)
     
     if $ButtonPerspective.selected == 2:
         var forwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD)
