@@ -2,9 +2,6 @@
 extends Node3D
 class_name VoxEditor
 
-### TODO LIST
-# - save gltf (need to port to godot 4)
-
 ### nice-to-have list
 # - remember VoxMat properties when editing
 # - deform tool (modifying existing geometry vertex offsets)
@@ -282,12 +279,42 @@ func save_map_resource():
     dialog.unresizable = false
     dialog.access = FileDialog.ACCESS_FILESYSTEM
     dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
-    dialog.add_filter("*.tres ; Godot Resource Files")
+    dialog.add_filter("*.tres ; Godot Resource File")
     dialog.current_file = "voxel_mesh.tres"
     add_child(dialog)
     dialog.popup_centered_ratio(0.5)
     
     dialog.connect("file_selected", Callable(self, "save_world_as_resource"))
+    await dialog.visibility_changed
+    dialog.queue_free()
+
+func save_world_as_gltf(fname):
+    #var m : Mesh = $Voxels.mesh.duplicate(true)
+    var state = GLTFState.new()
+    state.create_animations = false
+    var gltf = GLTFDocument.new()
+    gltf.append_from_scene($Voxels, state)
+    gltf.write_to_filesystem(state, fname)
+    #for i in m.get_surface_count():
+    #    var mat : StandardMaterial3D = m.surface_get_material(i).duplicate(true)
+    #    var stex : Texture2D = mat.albedo_texture.duplicate(true)
+    #    var img = stex.get_image()
+    #    var tex = ImageTexture.create_from_image(img)
+    #    mat.albedo_texture = tex
+    #    m.surface_set_material(i, mat)
+    #var _e = ResourceSaver.save(m, fname)
+
+func save_map_gltf():
+    var dialog = FileDialog.new()
+    dialog.unresizable = false
+    dialog.access = FileDialog.ACCESS_FILESYSTEM
+    dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
+    dialog.add_filter("*.glb ; Binary GLTF 2.0 File")
+    dialog.current_file = "voxel_mesh.glb"
+    add_child(dialog)
+    dialog.popup_centered_ratio(0.5)
+    
+    dialog.connect("file_selected", save_world_as_gltf)
     await dialog.visibility_changed
     dialog.queue_free()
 
@@ -348,6 +375,7 @@ func _ready():
     $MenuBar.connect("file_save", Callable(self, "default_save"))
     $MenuBar.connect("file_save_as", Callable(self, "save_map"))
     $MenuBar.connect("file_export_resource", Callable(self, "save_map_resource"))
+    $MenuBar.connect("file_export_gltf", Callable(self, "save_map_gltf"))
     $MenuBar.connect("file_open", Callable(self, "open_map"))
     
     $Mat2dOrientation.add_item("0 deg", 0)

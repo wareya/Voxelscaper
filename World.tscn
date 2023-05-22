@@ -1,4 +1,4 @@
-[gd_scene load_steps=31 format=3 uid="uid://d3g1asoupvk7r"]
+[gd_scene load_steps=28 format=3 uid="uid://d3g1asoupvk7r"]
 
 [ext_resource type="PackedScene" path="res://Voxels.tscn" id="1"]
 [ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="3_nptgm"]
@@ -16,7 +16,6 @@
 [ext_resource type="Script" path="res://Mat2dOrientation.gd" id="13"]
 [ext_resource type="Script" path="res://ModelOffset.gd" id="14"]
 [ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="15"]
-[ext_resource type="Texture2D" uid="uid://duo7pr8ld2d67" path="res://icon.png" id="17_bmg3h"]
 
 [sub_resource type="Environment" id="3"]
 background_mode = 1
@@ -155,18 +154,6 @@ line_spacing = 0.0
 font = ExtResource("10_2dnov")
 font_size = 12
 outline_color = Color(0, 0, 0, 1)
-
-[sub_resource type="Shader" id="Shader_csv52"]
-code = "shader_type canvas_item;
-
-void fragment()
-{
-    COLOR.rgb = vec3(0.5, 0.5, 0.5);
-    COLOR.a = 2.0;
-}"
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_5xiyy"]
-shader = SubResource("Shader_csv52")
 
 [node name="World" type="Node3D" groups=["VoxEditor"]]
 script = ExtResource("5")
@@ -771,12 +758,3 @@ patch_margin_left = 32
 patch_margin_top = 32
 patch_margin_right = 32
 patch_margin_bottom = 32
-
-[node name="Icon" type="Sprite2D" parent="."]
-position = Vector2(-311, 25)
-texture = ExtResource("17_bmg3h")
-
-[node name="ColorRect" type="ColorRect" parent="Icon"]
-material = SubResource("ShaderMaterial_5xiyy")
-offset_right = 40.0
-offset_bottom = 40.0
