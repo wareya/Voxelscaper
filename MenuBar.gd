@@ -27,6 +27,11 @@ func pressed(id : int, which : PopupMenu):
         on = !on
         which.set_item_checked(idx, on)
         editor.control_swap = on
+    
+    if which == $Edit.get_popup() and id == 0:
+        editor.perform_undo()
+    elif which == $Edit.get_popup() and id == 1:
+        editor.perform_redo()
 
 onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
@@ -40,7 +45,12 @@ func _ready():
     file_popup.set_item_accelerator(file_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_S)
     file_popup.set_item_accelerator(file_popup.get_item_index(2), KEY_MASK_CTRL | KEY_O)
     
-    var edit_popup = null
+    var edit_popup : PopupMenu = $Edit.get_popup()
+    edit_popup.add_item("Undo", 0)
+    edit_popup.add_item("Redo", 1)
+    edit_popup.connect("index_pressed", self, "pressed", [edit_popup])
+    edit_popup.set_item_accelerator(edit_popup.get_item_index(0), KEY_MASK_CTRL | KEY_Z)
+    edit_popup.set_item_accelerator(edit_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_Z)
     
     var controls_popup : PopupMenu = $Controls.get_popup()
     controls_popup.hide_on_checkable_item_selection = false

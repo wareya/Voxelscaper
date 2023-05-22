@@ -3,7 +3,6 @@ extends Spatial
 class_name VoxEditor
 
 ### TODO LIST
-# - undo/redo
 # - save gltf (need to port to godot 4)
 # - show controls on a fade-out text overlay on boot
 
@@ -267,6 +266,11 @@ func save_world_as_resource(fname):
         m.surface_set_material(i, mat)
     var _e = ResourceSaver.save(fname, m)
 
+func perform_undo():
+    $Voxels.perform_undo()
+func perform_redo():
+    $Voxels.perform_redo()
+
 func _ready():
     if Engine.editor_hint:
         return
@@ -518,6 +522,8 @@ func do_pick_vert_warp():
             else:
                 $VertEditPanel.set_overrides({})
 
+var must_end_operation = false
+
 var lock_mode = 0
 var input_pick_mode = false
 signal hide_menus
@@ -547,11 +553,13 @@ func _unhandled_input(_event):
         input_pick_mode = false
         if Input.is_action_just_pressed(main):
             draw_mode = true
+            $Voxels.start_operation()
         elif !Input.is_action_pressed(main):
             draw_mode = false
         
         if Input.is_action_just_pressed(sub):
             erase_mode = true
+            $Voxels.start_operation()
         elif !Input.is_action_pressed(sub):
             erase_mode = false
     
@@ -871,6 +879,9 @@ func _process(delta):
         current_mat.current_coord = $Mat2dTilePicker.icon_coord
     
     handle_voxel_input()
+    
+    if $Voxels.operation_active and !draw_mode and !erase_mode:
+        $Voxels.end_operation()
 
 func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()

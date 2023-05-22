@@ -17,6 +17,107 @@ onready var models = {}
 onready var voxel_corners = {
 }
 
+func dict_left(a : Dictionary, b : Dictionary) -> Dictionary:
+    var ret = {}
+    for key in a:
+        if not key in b:
+            ret[key] = a[key]
+    return ret
+
+func dict_right(a : Dictionary, b : Dictionary) -> Dictionary:
+    return dict_left(b, a)
+
+func dict_diff(a : Dictionary, b : Dictionary) -> Dictionary:
+    var ret = {}
+    for key in a.keys() + b.keys():
+        if a.get(key) != b.get(key):
+            ret[key] = [a.get(key), b.get(key)]
+    return ret
+
+func apply_diff_right(a : Dictionary, diff : Dictionary):
+    for key in diff:
+        var new = diff[key][1]
+        if new == null and key in a:
+            a.erase(key)
+        else:
+            a[key] = new
+
+func apply_diff_left(a : Dictionary, diff : Dictionary):
+    for key in diff:
+        var old = diff[key][0]
+        if old == null and key in a:
+            a.erase(key)
+        else:
+            a[key] = old
+
+var undo_buffer = []
+var redo_buffer = []
+
+func perform_undo():
+    if undo_buffer.size() == 0:
+        return
+    
+    var info = undo_buffer.pop_back()
+    
+    if "voxels" in info:
+        apply_diff_left(voxels, info.voxels)
+    if "decals" in info:
+        apply_diff_left(decals, info.decals)
+    if "models" in info:
+        apply_diff_left(models, info.models)
+    
+    redo_buffer.push_back(info)
+    full_remesh()
+
+func perform_redo():
+    if redo_buffer.size() == 0:
+        return
+    
+    var info = redo_buffer.pop_back()
+    
+    if "voxels" in info:
+        apply_diff_right(voxels, info.voxels)
+    if "decals" in info:
+        apply_diff_right(decals, info.decals)
+    if "models" in info:
+        apply_diff_right(models, info.models)
+    
+    undo_buffer.push_back(info)
+    full_remesh()
+
+var temp_world = {}
+var operation_active = false
+func start_operation():
+    temp_world["voxels"] = voxels.duplicate(false)
+    temp_world["decals"] = decals.duplicate(false)
+    temp_world["models"] = models.duplicate(false)
+    operation_active = true
+
+func end_operation():
+    if !operation_active:
+        return
+    
+    var changed = {}
+    
+    var diff = dict_diff(temp_world.voxels, voxels)
+    if diff.size() > 0:
+        changed["voxels"] = diff
+    
+    diff = dict_diff(temp_world.decals, decals)
+    if diff.size() > 0:
+        changed["decals"] = diff
+    
+    diff = dict_diff(temp_world.models, models)
+    if diff.size() > 0:
+        changed["models"] = diff
+    
+    if changed.size() > 0:
+        undo_buffer.push_back(changed)
+        redo_buffer = []
+    
+    temp_world = {}
+    operation_active = false
+
 func serialize() -> Dictionary:
     var mats = {}
     var save_mats = {}
@@ -358,6 +459,7 @@ func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMa
     if not position in decals:
         decals[position] = {}
     
+    decals[position] = decals[position].duplicate(false)
     decals[position][dir] = [material, material.current_coord, scale_id%8]
     is_dirty = true
 
