@@ -65,6 +65,8 @@ func perform_undo():
         apply_diff_left(decals, info.decals)
     if "models" in info:
         apply_diff_left(models, info.models)
+    if "voxel_corners" in info:
+        apply_diff_left(voxel_corners, info.voxel_corners)
     
     redo_buffer.push_back(info)
     full_remesh()
@@ -81,6 +83,8 @@ func perform_redo():
         apply_diff_right(decals, info.decals)
     if "models" in info:
         apply_diff_right(models, info.models)
+    if "voxel_corners" in info:
+        apply_diff_right(voxel_corners, info.voxel_corners)
     
     undo_buffer.push_back(info)
     full_remesh()
@@ -91,6 +95,7 @@ func start_operation():
     temp_world["voxels"] = voxels.duplicate(false)
     temp_world["decals"] = decals.duplicate(false)
     temp_world["models"] = models.duplicate(false)
+    temp_world["voxel_corners"] = voxel_corners.duplicate(false)
     operation_active = true
 
 func end_operation():
@@ -110,6 +115,10 @@ func end_operation():
     diff = dict_diff(temp_world.models, models)
     if diff.size() > 0:
         changed["models"] = diff
+    
+    diff = dict_diff(temp_world.voxel_corners, voxel_corners)
+    if diff.size() > 0:
+        changed["voxel_corners"] = diff
     
     if changed.size() > 0:
         undo_buffer.push_back(changed)
@@ -485,9 +494,12 @@ func erase_model(position : Vector3):
     is_dirty = true
 
 func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = []):
-    voxels[position.round()] = material
+    position = position.round()
+    voxels[position] = material
     if ramp_corners.size() > 0:
-        voxel_corners[position.round()] = ramp_corners.duplicate(true)
+        voxel_corners[position] = ramp_corners.duplicate(true)
+    if voxel_corners.has(position):
+        voxel_corners.erase(position)
     is_dirty = true
     
     dirtify_bitmask(position)

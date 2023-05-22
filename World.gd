@@ -6,6 +6,7 @@ class_name VoxEditor
 # - save gltf (need to port to godot 4)
 # - show controls on a fade-out text overlay on boot
 
+### long-term TODO list
 # - material transparency modes (none, binary, transparent)
 # - deform tool (modifying existing geometry vertex offsets)
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
