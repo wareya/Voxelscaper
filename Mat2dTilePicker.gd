@@ -5,14 +5,17 @@ var rect = Rect2(Vector2(), Vector2(1, 1))
 var new_rect = Rect2(Vector2(), Vector2(1, 1))
 var tile_count = Vector2(1, 1)
 
-var tex : Texture = null
+var tex : Texture2D = null
 var grid_size = Vector2(16, 16)
 var icon_coord = Vector2(0, 0)
 
 var next_coord = null
 
-var scale = 1.0
+var my_scale = 1.0
 var offset = Vector2()
+
+func _init():
+    texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
 
 func _input(_event):
     if !visible:
@@ -25,7 +28,7 @@ func _input(_event):
     
     if _event is InputEventMouseButton:
         var event : InputEventMouseButton = _event
-        if event.button_index == 1 and event.pressed:
+        if event.button_index == 1 and event.is_pressed():
             var pos : Vector2 = get_local_mouse_position()
             pos -= new_rect.position
             pos /= new_rect.size
@@ -38,15 +41,17 @@ func _input(_event):
             if pos == old_pos:
                 next_coord = pos
         
-        elif event.button_index == 5 and event.pressed:
-            scale /= sqrt(sqrt(2.0))
-        elif event.button_index == 4 and event.pressed:
-            scale *= sqrt(sqrt(2.0))
+        elif event.button_index == 5 and event.is_pressed():
+            my_scale /= sqrt(sqrt(2.0))
+            get_tree().get_root().set_input_as_handled()
+        elif event.button_index == 4 and event.is_pressed():
+            my_scale *= sqrt(sqrt(2.0))
+            get_tree().get_root().set_input_as_handled()
     
     if _event is InputEventMouseMotion:
         var event : InputEventMouseMotion = _event
-        if event.button_mask & BUTTON_MASK_MIDDLE:
-            offset += event.relative / scale
+        if event.button_mask & MOUSE_BUTTON_MASK_MIDDLE:
+            offset += event.relative / my_scale
 
 func think():
     tex_size = tex.get_size()
@@ -74,12 +79,12 @@ func think():
     
     var unscaled_rect = new_rect
     
-    new_rect.size *= scale
+    new_rect.size *= my_scale
     
-    new_rect.position += offset*scale
+    new_rect.position += offset*my_scale
     
     new_rect.position += (rect.size/2.0 - unscaled_rect.position)
-    new_rect.position -= (rect.size/2.0 - unscaled_rect.position)*scale
+    new_rect.position -= (rect.size/2.0 - unscaled_rect.position)*my_scale
     
     grid_size.x = min(grid_size.x, tex_size.x)
     grid_size.y = min(grid_size.y, tex_size.y)
@@ -90,18 +95,17 @@ func think():
         icon_coord = next_coord
         next_coord = null
     
-    update()
+    queue_redraw()
 
 var prev_tex = null
 var nonlinear_tex = null
 
 func _draw():
     if prev_tex != tex:
-        var image = tex.get_data()
-        nonlinear_tex = ImageTexture.new()
-        nonlinear_tex.create_from_image(image, 0)
+        var image = tex.get_image()
+        nonlinear_tex = ImageTexture.create_from_image(image)
         prev_tex = tex
-        scale = 1.0
+        my_scale = 1.0
         offset = Vector2()
     
     if nonlinear_tex:

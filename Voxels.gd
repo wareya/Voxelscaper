@@ -1,5 +1,5 @@
-tool
-extends MeshInstance
+@tool
+extends MeshInstance3D
 
 func vec_to_array(vec : Vector3) -> Array:
     return [vec.x, vec.y, vec.z]
@@ -7,9 +7,9 @@ func vec_to_array(vec : Vector3) -> Array:
 func array_to_vec(array : Array) -> Vector3:
     return Vector3(array[0], array[1], array[2])
 
-onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
+@onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 
-onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
+@onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
 func occluding_voxel_exists(position, source_mat):
     if position in voxels:
@@ -21,10 +21,10 @@ func occluding_voxel_exists(position, source_mat):
             return true
     return false
 
-onready var decals = {}
-onready var models = {}
+@onready var decals = {}
+@onready var models = {}
 
-onready var voxel_corners = {
+@onready var voxel_corners = {
 }
 
 func clear():
@@ -287,17 +287,17 @@ func _process(_delta):
     if is_dirty:
         is_dirty = false
         
-        var start = OS.get_ticks_usec()
+        var start = Time.get_ticks_usec()
         refresh_surface_mapping()
-        var end = OS.get_ticks_usec()
+        var end = Time.get_ticks_usec()
         
         var time = (end-start)/1000000.0
         if time > 0.1:
             print("refresh time: ", time)
         
-        start = OS.get_ticks_usec()
+        start = Time.get_ticks_usec()
         remesh()
-        end = OS.get_ticks_usec()
+        end = Time.get_ticks_usec()
         
         time = (end-start)/1000000.0
         if time > 0.1:
@@ -378,9 +378,9 @@ var uv_shrink = 0.99
 
 func transform_point_on_cube(vert : Vector3, dir : Vector3) -> Vector3:
     if dir == Vector3.UP or dir == Vector3.DOWN:
-        return Transform.IDENTITY.looking_at(dir, Vector3.FORWARD).xform(vert)
+        return Transform3D.IDENTITY.looking_at(dir, Vector3.FORWARD) * (vert)
     else:
-        return Transform.IDENTITY.looking_at(dir, Vector3.UP).xform(vert)
+        return Transform3D.IDENTITY.looking_at(dir, Vector3.UP) * (vert)
 
 func transform_2d_point_on_cube(vert : Vector2, dir : Vector3) -> Vector3:
     return transform_point_on_cube(Vector3(-vert.x, -vert.y, 0.0), dir)
@@ -398,18 +398,30 @@ var dir_verts = build_verts()
 
 const bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
+
+const BIND_TOPLEFT = 1
+const BIND_TOP = 2
+const BIND_TOPRIGHT = 4
+const BIND_LEFT = 8
+const BIND_CENTER = 16
+const BIND_RIGHT = 32
+const BIND_BOTTOMLEFT = 64
+const BIND_BOTTOM = 128
+const BIND_BOTTOMRIGHT = 256
+
+
 var bitmask_dirs = {
-    TileSet.BIND_TOPLEFT     : Vector2(-1, -1),
-    TileSet.BIND_LEFT        : Vector2(-1,  0),
-    TileSet.BIND_BOTTOMLEFT  : Vector2(-1,  1),
+    BIND_TOPLEFT     : Vector2(-1, -1),
+    BIND_LEFT        : Vector2(-1,  0),
+    BIND_BOTTOMLEFT  : Vector2(-1,  1),
     
-    TileSet.BIND_TOP         : Vector2( 0, -1),
-    TileSet.BIND_CENTER      : Vector2( 0,  0),
-    TileSet.BIND_BOTTOM      : Vector2( 0,  1),
+    BIND_TOP         : Vector2( 0, -1),
+    BIND_CENTER      : Vector2( 0,  0),
+    BIND_BOTTOM      : Vector2( 0,  1),
     
-    TileSet.BIND_TOPRIGHT    : Vector2( 1, -1),
-    TileSet.BIND_RIGHT       : Vector2( 1,  0),
-    TileSet.BIND_BOTTOMRIGHT : Vector2( 1,  1),
+    BIND_TOPRIGHT    : Vector2( 1, -1),
+    BIND_RIGHT       : Vector2( 1,  0),
+    BIND_BOTTOMRIGHT : Vector2( 1,  1),
 }
 
 func generate_bitmask_dirs_by_dir():
@@ -426,13 +438,13 @@ var bitmask_dirs_by_dir = generate_bitmask_dirs_by_dir()
 func get_bitmask_bit(tile : Vector2, which : int, pool : Array):
     var bit = tile * 3
     var stride = pool.size() / 3 / 3 / 4
-    if which == TileSet.BIND_BOTTOM or which == TileSet.BIND_BOTTOMLEFT or which == TileSet.BIND_BOTTOMRIGHT:
+    if which == BIND_BOTTOM or which == BIND_BOTTOMLEFT or which == BIND_BOTTOMRIGHT:
         bit.y += 2
-    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_LEFT or which == TileSet.BIND_RIGHT:
+    elif which == BIND_CENTER or which == BIND_LEFT or which == BIND_RIGHT:
         bit.y += 1
-    if which == TileSet.BIND_RIGHT or which == TileSet.BIND_BOTTOMRIGHT or which == TileSet.BIND_TOPRIGHT:
+    if which == BIND_RIGHT or which == BIND_BOTTOMRIGHT or which == BIND_TOPRIGHT:
         bit.x += 2
-    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_BOTTOM or which == TileSet.BIND_TOP:
+    elif which == BIND_CENTER or which == BIND_BOTTOM or which == BIND_TOP:
         bit.x += 1
     return pool[bit.x + bit.y*stride*3]
 
@@ -675,16 +687,17 @@ func add_decals(mesh):
         var tex_size = texture.get_size()
         var grid_size = mat.grid_size
         
-        var material = SpatialMaterial.new()
+        var material = StandardMaterial3D.new()
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
         material.roughness = 1.0
-        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
+        material.diffuse_mode = StandardMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         material.params_use_alpha_scissor = true
         
-        var verts = PoolVector3Array()
-        var tex_uvs = PoolVector2Array()
-        var normals = PoolVector3Array()
-        var indexes = PoolIntArray()
+        var verts = PackedVector3Array()
+        var tex_uvs = PackedVector2Array()
+        var normals = PackedVector3Array()
+        var indexes = PackedInt32Array()
         
         for decal in decals_by_mat[mat]:
             var pos = decal[0]
@@ -704,7 +717,7 @@ func add_decals(mesh):
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
             
             for i in range(uvs.size()):
-                uvs[i] = uv_xform.xform(uvs[i])
+                uvs[i] = uv_xform * (uvs[i])
                 uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
                 uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
                 uvs[i].y = 1.0-uvs[i].y
@@ -805,17 +818,18 @@ func add_models(mesh):
         var tex_size = texture.get_size()
         var grid_size = mat.grid_size
         
-        var material = SpatialMaterial.new()
+        var material = StandardMaterial3D.new()
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
         material.roughness = 1.0
-        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
+        material.diffuse_mode = StandardMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         material.params_use_alpha_scissor = true
-        material.params_cull_mode = SpatialMaterial.CULL_DISABLED
+        material.params_cull_mode = StandardMaterial3D.CULL_DISABLED
         
-        var verts = PoolVector3Array()
-        var tex_uvs = PoolVector2Array()
-        var normals = PoolVector3Array()
-        var indexes = PoolIntArray()
+        var verts = PackedVector3Array()
+        var tex_uvs = PackedVector2Array()
+        var normals = PackedVector3Array()
+        var indexes = PackedInt32Array()
         
         for model in models_by_mat[mat]:
             var pos = model
@@ -836,7 +850,7 @@ func add_models(mesh):
             
             var pure_offset = Vector3()
             var normal = Vector3.UP
-            var tangent = Vector3.FORWARD
+            var orthogonal = Vector3.FORWARD
             if (floor_mode == 1 or floor_mode == 2) and vox_corners.size() > 0:
                 var corners = top_corners.duplicate()
                 for i in 4:
@@ -856,7 +870,7 @@ func add_models(mesh):
                     var dx_a : Vector3 = (tx_a + tx_b).normalized()
                     var dx_b : Vector3 = (tx_a - tx_b).normalized()
                     # diagonal of those diagonals, which will not be skew
-                    tangent = (dx_a + dx_b).normalized()
+                    orthogonal = (dx_a + dx_b).normalized()
                     # (the normalizations are responsible for this working properly)
                 
                 pure_offset = mid * 0.5 - Vector3(0, 0.5, 0)
@@ -875,14 +889,14 @@ func add_models(mesh):
             var rot_y = float((mode_id >> 9) & 7) / 4.0 * PI
             var rot_z = float((mode_id >> 12) & 7) / 4.0 * PI
             
-            var bitangent = tangent.cross(normal)
-            var rot : Transform = Transform(Basis(bitangent, normal, tangent), Vector3())
-            var rot2 : Transform = Transform(Basis(Vector3(rot_x, rot_y, rot_z)), Vector3())
-            var xform : Transform = Transform.IDENTITY
-            xform = xform * Transform(Basis.IDENTITY, Vector3(0, -0.5, 0))
+            var bitangent = orthogonal.cross(normal)
+            var rot : Transform3D = Transform3D(Basis(bitangent, normal, orthogonal), Vector3())
+            var rot2 : Transform3D = Transform3D(Basis.from_euler(Vector3(rot_x, rot_y, rot_z)), Vector3())
+            var xform : Transform3D = Transform3D.IDENTITY
+            xform = xform * Transform3D(Basis.IDENTITY, Vector3(0, -0.5, 0))
             xform = xform * rot
             xform = xform * rot2
-            xform = xform * Transform(Basis.IDENTITY, Vector3(0, 0.5, 0))
+            xform = xform * Transform3D(Basis.IDENTITY, Vector3(0, 0.5, 0))
             
             var stuff = model_get_verts_etc(mode_id)
             
@@ -945,9 +959,10 @@ func add_voxels(mesh):
         if info[2].size() > 1:
             print(mat.tiling_mode)
         
-        var material = SpatialMaterial.new()
+        var material = StandardMaterial3D.new()
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
         material.roughness = 1.0
-        material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
+        material.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         
         var inner_faces = false
@@ -958,16 +973,16 @@ func add_voxels(mesh):
             material.flags_transparent = true
             inner_faces = mat.transparent_inner_face_mode != 0
         
-        var verts = PoolVector3Array()
-        var tex_uvs = PoolVector2Array()
-        var normals = PoolVector3Array()
-        var indexes = PoolIntArray()
+        var verts = PackedVector3Array()
+        var tex_uvs = PackedVector2Array()
+        var normals = PackedVector3Array()
+        var indexes = PackedInt32Array()
         
         var is_side = info[1]
         
         var list = info[2]
         
-        var start = OS.get_ticks_usec()
+        var start = Time.get_ticks_usec()
         
         for pos in list:
             var vox = voxels[pos]
@@ -1000,13 +1015,13 @@ func add_voxels(mesh):
                             bitmask &= ~bit
                         # FIXME handle floor-wall transitions better if material asks for it
                     
-                    bitmask |= TileSet.BIND_CENTER
+                    bitmask |= BIND_CENTER
                     
                     var smart_bind_sets = {
-                        TileSet.BIND_TOPLEFT     : TileSet.BIND_TOP    | TileSet.BIND_LEFT,
-                        TileSet.BIND_TOPRIGHT    : TileSet.BIND_TOP    | TileSet.BIND_RIGHT,
-                        TileSet.BIND_BOTTOMLEFT  : TileSet.BIND_BOTTOM | TileSet.BIND_LEFT,
-                        TileSet.BIND_BOTTOMRIGHT : TileSet.BIND_BOTTOM | TileSet.BIND_RIGHT,
+                        BIND_TOPLEFT     : BIND_TOP    | BIND_LEFT,
+                        BIND_TOPRIGHT    : BIND_TOP    | BIND_RIGHT,
+                        BIND_BOTTOMLEFT  : BIND_BOTTOM | BIND_LEFT,
+                        BIND_BOTTOMRIGHT : BIND_BOTTOM | BIND_RIGHT,
                     }
                     for bind in smart_bind_sets.keys():
                         var other = smart_bind_sets[bind]
@@ -1028,13 +1043,13 @@ func add_voxels(mesh):
                             if bitmask in bitmask_uvs_12x4:
                                 uvs[i] += bitmask_uvs_12x4[bitmask]
                             else:
-                                uvs[i] += bitmask_uvs_12x4[TileSet.BIND_CENTER]
+                                uvs[i] += bitmask_uvs_12x4[BIND_CENTER]
                             uvs[i] = Vector2(1.0/12.0, 1/4.0) * uvs[i]
                         elif mat.tiling_mode == VoxEditor.VoxMat.TileMode.MODE_4x4:
                             if bitmask in bitmask_uvs_4x4:
                                 uvs[i] += bitmask_uvs_4x4[bitmask]
                             else:
-                                uvs[i] += bitmask_uvs_4x4[TileSet.BIND_CENTER]
+                                uvs[i] += bitmask_uvs_4x4[BIND_CENTER]
                             uvs[i] = Vector2(1.0/4.0, 1/4.0) * uvs[i]
                     
                     if not pos in uv_data_cache:
@@ -1092,7 +1107,7 @@ func add_voxels(mesh):
                 for i in order:
                     indexes.push_back(i + index_base)
         
-        var end = OS.get_ticks_usec()
+        var end = Time.get_ticks_usec()
         
         var arrays = []
         arrays.resize(Mesh.ARRAY_MAX)

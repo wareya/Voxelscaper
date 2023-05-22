@@ -1,57 +1,61 @@
-[gd_scene load_steps=6 format=2]
+[gd_scene load_steps=7 format=3 uid="uid://gr3yxfiqnx56"]
 
-[ext_resource path="res://CubePreview.gd" type="Script" id=1]
-[ext_resource path="res://Voxels.tscn" type="PackedScene" id=2]
+[ext_resource type="Script" path="res://CubePreview.gd" id="1"]
+[ext_resource type="PackedScene" path="res://Voxels.tscn" id="2"]
 
-[sub_resource type="Environment" id=1]
-ambient_light_color = Color( 0.254902, 0.254902, 0.254902, 1 )
-ambient_light_sky_contribution = 0.0
+[sub_resource type="Environment" id="Environment_3lx66"]
+ambient_light_source = 2
+ambient_light_color = Color(0.376471, 0.376471, 0.376471, 1)
 
-[sub_resource type="World" id=2]
-environment = SubResource( 1 )
+[sub_resource type="World3D" id="World3D_6w3v8"]
+environment = SubResource("Environment_3lx66")
 
-[sub_resource type="QuadMesh" id=3]
-size = Vector2( 2, 2 )
+[sub_resource type="ArrayMesh" id="ArrayMesh_wh6yi"]
 
-[node name="CubePreview" type="ViewportContainer"]
+[sub_resource type="QuadMesh" id="3"]
+size = Vector2(2, 2)
+
+[node name="CubePreview" type="SubViewportContainer"]
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 stretch = true
-script = ExtResource( 1 )
+script = ExtResource("1")
 
-[node name="Viewport" type="Viewport" parent="."]
-size = Vector2( 1024, 600 )
-own_world = true
-world = SubResource( 2 )
+[node name="SubViewport" type="SubViewport" parent="."]
+own_world_3d = true
+world_3d = SubResource("World3D_6w3v8")
 transparent_bg = true
 handle_input_locally = false
-render_target_update_mode = 3
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
 
-[node name="DirectionalLight" type="DirectionalLight" parent="Viewport"]
-transform = Transform( 0.173648, 0.852868, -0.492404, 0, 0.5, 0.866025, 0.984808, -0.150384, 0.086824, 0, 2.26911, 2.99581 )
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewport"]
+transform = Transform3D(0.173648, 0.852868, -0.492404, 0, 0.5, 0.866025, 0.984808, -0.150384, 0.086824, 0, 2.26911, 2.99581)
 
-[node name="Spatial" type="Spatial" parent="Viewport"]
-transform = Transform( 0.707107, 0.353553, -0.612372, 0, 0.866025, 0.5, 0.707107, -0.353553, 0.612372, 0, 0, 0 )
+[node name="Node3D" type="Node3D" parent="SubViewport"]
+transform = Transform3D(0.707107, 0.353553, -0.612372, 0, 0.866025, 0.5, 0.707107, -0.353553, 0.612372, 0, 0, 0)
 
-[node name="Camera" type="Camera" parent="Viewport/Spatial"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10 )
+[node name="Camera3D" type="Camera3D" parent="SubViewport/Node3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 10)
 projection = 1
 fov = 30.0
 size = 3.3
 
-[node name="Voxels" parent="Viewport" instance=ExtResource( 2 )]
+[node name="Voxels" parent="SubViewport" instance=ExtResource("2")]
+mesh = SubResource("ArrayMesh_wh6yi")
 
-[node name="SideA" type="MeshInstance" parent="Viewport"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1 )
+[node name="SideA" type="MeshInstance3D" parent="SubViewport"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)
 visible = false
-mesh = SubResource( 3 )
+mesh = SubResource("3")
 
-[node name="SideB" type="MeshInstance" parent="Viewport"]
-transform = Transform( -4.37114e-08, 1, 4.37114e-08, 0, -4.37114e-08, 1, 1, 4.37114e-08, 1.91069e-15, 0, 1, 0 )
+[node name="SideB" type="MeshInstance3D" parent="SubViewport"]
+transform = Transform3D(-4.37114e-08, 1, 4.37114e-08, 0, -4.37114e-08, 1, 1, 4.37114e-08, 1.91069e-15, 0, 1, 0)
 visible = false
-mesh = SubResource( 3 )
+mesh = SubResource("3")
 
-[node name="SideC" type="MeshInstance" parent="Viewport"]
-transform = Transform( -4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -1, 0, 0 )
+[node name="SideC" type="MeshInstance3D" parent="SubViewport"]
+transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, -1, 0, 0)
 visible = false
-mesh = SubResource( 3 )
+mesh = SubResource("3")

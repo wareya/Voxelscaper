@@ -1,38 +1,75 @@
-[gd_scene load_steps=23 format=2]
+[gd_scene load_steps=31 format=3 uid="uid://d3g1asoupvk7r"]
 
-[ext_resource path="res://Voxels.tscn" type="PackedScene" id=1]
-[ext_resource path="res://art/sfdsfgrtj.png" type="Texture" id=4]
-[ext_resource path="res://World.gd" type="Script" id=5]
-[ext_resource path="res://art/grid.png" type="Texture" id=6]
-[ext_resource path="res://VertEditPanel.gd" type="Script" id=7]
-[ext_resource path="res://font/IBMPlexSans-Medium.ttf" type="DynamicFontData" id=8]
-[ext_resource path="res://VertEditInputCatcher.gd" type="Script" id=9]
-[ext_resource path="res://art/minigrid.png" type="Texture" id=10]
-[ext_resource path="res://MenuBar.gd" type="Script" id=11]
-[ext_resource path="res://Mat2dTilePicker.gd" type="Script" id=12]
-[ext_resource path="res://Mat2dOrientation.gd" type="Script" id=13]
-[ext_resource path="res://ModelOffset.gd" type="Script" id=14]
-[ext_resource path="res://art/blob.png" type="Texture" id=15]
+[ext_resource type="PackedScene" path="res://Voxels.tscn" id="1"]
+[ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="3_nptgm"]
+[ext_resource type="Texture2D" uid="uid://c201at7q0hl40" path="res://art/sfdsfgrtj.png" id="4"]
+[ext_resource type="Texture2D" uid="uid://cohvwgn25ipik" path="res://art/sandbrick.png" id="4_shh1p"]
+[ext_resource type="Script" path="res://World.gd" id="5"]
+[ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6"]
+[ext_resource type="Script" path="res://VertEditPanel.gd" id="7"]
+[ext_resource type="FontFile" uid="uid://cfoqc4o1oy14d" path="res://font/IBMPlexSans-Medium.ttf" id="8"]
+[ext_resource type="Script" path="res://VertEditInputCatcher.gd" id="9"]
+[ext_resource type="Texture2D" uid="uid://bne6k7rae1jy3" path="res://art/minigrid.png" id="10"]
+[ext_resource type="FontFile" uid="uid://bttb8efph3i3r" path="res://font/Comme-Regular.ttf" id="10_2dnov"]
+[ext_resource type="Script" path="res://MenuBar.gd" id="11"]
+[ext_resource type="Script" path="res://Mat2dTilePicker.gd" id="12"]
+[ext_resource type="Script" path="res://Mat2dOrientation.gd" id="13"]
+[ext_resource type="Script" path="res://ModelOffset.gd" id="14"]
+[ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="15"]
+[ext_resource type="Texture2D" uid="uid://duo7pr8ld2d67" path="res://icon.png" id="17_bmg3h"]
 
-[sub_resource type="Environment" id=3]
+[sub_resource type="Environment" id="3"]
 background_mode = 1
-background_color = Color( 0.486275, 0.654902, 0.835294, 1 )
-ambient_light_color = Color( 1, 1, 1, 1 )
-ambient_light_energy = 0.1
+background_color = Color(0.486275, 0.654902, 0.835294, 1)
+ambient_light_source = 2
+ambient_light_color = Color(0.866667, 0.933333, 1, 1)
 ambient_light_sky_contribution = 0.0
+ambient_light_energy = 0.2
 
-[sub_resource type="ArrayMesh" id=28]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqc23"]
+diffuse_mode = 1
+albedo_texture = ExtResource("3_nptgm")
+texture_filter = 4
 
-[sub_resource type="SpatialMaterial" id=11]
-flags_unshaded = true
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_biqnf"]
+diffuse_mode = 1
+albedo_texture = ExtResource("4_shh1p")
+texture_filter = 4
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_ywiu2"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 24,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
+"material": SubResource("StandardMaterial3D_tqc23"),
+"primitive": 3,
+"vertex_count": 16,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
+}, {
+"aabb": AABB(-0.5, -0.5, -0.5, 1.00001, 1.00001, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 12,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
+"material": SubResource("StandardMaterial3D_biqnf"),
+"primitive": 3,
+"vertex_count": 8,
+"vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
+}]
+
+[sub_resource type="StandardMaterial3D" id="11"]
+transparency = 2
+alpha_scissor_threshold = 0.98
+alpha_antialiasing_mode = 0
+shading_mode = 0
+diffuse_mode = 2
 vertex_color_use_as_albedo = true
-params_diffuse_mode = 2
-params_billboard_mode = 2
-params_use_alpha_scissor = true
-params_alpha_scissor_threshold = 0.98
-albedo_texture = ExtResource( 4 )
+albedo_texture = ExtResource("4")
+billboard_mode = 2
 
-[sub_resource type="GDScript" id=12]
+[sub_resource type="GDScript" id="12"]
 script/source = "extends Sprite3D
 
 
@@ -46,13 +83,13 @@ func _ready():
     pass # Replace with function body.
 
 func do_cast(offset : Vector3 = Vector3()):
-    var light : DirectionalLight = get_parent().get_node(\"DirectionalLight\")
-    var cast : RayCast = RayCast.new()
+    var light : DirectionalLight3D = get_parent().get_node(\"DirectionalLight3D\")
+    var cast : RayCast3D = RayCast3D.new()
     add_child(cast)
     cast.global_transform.origin = global_transform.origin + offset
-    cast.cast_to = light.global_transform.origin - cast.global_transform.origin
-    cast.cast_to = cast.cast_to.normalized()
-    cast.cast_to *= light.directional_shadow_max_distance
+    cast.target_position = light.global_transform.origin - cast.global_transform.origin
+    cast.target_position = cast.target_position.normalized()
+    cast.target_position *= light.directional_shadow_max_distance
     cast.force_raycast_update()
     #var raw_collision_point = null
     #var collision_point = null
@@ -68,120 +105,149 @@ func _process(delta):
     for offset in offsets:
         if do_cast(offset):
             amount += 1.0/offsets.size()
-    var target_color = Color(1.00, 1.00, 1.00).linear_interpolate(Color(0.25, 0.25, 0.25), amount)
-    modulate = modulate.linear_interpolate(target_color, 1.0 - pow(0.001, delta))
+    var target_color = Color(1.00, 1.00, 1.00).lerp(Color(0.25, 0.25, 0.25), amount)
+    modulate = modulate.lerp(target_color, 1.0 - pow(0.001, delta))
     
     pass
 "
 
-[sub_resource type="SpatialMaterial" id=7]
-flags_transparent = true
-flags_unshaded = true
+[sub_resource type="StandardMaterial3D" id="7"]
+transparency = 1
+shading_mode = 0
 vertex_color_use_as_albedo = true
-albedo_color = Color( 0.168627, 0.47451, 1, 0.321569 )
+albedo_color = Color(0.168627, 0.47451, 1, 0.321569)
 
-[sub_resource type="Environment" id=19]
-ambient_light_color = Color( 0.623529, 0.623529, 0.623529, 1 )
-ambient_light_sky_contribution = 0.0
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lqnxi"]
+diffuse_mode = 1
+albedo_texture = ExtResource("3_nptgm")
+texture_filter = 4
 
-[sub_resource type="World" id=20]
-environment = SubResource( 19 )
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lp4sm"]
+diffuse_mode = 1
+albedo_texture = ExtResource("4_shh1p")
+texture_filter = 4
 
-[sub_resource type="ArrayMesh" id=29]
+[sub_resource type="ArrayMesh" id="ArrayMesh_qg7pc"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 24,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
+"material": SubResource("StandardMaterial3D_lqnxi"),
+"primitive": 3,
+"vertex_count": 16,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
+}, {
+"aabb": AABB(-0.5, -0.5, -0.5, 1.00001, 1.00001, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 12,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
+"material": SubResource("StandardMaterial3D_lp4sm"),
+"primitive": 3,
+"vertex_count": 8,
+"vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
+}]
 
-[sub_resource type="DynamicFont" id=27]
-size = 18
-use_mipmaps = true
-use_filter = true
-font_data = ExtResource( 8 )
+[sub_resource type="LabelSettings" id="LabelSettings_jl3bd"]
+line_spacing = 0.0
+font = ExtResource("10_2dnov")
+font_size = 12
+outline_color = Color(0, 0, 0, 1)
 
-[node name="World" type="Spatial" groups=["VoxEditor"]]
-script = ExtResource( 5 )
+[sub_resource type="Shader" id="Shader_csv52"]
+code = "shader_type canvas_item;
 
-[node name="DirectionalLight" type="DirectionalLight" parent="." groups=["Sun"]]
-transform = Transform( 0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5 )
+void fragment()
+{
+    COLOR.rgb = vec3(0.5, 0.5, 0.5);
+    COLOR.a = 2.0;
+}"
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_5xiyy"]
+shader = SubResource("Shader_csv52")
+
+[node name="World" type="Node3D" groups=["VoxEditor"]]
+script = ExtResource("5")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["Sun"]]
+transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5)
 shadow_enabled = true
-shadow_bias = 0.05
-directional_shadow_split_1 = 0.25
-directional_shadow_split_2 = 0.4
-directional_shadow_split_3 = 0.8
 directional_shadow_blend_splits = true
-directional_shadow_normal_bias = 0.4
-directional_shadow_bias_split_scale = 1.0
-directional_shadow_max_distance = 50.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
-environment = SubResource( 3 )
+environment = SubResource("3")
 
-[node name="CameraHolder" type="Spatial" parent="."]
-transform = Transform( 0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 1, 0 )
+[node name="CameraHolder" type="Node3D" parent="."]
+transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 1, 0)
 
-[node name="Camera" type="Camera" parent="CameraHolder"]
-transform = Transform( 1, 0, 0, 0, 1, -8.34465e-07, 0, 8.04663e-07, 1, 0, 0, 10 )
+[node name="Camera3D" type="Camera3D" parent="CameraHolder"]
+transform = Transform3D(1, 0, 0, 0, 1, -8.34465e-07, 0, 8.04663e-07, 1, 0, 0, 10)
 projection = 1
 current = true
 fov = 45.0
 size = 10.0
+far = 500.0
 
-[node name="Voxels" parent="." instance=ExtResource( 1 )]
-mesh = SubResource( 28 )
+[node name="Voxels" parent="." instance=ExtResource("1")]
+mesh = SubResource("ArrayMesh_ywiu2")
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 visible = false
-material_override = SubResource( 11 )
-generate_lightmap = false
-offset = Vector2( 0, 8 )
+material_override = SubResource("11")
+offset = Vector2(0, 8)
 pixel_size = 0.0625
 billboard = 2
 shaded = true
 double_sided = false
 alpha_cut = 1
-texture = ExtResource( 4 )
-script = SubResource( 12 )
+texture = ExtResource("4")
+script = SubResource("12")
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
-margin_left = 8.0
-margin_top = 190.0
-margin_right = 176.0
-margin_bottom = 227.0
-hint_tooltip = "Grid rendering"
+offset_left = 8.0
+offset_top = 190.0
+offset_right = 183.0
+offset_bottom = 220.0
+tooltip_text = "Grid rendering"
 
 [node name="ButtonWarp" type="OptionButton" parent="."]
-margin_left = 8.0
-margin_top = 153.0
-margin_right = 176.0
-margin_bottom = 190.0
-hint_tooltip = "Cursor alignment technique when using \"Add\" mode with \"Draw\""
+offset_left = 8.0
+offset_top = 153.0
+offset_right = 183.0
+offset_bottom = 183.0
+tooltip_text = "Cursor alignment technique when using \"Add\" mode with \"Draw\""
 
 [node name="ButtonTool" type="OptionButton" parent="."]
-margin_left = 8.0
-margin_top = 116.0
-margin_right = 176.0
-margin_bottom = 153.0
-hint_tooltip = "Drawing tool placement mode.
+offset_left = 8.0
+offset_top = 116.0
+offset_right = 183.0
+offset_bottom = 146.0
+tooltip_text = "Drawing tool placement mode.
 Place: Place a single block, like minecraft.
 Draw: Continuously draw, like an image editor.
 
 HINT: Draw mode direction follows the face you click down on to start drawing."
 
 [node name="ButtonMode" type="OptionButton" parent="."]
-margin_left = 8.0
-margin_top = 79.0
-margin_right = 176.0
-margin_bottom = 116.0
-hint_tooltip = "Drawing mode
+offset_left = 8.0
+offset_top = 79.0
+offset_right = 183.0
+offset_bottom = 109.0
+tooltip_text = "Drawing mode
 Add: Place a block on top of the surface.
 Replace: Replace the given block.
 Add (vertical only): Add but vertically aligned \"draw\" mode.
 Add (horizontal only): Add but horizontally aligned \"draw\" mode."
 
 [node name="ButtonPerspective" type="OptionButton" parent="."]
-margin_left = 8.0
-margin_top = 42.0
-margin_right = 176.0
-margin_bottom = 79.0
-hint_tooltip = "Camera perspective type.
+offset_left = 8.0
+offset_top = 42.0
+offset_right = 183.0
+offset_bottom = 72.0
+tooltip_text = "Camera3D perspective type.
 Orthographic: Like a 2d game.
 Perspective (Orbit): Like a 3d modeling app.
 Perspective (FPS): Like minecraft.
@@ -189,423 +255,492 @@ Perspective (FPS): Like minecraft.
 HINT: Middle click drag to turn. Shift middle click drag to pan/translate.
 
 HINT: Press j to toggle between orthographic preview modes/angles."
-text = "Camera"
 
-[node name="CursorBox" type="CSGBox" parent="."]
-width = 1.1
-height = 1.1
-depth = 1.1
-material = SubResource( 7 )
+[node name="CursorBox" type="CSGBox3D" parent="."]
+size = Vector3(1.1, 1.1, 1.1)
+material = SubResource("7")
 
 [node name="Grid" type="Sprite3D" parent="."]
 visible = false
 cast_shadow = 0
 pixel_size = 0.0625
-texture = ExtResource( 6 )
+texture = ExtResource("6")
 
 [node name="VertEditPanel" type="Control" parent="."]
-visible = false
+clip_contents = true
+layout_mode = 3
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -256.0
-margin_bottom = 287.0
-rect_clip_content = true
-script = ExtResource( 7 )
+offset_left = -256.0
+offset_bottom = 287.0
+grow_horizontal = 0
+script = ExtResource("7")
 
-[node name="Frame" type="ViewportContainer" parent="VertEditPanel"]
+[node name="Frame" type="SubViewportContainer" parent="VertEditPanel"]
 show_behind_parent = true
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_bottom = -31.0
+offset_bottom = -31.0
 stretch = true
 
-[node name="VertEditViewport" type="Viewport" parent="VertEditPanel/Frame"]
-size = Vector2( 256, 256 )
-own_world = true
-world = SubResource( 20 )
+[node name="VertEditViewport" type="SubViewport" parent="VertEditPanel/Frame"]
+own_world_3d = true
 handle_input_locally = false
-render_target_update_mode = 0
+size = Vector2i(256, 256)
+render_target_update_mode = 4
 
-[node name="DirectionalLight" type="DirectionalLight" parent="VertEditPanel/Frame/VertEditViewport"]
-transform = Transform( -0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581 )
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="VertEditPanel/Frame/VertEditViewport"]
+transform = Transform3D(-0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581)
 
-[node name="CameraHolder" type="Spatial" parent="VertEditPanel/Frame/VertEditViewport"]
-transform = Transform( 0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 0, 0 )
+[node name="CameraHolder" type="Node3D" parent="VertEditPanel/Frame/VertEditViewport"]
+transform = Transform3D(0.866025, -0.25, 0.433013, 0, 0.866025, 0.5, -0.5, -0.433013, 0.75, 0, 0, 0)
 
-[node name="VertEditCamera" type="Camera" parent="VertEditPanel/Frame/VertEditViewport/CameraHolder"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4 )
+[node name="VertEditCamera" type="Camera3D" parent="VertEditPanel/Frame/VertEditViewport/CameraHolder"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 4)
 fov = 35.0
 
 [node name="Grid" type="Sprite3D" parent="VertEditPanel/Frame/VertEditViewport"]
-transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.51 )
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.51)
 pixel_size = 0.0078
-texture = ExtResource( 10 )
+texture = ExtResource("10")
 
-[node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource( 1 )]
-mesh = SubResource( 29 )
+[node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("1")]
+mesh = SubResource("ArrayMesh_qg7pc")
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-script = ExtResource( 9 )
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("9")
 
 [node name="PlaneLock" type="Button" parent="VertEditPanel/Frame/VertEditViewport"]
 toggle_mode = true
-pressed = true
 text = "Plane Lock"
 
 [node name="Buttons" type="HBoxContainer" parent="VertEditPanel"]
+layout_mode = 1
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_top = -31.0
+offset_top = -30.0
+grow_horizontal = 2
+grow_vertical = 0
 
 [node name="Label" type="Label" parent="VertEditPanel/Buttons"]
-margin_right = 46.0
-margin_bottom = 31.0
+layout_mode = 2
 text = "Vertex
 Control"
-align = 1
+label_settings = SubResource("LabelSettings_jl3bd")
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Left" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 50.0
-margin_right = 77.0
-margin_bottom = 31.0
-hint_tooltip = "Rotate Left"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Rotate Left"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "↶"
+clip_text = true
 
 [node name="Right" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 81.0
-margin_right = 108.0
-margin_bottom = 31.0
-hint_tooltip = "Rotate Right"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Rotate Right"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "↷"
+clip_text = true
 
 [node name="FlipH" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 112.0
-margin_right = 139.0
-margin_bottom = 31.0
-hint_tooltip = "Flip Horizontally"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Flip Horizontally"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "↔"
+clip_text = true
 
 [node name="FlipV" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 143.0
-margin_right = 170.0
-margin_bottom = 31.0
-hint_tooltip = "Flip Vertically"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Flip Vertically"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "↕"
+clip_text = true
 
 [node name="Reset" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 174.0
-margin_right = 202.0
-margin_bottom = 31.0
-hint_tooltip = "Clear Vertex Edits"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Clear Vertex Edits"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "❌"
+clip_text = true
 
 [node name="ResetCamera" type="Button" parent="VertEditPanel/Buttons"]
-margin_left = 206.0
-margin_right = 229.0
-margin_bottom = 31.0
-hint_tooltip = "Reset Camera"
-custom_fonts/font = SubResource( 27 )
+clip_contents = true
+custom_minimum_size = Vector2(28, 4)
+layout_mode = 2
+tooltip_text = "Reset Camera3D"
+theme_override_constants/outline_size = 0
+theme_override_constants/h_separation = 0
+theme_override_fonts/font = ExtResource("8")
+theme_override_font_sizes/font_size = 16
 text = "¬"
+clip_text = true
 
 [node name="Mat2dTilePicker" type="Control" parent="."]
+clip_contents = true
+layout_mode = 3
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -256.0
-margin_bottom = 256.0
-rect_clip_content = true
-script = ExtResource( 12 )
+offset_left = -256.0
+offset_bottom = 256.0
+grow_horizontal = 0
+script = ExtResource("12")
 
 [node name="Panel" type="Panel" parent="Mat2dTilePicker"]
 show_behind_parent = true
+layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Mat2dOrientation" type="OptionButton" parent="."]
 visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -117.0
-margin_top = 256.0
-margin_right = -1.0
-margin_bottom = 280.0
-script = ExtResource( 13 )
+offset_left = -117.0
+offset_top = 256.0
+offset_right = -1.0
+offset_bottom = 280.0
+script = ExtResource("13")
 
 [node name="Label" type="Label" parent="Mat2dOrientation"]
-margin_left = -117.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -117.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Decal Orientation"
 
 [node name="ModelOffsetZ" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 496.0
-margin_right = -1.0
-margin_bottom = 520.0
+offset_left = -175.0
+offset_top = 496.0
+offset_right = -1.0
+offset_bottom = 520.0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelOffsetZ"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Offset Z"
 
 [node name="ModelOffsetY" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 472.0
-margin_right = -1.0
-margin_bottom = 496.0
+offset_left = -175.0
+offset_top = 472.0
+offset_right = -1.0
+offset_bottom = 496.0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelOffsetY"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Offset Y"
 
 [node name="ModelOffsetX" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 448.0
-margin_right = -1.0
-margin_bottom = 472.0
+offset_left = -175.0
+offset_top = 448.0
+offset_right = -1.0
+offset_bottom = 472.0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelOffsetX"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Offset X"
 
 [node name="ModelWiden" type="CheckBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 424.0
-margin_right = -1.0
-margin_bottom = 448.0
+offset_left = -175.0
+offset_top = 424.0
+offset_right = -1.0
+offset_bottom = 448.0
 
 [node name="Label" type="Label" parent="ModelWiden"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Widen"
 
 [node name="ModelRotationZ" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 400.0
-margin_right = -1.0
-margin_bottom = 424.0
+offset_left = -175.0
+offset_top = 400.0
+offset_right = -1.0
+offset_bottom = 424.0
 max_value = 7.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelRotationZ"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Roll"
 
 [node name="ModelRotationX" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 376.0
-margin_right = -1.0
-margin_bottom = 400.0
+offset_left = -175.0
+offset_top = 376.0
+offset_right = -1.0
+offset_bottom = 400.0
 max_value = 7.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelRotationX"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Pitch"
 
 [node name="ModelAdvanced" type="CheckBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 352.0
-margin_right = -1.0
-margin_bottom = 376.0
+offset_left = -175.0
+offset_top = 352.0
+offset_right = -1.0
+offset_bottom = 376.0
 
 [node name="Label" type="Label" parent="ModelAdvanced"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Advanced"
 
 [node name="ModelRotationY" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 328.0
-margin_right = -1.0
-margin_bottom = 352.0
+offset_left = -175.0
+offset_top = 328.0
+offset_right = -1.0
+offset_bottom = 352.0
 max_value = 7.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelRotationY"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Yaw"
 
 [node name="ModelSpacing" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 304.0
-margin_right = -1.0
-margin_bottom = 328.0
+offset_left = -175.0
+offset_top = 304.0
+offset_right = -1.0
+offset_bottom = 328.0
 max_value = 4.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelSpacing"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Spacing"
 
 [node name="ModelTurnCount" type="SpinBox" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 280.0
-margin_right = -1.0
-margin_bottom = 304.0
+offset_left = -175.0
+offset_top = 280.0
+offset_right = -1.0
+offset_bottom = 304.0
 min_value = 1.0
 max_value = 4.0
 value = 1.0
-script = ExtResource( 14 )
+script = ExtResource("14")
 
 [node name="Label" type="Label" parent="ModelTurnCount"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Turn Count"
 
 [node name="ModelMatchFloor" type="OptionButton" parent="."]
+visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 256.0
-margin_right = -1.0
-margin_bottom = 280.0
-script = ExtResource( 13 )
+offset_left = -175.0
+offset_top = 256.0
+offset_right = -1.0
+offset_bottom = 280.0
+script = ExtResource("13")
 
 [node name="Label" type="Label" parent="ModelMatchFloor"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Match Floor"
 
 [node name="ModelBasePlaneCount" type="OptionButton" parent="."]
 visible = false
+anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
-margin_left = -175.0
-margin_top = 256.0
-margin_right = -1.0
-margin_bottom = 280.0
-script = ExtResource( 13 )
+offset_left = -175.0
+offset_top = 256.0
+offset_right = -1.0
+offset_bottom = 280.0
+script = ExtResource("13")
 
 [node name="Label" type="Label" parent="ModelBasePlaneCount"]
-margin_left = -80.0
-margin_top = 6.0
-margin_right = -4.0
-margin_bottom = 20.0
+layout_mode = 0
+offset_left = -80.0
+offset_top = 6.0
+offset_right = -4.0
+offset_bottom = 20.0
 text = "Model Type"
 
 [node name="Mats" type="ScrollContainer" parent="."]
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-margin_top = -64.0
-margin_right = -1.0
+offset_top = -64.0
+offset_right = -1.0
 mouse_filter = 2
-scroll_vertical_enabled = false
 
 [node name="List" type="HBoxContainer" parent="Mats"]
-margin_right = 1023.0
-margin_bottom = 64.0
-mouse_filter = 2
+layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
+mouse_filter = 2
 
 [node name="MenuBar" type="HBoxContainer" parent="."]
-margin_left = 8.0
-margin_top = 8.0
-margin_right = 83.0
-margin_bottom = 30.0
-script = ExtResource( 11 )
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 83.0
+offset_bottom = 30.0
+script = ExtResource("11")
 
 [node name="File" type="MenuButton" parent="MenuBar"]
-margin_right = 35.0
-margin_bottom = 22.0
+layout_mode = 2
 text = "File"
 flat = false
 
 [node name="Edit" type="MenuButton" parent="MenuBar"]
-margin_left = 39.0
-margin_right = 75.0
-margin_bottom = 22.0
+layout_mode = 2
 focus_mode = 2
 text = "Edit"
 flat = false
 
 [node name="Controls" type="MenuButton" parent="MenuBar"]
-margin_left = 79.0
-margin_right = 144.0
-margin_bottom = 22.0
+layout_mode = 2
 focus_mode = 2
 text = "Controls"
 flat = false
 
 [node name="ControlsExplanation" type="Label" parent="."]
+anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-margin_left = -200.0
-margin_right = 200.0
-margin_bottom = 256.0
-custom_colors/font_color = Color( 1, 1, 1, 1 )
-custom_colors/font_color_shadow = Color( 0, 0, 0, 1 )
-custom_constants/shadow_offset_x = 1
-custom_constants/shadow_offset_y = 1
-custom_constants/shadow_as_outline = 0
+offset_left = -176.0
+offset_top = 30.0
+offset_right = 174.0
+offset_bottom = 245.0
+grow_horizontal = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_constants/shadow_offset_x = 1
+theme_override_constants/shadow_offset_y = 1
+theme_override_constants/shadow_outline_size = 0
 text = "CONTROLS:
 
 left mouse: create
@@ -618,16 +753,30 @@ alt + left mouse: pick material from world
 alt + right mouse: pick voxel deformation from world
 
 j: cycle 2d-style previews (orthographic, isometric)"
-align = 1
-valign = 1
-autowrap = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="ControlsExplanation"]
 show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-texture = ExtResource( 15 )
+offset_left = -32.0
+offset_top = -32.0
+offset_right = 33.0
+offset_bottom = 33.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("15")
 patch_margin_left = 32
 patch_margin_top = 32
 patch_margin_right = 32
 patch_margin_bottom = 32
+
+[node name="Icon" type="Sprite2D" parent="."]
+position = Vector2(-311, 25)
+texture = ExtResource("17_bmg3h")
+
+[node name="ColorRect" type="ColorRect" parent="Icon"]
+material = SubResource("ShaderMaterial_5xiyy")
+offset_right = 40.0
+offset_bottom = 40.0

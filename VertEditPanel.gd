@@ -26,7 +26,7 @@ func flush_negative_zero(n : Vector3) -> Vector3:
     return n
 
 func action(which):
-    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     
     #print()
     
@@ -34,9 +34,9 @@ func action(which):
     for vert in ref_verts:
         copy[vert] = get_override(vert)
     
-    var right : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.RIGHT))
-    var up : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.UP))
-    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+    var right : Vector3 = axialize(cam.global_transform.basis * (Vector3.RIGHT))
+    var up : Vector3 = axialize(cam.global_transform.basis * (Vector3.UP))
+    var front : Vector3 = axialize(cam.global_transform.basis * (Vector3.FORWARD))
     
     if which == "left" or which == "right":
         var _sign = -1.0 if which == "left" else 1.0
@@ -73,25 +73,25 @@ func action(which):
 
 # Called when the node enters the scene tree for the first time.
 func _ready():
-    $Buttons/Left.connect("pressed", self, "action", ["left"])
-    $Buttons/Right.connect("pressed", self, "action", ["right"])
-    $Buttons/FlipH.connect("pressed", self, "action", ["fliph"])
-    $Buttons/FlipV.connect("pressed", self, "action", ["flipv"])
-    $Buttons/Reset.connect("pressed", self, "action", ["reset"])
-    $Buttons/ResetCamera.connect("pressed", self, "action", ["resetcam"])
+    $Buttons/Left.connect("pressed", Callable(self, "action").bind("left"))
+    $Buttons/Right.connect("pressed", Callable(self, "action").bind("right"))
+    $Buttons/FlipH.connect("pressed", Callable(self, "action").bind("fliph"))
+    $Buttons/FlipV.connect("pressed", Callable(self, "action").bind("flipv"))
+    $Buttons/Reset.connect("pressed", Callable(self, "action").bind("reset"))
+    $Buttons/ResetCamera.connect("pressed", Callable(self, "action").bind("resetcam"))
     pass # Replace with function body.
 
 
 # Called every frame. 'delta' is the elapsed time since the previous frame.
 func _process(_delta):
-    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
-    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
-    $Frame/VertEditViewport/Grid.global_translation = -front*0.51
+    var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    var front : Vector3 = axialize(cam.global_transform.basis * (Vector3.FORWARD))
+    $Frame/VertEditViewport/Grid.global_position = -front*0.51
     if front.abs() != Vector3.UP:
         $Frame/VertEditViewport/Grid.look_at(-front, Vector3.UP)
     else:
         $Frame/VertEditViewport/Grid.look_at(-front, Vector3.FORWARD)
-    update()
+    queue_redraw()
 
 var ref_verts = [
     Vector3(-0.5, -0.5, -0.5),
@@ -113,7 +113,7 @@ func set_overrides(list):
     for k in list:
         vert_overrides[k*0.5] = list[k]*0.5
     prepare_overrides()
-    update()
+    queue_redraw()
 
 func set_override(vert, new):
     vert_overrides[vert] = new
@@ -132,7 +132,7 @@ var camera_mode = false
 func _indirect_input(_event):
     if !visible:
         return
-    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     if _event.is_action_pressed("m1") and Input.is_action_just_pressed("m1"):
         drag_target = null
         
@@ -145,7 +145,8 @@ func _indirect_input(_event):
             var pos = cam.unproject_position(vert)
             var pos_dist = get_local_mouse_position().distance_to(pos)
             if pos_dist < dist and pos_dist < 8.0:
-                var depth = -cam.global_transform.xform_inv(vert).z
+                #var depth = -(vert) * cam.global_transform.z
+                var depth = -(vert * cam.global_transform.inverse()).z
                 dist = pos_dist
                 drag_target = _vert
                 drag_depth = depth
@@ -190,7 +191,7 @@ func _indirect_input(_event):
             var cam_normal = cam.project_ray_normal(pos)
             
             if $Frame/VertEditViewport/PlaneLock.pressed:
-                var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
+                var front : Vector3 = axialize(cam.global_transform.basis * (Vector3.FORWARD))
                 #var positive = front.abs()
                 var diff = drag_initial_value*front - new_vert*front
                 
@@ -216,10 +217,6 @@ func _indirect_input(_event):
         elif camera_mode:
             $Frame/VertEditViewport/CameraHolder.rotation_degrees.y -= 0.22 * event.relative.x
             $Frame/VertEditViewport/CameraHolder.rotation_degrees.x -= 0.22 * event.relative.y
-
-class Sorter:
-    func compare(a, b):
-        return a[1] > b[1]
 
 var prepared_overrides = {}
 
@@ -251,7 +248,7 @@ func prepare_overrides():
 var rounding_amount = 8.0
 
 func _draw():
-    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
+    var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     
     #var rect = get_global_rect()
     #rect.position -= rect_global_position
@@ -273,7 +270,8 @@ func _draw():
     for _vert in ref_verts:
         var vert = get_override(_vert)
         vert = (vert*rounding_amount).round()/rounding_amount
-        var depth = -cam.global_transform.xform_inv(vert).z
+        #var depth = -(vert) * cam.global_transform.z
+        var depth = -(vert * cam.global_transform.inverse()).z
         verts.push_back([vert, _vert, depth])
     
     var voxels = $Frame/VertEditViewport/Voxel
@@ -281,7 +279,7 @@ func _draw():
     voxels.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
     voxels.remesh()
     
-    verts.sort_custom(Sorter.new(), "compare")
+    verts.sort_custom(func compare(a, b): return a[1] > b[1])
     
     for _vert in verts:
         var vert = _vert[0]
@@ -291,12 +289,12 @@ func _draw():
         
         #var pos_dist = get_local_mouse_position().distance_to(pos)
         if drag_target == _vert[1]:
-            color = Color.aquamarine
+            color = Color.AQUAMARINE
             
-        if vert == target and !drag_target:
-            color = Color.yellow
+        if vert == target and drag_target == null:
+            color = Color.YELLOW
         
         #draw_circle(pos, 4.0, color)
-        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, Color.black, 5.4, true)
+        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, Color.BLACK, 5.4, true)
         draw_arc(pos, 2.0, 0.0, PI*2.01, 24, color, 4.0, true)
     pass

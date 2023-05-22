@@ -1,5 +1,5 @@
-tool
-extends Spatial
+@tool
+extends Node3D
 class_name VoxEditor
 
 ### TODO LIST
@@ -14,7 +14,7 @@ class_name VoxEditor
 # - 1:1 pixel screenshot mode (orthographic, isometric)
 # - importing real meshes somehow maybe?
 
-class VoxMat extends Reference:
+class VoxMat extends RefCounted:
     
     enum TileMode {
         MODE_12x4,
@@ -23,8 +23,8 @@ class VoxMat extends Reference:
         MODE_1x1_WORLD,
     }
     
-    var sides : Texture
-    var top   : Texture
+    var sides : Texture2D
+    var top   : Texture2D
     
     # FIXME: previews don't work
     var transparent_mode : int = 0 # 0 : opaque, 1 : alpha scissor, 2 : actually transparent
@@ -32,7 +32,7 @@ class VoxMat extends Reference:
     
     var tiling_mode = TileMode.MODE_12x4
     
-    func _init(_sides : Texture, _top : Texture, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int):
+    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int):
         sides = _sides
         top = _top
         transparent_mode = _transparent_mode
@@ -40,8 +40,8 @@ class VoxMat extends Reference:
         tiling_mode = _tiling_mode
     
     func encode() -> Dictionary:
-        var top_png = Marshalls.raw_to_base64(top.get_data().save_png_to_buffer())
-        var sides_png = Marshalls.raw_to_base64(sides.get_data().save_png_to_buffer())
+        var top_png = Marshalls.raw_to_base64(top.get_image().save_png_to_buffer())
+        var sides_png = Marshalls.raw_to_base64(sides.get_image().save_png_to_buffer())
         return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode}
     
     static func decode(dict : Dictionary):
@@ -50,10 +50,8 @@ class VoxMat extends Reference:
             top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
             var sides_image = Image.new()
             sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
-            var top_tex = ImageTexture.new()
-            top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-            var sides_tex = ImageTexture.new()
-            sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var top_tex = ImageTexture.create_from_image(top_image)
+            var sides_tex = ImageTexture.create_from_image(sides_image)
             var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
             var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
             var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
@@ -63,20 +61,20 @@ class VoxMat extends Reference:
         elif dict.type == "decal":
             return DecalMat.decode(dict)
 
-class DecalMat extends Reference:
-    var tex : Texture
+class DecalMat extends RefCounted:
+    var tex : Texture2D
     var grid_size : Vector2
     var icon_coord : Vector2
     var current_coord : Vector2
     
-    func _init(_tex : Texture, _grid_size : Vector2, _icon_coord : Vector2):
+    func _init(_tex : Texture2D, _grid_size : Vector2, _icon_coord : Vector2):
         tex = _tex
         grid_size = _grid_size
         icon_coord = _icon_coord
         current_coord = icon_coord
     
     func encode() -> Dictionary:
-        var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
+        var png = Marshalls.raw_to_base64(tex.get_image().save_png_to_buffer())
         return {
             "type": "decal",
             "tex": png,
@@ -89,8 +87,7 @@ class DecalMat extends Reference:
         if "type" in dict and dict.type == "decal":
             var image = Image.new()
             image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
-            var new_tex = ImageTexture.new()
-            new_tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var new_tex = ImageTexture.create_from_image(image)
             var ret = DecalMat.new(
                 new_tex,
                 Helpers.array_to_vec2(dict.grid_size),
@@ -102,11 +99,12 @@ class DecalMat extends Reference:
             return VoxMat.decode(dict)
 
 class ModelMat extends DecalMat:
-    func _init(_tex : Texture, _grid_size : Vector2, _icon_coord : Vector2).(_tex, _grid_size, _icon_coord):
+    func _init(_tex : Texture2D, _grid_size : Vector2, _icon_coord : Vector2):
+        super(_tex, _grid_size, _icon_coord)
         pass
     
     func encode() -> Dictionary:
-        var png = Marshalls.raw_to_base64(tex.get_data().save_png_to_buffer())
+        var png = Marshalls.raw_to_base64(tex.get_image().save_png_to_buffer())
         return {
             "type": "model",
             "tex": png,
@@ -119,8 +117,7 @@ class ModelMat extends DecalMat:
         if "type" in dict and dict.type == "model":
             var image = Image.new()
             image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
-            var tex = ImageTexture.new()
-            tex.create_from_image(image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
+            var tex = ImageTexture.create_from_image(image)
             var ret = ModelMat.new(
                 tex,
                 Helpers.array_to_vec2(dict.grid_size),
@@ -142,7 +139,7 @@ func delete_mat(mat):
         return
     var i = mats.find(mat)
     if i >= 0:
-        mats.remove(i)
+        mats.remove_at(i)
     if mat == current_mat:
         current_mat = mats[max(0, i-1)]
     
@@ -158,12 +155,12 @@ func set_current_mat(new_current):
 
 func modify_mat(mat):
     if mat is VoxMat:
-        var matconf = load("res://MatConfig.tscn").instance()
+        var matconf = load("res://MatConfig.tscn").instantiate()
         matconf.set_side(mat.sides)
         matconf.set_top(mat.top)
         add_child(matconf)
         
-        var new_mat = yield(matconf, "done")
+        var new_mat = await matconf.done
         if new_mat:
             mat.sides = new_mat[0]
             mat.top = new_mat[1]
@@ -172,13 +169,13 @@ func modify_mat(mat):
             mat.tiling_mode = new_mat[4]
     
     elif mat is DecalMat:
-        var config = preload("res://DecalConfig.tscn").instance()
+        var config = preload("res://DecalConfig.tscn").instantiate()
         config.set_mat(mat.tex)
         config.set_icon_coord(mat.icon_coord)
         config.set_grid_size(mat.grid_size)
         add_child(config)
         
-        var info = yield(config, "done")
+        var info = await config.done
         if info:
             var new_mat = info[0]
             var grid_size = info[1]
@@ -192,7 +189,7 @@ func modify_mat(mat):
     rebuild_mat_buttons()
     $Voxels.full_remesh()
 
-func _on_files_dropped(files, _screen):
+func _on_files_dropped(files):
     var fname : String = files[0]
     var image = Image.new()
     var error = image.load(fname)
@@ -211,25 +208,25 @@ func _on_files_dropped(files, _screen):
         existant[0].set_mat(image)
         return
     
-    var picker = preload("res://MaterialModePicker.tscn").instance()
+    var picker = preload("res://MaterialModePicker.tscn").instantiate()
     add_child(picker)
-    var which = yield(picker, "done")
+    var which = await picker.done
     
     if which == "voxel":
-        var matconf = load("res://MatConfig.tscn").instance()
+        var matconf = load("res://MatConfig.tscn").instantiate()
         matconf.set_side(image)
         add_child(matconf)
         
-        var mat = yield(matconf, "done")
+        var mat = await matconf.done
         if mat:
             add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4]))
     
     elif which == "decal" or which == "model":
-        var config = preload("res://DecalConfig.tscn").instance()
+        var config = preload("res://DecalConfig.tscn").instantiate()
         config.set_mat(image)
         add_child(config)
         
-        var info = yield(config, "done")
+        var info = await config.done
         if info:
             var mat = info[0]
             var grid_size = info[1]
@@ -240,7 +237,7 @@ func _on_files_dropped(files, _screen):
                 add_mat(ModelMat.new(mat, grid_size, icon_coord))
     
     elif which == "cancel":
-        print("cancelled")
+        print("canceled")
 
 func add_mat_button(mat):
     var button = Button.new()
@@ -248,14 +245,14 @@ func add_mat_button(mat):
     button.mat = mat
     $Mats/List.add_child(button)
     
-    var preview = load("res://CubePreview.tscn").instance()
+    var preview = load("res://CubePreview.tscn").instantiate()
     preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
     button.add_child(preview)
     preview.inform_mat(mat)
     
-    button.rect_min_size = Vector2(64, 48)
+    button.custom_minimum_size = Vector2(64, 48)
     button.toggle_mode = true
-    button.connect("pressed", self, "set_current_mat", [mat])
+    button.connect("pressed", Callable(self, "set_current_mat").bind(mat))
 
 func rebuild_mat_buttons():
     for child in $Mats/List.get_children():
@@ -272,28 +269,27 @@ func add_mat(mat):
 func save_world_as_resource(fname):
     var m : Mesh = $Voxels.mesh.duplicate(true)
     for i in m.get_surface_count():
-        var mat : SpatialMaterial = m.surface_get_material(i).duplicate(true)
-        var stex : Texture = mat.albedo_texture.duplicate(true)
-        var img = stex.get_data()
-        var tex = ImageTexture.new()
-        tex.create_from_image(img, stex.flags)
+        var mat : StandardMaterial3D = m.surface_get_material(i).duplicate(true)
+        var stex : Texture2D = mat.albedo_texture.duplicate(true)
+        var img = stex.get_image()
+        var tex = ImageTexture.create_from_image(img)
         mat.albedo_texture = tex
         m.surface_set_material(i, mat)
-    var _e = ResourceSaver.save(fname, m)
+    var _e = ResourceSaver.save(m, fname)
 
 func save_map_resource():
     var dialog = FileDialog.new()
-    dialog.resizable = true
+    dialog.unresizable = false
     dialog.access = FileDialog.ACCESS_FILESYSTEM
-    dialog.mode = FileDialog.MODE_SAVE_FILE
+    dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
     dialog.add_filter("*.tres ; Godot Resource Files")
     dialog.current_file = "voxel_mesh.tres"
     add_child(dialog)
-    dialog.popup_centered_ratio()
+    dialog.popup_centered_ratio(0.5)
     
-    dialog.connect("file_selected", self, "save_world_as_resource")
-    yield(dialog, "visibility_changed")
-    remove_child(dialog)
+    dialog.connect("file_selected", Callable(self, "save_world_as_resource"))
+    await dialog.visibility_changed
+    dialog.queue_free()
 
 func perform_undo():
     $Voxels.perform_undo()
@@ -301,12 +297,14 @@ func perform_redo():
     $Voxels.perform_redo()
 
 func _ready():
-    if Engine.editor_hint:
+    if Engine.is_editor_hint():
         return
     
     #$Button.connect("pressed", self, "bwuhuhuh")
-        
-    get_tree().connect("files_dropped", self, "_on_files_dropped")
+    
+    #get_tree().connect(SceneTree.file
+    get_tree().get_root().files_dropped.connect(self._on_files_dropped)
+    #get_tree().connect("files_dropped", Callable(self, "_on_files_dropped"))
     
     var mats_copy = mats
     mats = []
@@ -347,10 +345,10 @@ func _ready():
         ]:
         $Voxels.place_voxel(vox[0], vox[1])
     
-    $MenuBar.connect("file_save", self, "default_save")
-    $MenuBar.connect("file_save_as", self, "save_map")
-    $MenuBar.connect("file_export_resource", self, "save_map_resource")
-    $MenuBar.connect("file_open", self, "open_map")
+    $MenuBar.connect("file_save", Callable(self, "default_save"))
+    $MenuBar.connect("file_save_as", Callable(self, "save_map"))
+    $MenuBar.connect("file_export_resource", Callable(self, "save_map_resource"))
+    $MenuBar.connect("file_open", Callable(self, "open_map"))
     
     $Mat2dOrientation.add_item("0 deg", 0)
     $Mat2dOrientation.add_item("90 deg", 1)
@@ -379,9 +377,8 @@ var prev_save_target = ""
 func save_data_to(fname, data):
     prev_save_target = fname
     
-    var out = File.new()
-    out.open(fname, File.WRITE)
-    var text = JSON.print(data, " ")
+    var out = FileAccess.open(fname, FileAccess.WRITE)
+    var text = JSON.stringify(data, " ")
     out.store_string(text)
     out.close()
 
@@ -389,54 +386,55 @@ func save_map():
     var data = $Voxels.serialize()
     
     var dialog = FileDialog.new()
-    dialog.resizable = true
+    dialog.unresizable = false
     dialog.access = FileDialog.ACCESS_FILESYSTEM
-    dialog.mode = FileDialog.MODE_SAVE_FILE
+    dialog.file_mode = FileDialog.FILE_MODE_SAVE_FILE
     dialog.add_filter("*.json ; Voxel Map JSON Files")
     dialog.current_file = "voxel_map.json"
     add_child(dialog)
-    dialog.popup_centered_ratio()
+    dialog.popup_centered_ratio(0.5)
     
-    dialog.connect("file_selected", self, "save_data_to", [data])
-    yield(dialog, "visibility_changed")
-    remove_child(dialog)
+    dialog.connect("file_selected", Callable(self, "save_data_to").bind(data))
+    await dialog.visibility_changed
+    dialog.queue_free()
 
 func open_data_from(fname):
     #print("bieueaf")
     prev_save_target = fname
     
-    var file = File.new()
-    file.open(fname, File.READ)
+    var file = FileAccess.open(fname, FileAccess.READ)
     var json = file.get_as_text()
     file.close()
-    var result : JSONParseResult = JSON.parse(json)
-    if !result.error:
-        $Voxels.deserialize(result.result)
+    var test_json_conv = JSON.new()
+    var error = test_json_conv.parse(json)
+    var result = test_json_conv.get_data()
+    if !error:
+        $Voxels.deserialize(result)
     else:
         var dialog = AcceptDialog.new()
         dialog.dialog_text = "File is malformed, failed to open."
-        dialog.popup_centered_ratio()
-        remove_child(dialog)
-        yield(dialog, "visibility_changed")
+        dialog.popup_centered_ratio(0.5)
+        dialog.queue_free()
+        await dialog.visibility_changed
 
 func open_map():
     var dialog = FileDialog.new()
-    dialog.resizable = true
+    dialog.unresizable = false
     dialog.access = FileDialog.ACCESS_FILESYSTEM
-    dialog.mode = FileDialog.MODE_OPEN_FILE
+    dialog.file_mode = FileDialog.FILE_MODE_OPEN_FILE
     dialog.add_filter("*.json ; Voxel Map JSON Files")
     add_child(dialog)
-    dialog.popup_centered_ratio()
+    dialog.popup_centered_ratio(0.5)
     
-    dialog.connect("file_selected", self, "open_data_from")
-    yield(dialog, "visibility_changed")
-    remove_child(dialog)
+    dialog.connect("file_selected", Callable(self, "open_data_from"))
+    await dialog.visibility_changed
+    dialog.queue_free()
 
 var draw_mode = false
 var erase_mode = false
 var camera_mode = false
 
-onready var camera_intended_scale = $CameraHolder/Camera.size / 5.0
+@onready var camera_intended_scale = $CameraHolder/Camera3D.size / 5.0
 
 func estimate_viewport_mouse_scale():
     #var rect = get_viewport().get_visible_rect().size
@@ -446,8 +444,8 @@ func estimate_viewport_mouse_scale():
 func do_pick_material():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
-    var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
-    var cast_normal : Vector3 = $CameraHolder/Camera.project_ray_normal(m_pos)
+    var cast_start : Vector3 = $CameraHolder/Camera3D.project_ray_origin(m_pos)
+    var cast_normal : Vector3 = $CameraHolder/Camera3D.project_ray_normal(m_pos)
     
     if !view_rect.has_point(m_pos):
         return
@@ -489,7 +487,7 @@ func do_pick_material():
                 elif pool == $Voxels.models:
                     current_mat = hit[0]
                     current_mat.current_coord = hit[1]
-                    $ModelWiden.pressed = hit[2] & 1
+                    $ModelWiden.button_pressed = hit[2] & 1
                     $ModelSpacing.value = (hit[2] >> 1) & 7
                     $ModelTurnCount.value = ((hit[2] >> 4) & 3) + 1
                     $ModelRotationX.value = (hit[2] >> 6) & 7
@@ -506,8 +504,8 @@ func do_pick_material():
 func do_pick_vert_warp():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
-    var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
-    var cast_normal : Vector3 = $CameraHolder/Camera.project_ray_normal(m_pos)
+    var cast_start : Vector3 = $CameraHolder/Camera3D.project_ray_origin(m_pos)
+    var cast_normal : Vector3 = $CameraHolder/Camera3D.project_ray_normal(m_pos)
     
     if !view_rect.has_point(m_pos):
         return
@@ -541,7 +539,7 @@ func _unhandled_input(_event):
     
     if _event is InputEventMouseButton:
         emit_signal("hide_menus")
-        var f = $Mats.get_focus_owner()
+        var f = $Mats.get_viewport().gui_get_focus_owner()
         if f:
             f.release_focus()
     
@@ -581,14 +579,14 @@ func _unhandled_input(_event):
         
     if _event is InputEventKey:
         var event : InputEventKey = _event
-        if event.pressed and event.scancode == KEY_J:
+        if event.is_pressed() and event.keycode == KEY_J:
             # stretched ortho
             if lock_mode == 0:
                 lock_mode = 1
                 $Voxels.scale.y = 1.0
                 $Voxels.scale.x = 1.0 / sqrt(2.0)
                 $Voxels.scale.z = 1.0
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder/Camera3D.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg_to_rad(45))
                 $CameraHolder.rotation_degrees.x = -45.0
                 $CameraHolder.rotation_degrees.y = 0.0
             elif lock_mode == 1:
@@ -596,7 +594,7 @@ func _unhandled_input(_event):
                 $Voxels.scale.y = 1.0
                 $Voxels.scale.x = 1.0
                 $Voxels.scale.z = 1.0 / sqrt(2.0)
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder/Camera3D.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg_to_rad(45))
                 $CameraHolder.rotation_degrees.x = -45.0
                 $CameraHolder.rotation_degrees.y = 90.0
             elif lock_mode == 2:
@@ -604,7 +602,7 @@ func _unhandled_input(_event):
                 $Voxels.scale.y = 1.0
                 $Voxels.scale.x = 1.0 / sqrt(2.0)
                 $Voxels.scale.z = 1.0
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder/Camera3D.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg_to_rad(45))
                 $CameraHolder.rotation_degrees.x = -45.0
                 $CameraHolder.rotation_degrees.y = 180.0
             elif lock_mode == 3:
@@ -612,18 +610,18 @@ func _unhandled_input(_event):
                 $Voxels.scale.y = 1.0
                 $Voxels.scale.x = 1.0
                 $Voxels.scale.z = 1.0 / sqrt(2.0)
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg2rad(45))
+                $CameraHolder/Camera3D.size = get_viewport().size.y / 16.0 / 3.0 * cos(deg_to_rad(45))
                 $CameraHolder.rotation_degrees.x = -45.0
                 $CameraHolder.rotation_degrees.y = 270.0
             else:
-                var cos_30 = cos(deg2rad(30))
-                var cos_45 = cos(deg2rad(45))
+                var cos_30 = cos(deg_to_rad(30))
+                var cos_45 = cos(deg_to_rad(45))
                 
                 $Voxels.scale.y = cos_45 / cos_30
                 $Voxels.scale.x = 1.0
                 $Voxels.scale.z = 1.0
                 
-                $CameraHolder/Camera.size = get_viewport().size.y / 16.0 / 3.0 * cos_45
+                $CameraHolder/Camera3D.size = get_viewport().size.y / 16.0 / 3.0 * cos_45
                 $CameraHolder.rotation_degrees.x = -30.0
                 # isometric
                 if lock_mode == 4:
@@ -645,7 +643,7 @@ func _unhandled_input(_event):
                     # default
                     lock_mode = 0
                     $CameraHolder.rotation_degrees.y = -45
-                    $CameraHolder/Camera.size = 5.0 * camera_intended_scale
+                    $CameraHolder/Camera3D.size = 5.0 * camera_intended_scale
                 pass
     
     estimate_viewport_mouse_scale()
@@ -657,22 +655,23 @@ func _unhandled_input(_event):
         $Voxels.scale.z = 1.0
         
         var event : InputEventMouseButton = _event
-        if $ButtonPerspective.selected == 2:
-            var dir = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD)
-            if event.button_index == 4:
-                $CameraHolder.global_transform.origin += dir
-            if event.button_index == 5:
-                $CameraHolder.global_transform.origin -= dir
-        else:
-            if event.button_index == 4:
-                camera_intended_scale /= 1.1
-            if event.button_index == 5:
-                camera_intended_scale *= 1.1
-            camera_intended_scale = clamp(camera_intended_scale, 0.1, 10)
+        if event.is_pressed():
+            if $ButtonPerspective.selected == 2:
+                var dir = $CameraHolder/Camera3D.global_transform.basis * (Vector3.FORWARD)
+                if event.button_index == 4:
+                    $CameraHolder.global_transform.origin += dir
+                if event.button_index == 5:
+                    $CameraHolder.global_transform.origin -= dir
+            else:
+                if event.button_index == 4:
+                    camera_intended_scale /= 1.2
+                if event.button_index == 5:
+                    camera_intended_scale *= 1.2
+                camera_intended_scale = clamp(camera_intended_scale, 0.1, 10)
         
         if $CameraHolder.scale.length() > 0.001:
             $CameraHolder.scale = Vector3.ONE.normalized() * camera_intended_scale
-        $CameraHolder/Camera.size = 5.0 * camera_intended_scale
+        $CameraHolder/Camera3D.size = 5.0 * camera_intended_scale
 
 func _input(_event):
     estimate_viewport_mouse_scale()
@@ -681,9 +680,9 @@ func _input(_event):
         if !camera_mode:
             return
         var event : InputEventMouseMotion = _event
-        if event.shift:
-            var upwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.UP)
-            var rightwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.RIGHT)
+        if event.shift_pressed:
+            var upwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.UP)
+            var rightwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.RIGHT)
             var speed = camera_intended_scale * estimate_viewport_mouse_scale() * 5.0
             $CameraHolder.global_transform.origin += event.relative.y * upwards * speed
             $CameraHolder.global_transform.origin += event.relative.x * -rightwards * speed
@@ -695,21 +694,21 @@ var prev_fps_mode = false
 
 func update_camera():
     if $ButtonPerspective.selected == 0:
-        $CameraHolder/Camera.projection = Camera.PROJECTION_ORTHOGONAL
+        $CameraHolder/Camera3D.projection = Camera3D.PROJECTION_ORTHOGONAL
     else:
-        $CameraHolder/Camera.projection = Camera.PROJECTION_PERSPECTIVE
+        $CameraHolder/Camera3D.projection = Camera3D.PROJECTION_PERSPECTIVE
     
     var fps_mode = $ButtonPerspective.selected == 2
     
     if fps_mode and !prev_fps_mode:
-        var forwards = $CameraHolder.global_transform.basis.xform(Vector3.FORWARD)
+        var forwards = $CameraHolder.global_transform.basis * (Vector3.FORWARD)
         $CameraHolder.scale = Vector3.ONE
-        $CameraHolder/Camera.transform.origin.z = 0
+        $CameraHolder/Camera3D.transform.origin.z = 0
         $CameraHolder.global_transform.origin -= forwards * 10 #6.0 * camera_intended_scale
     elif !fps_mode and prev_fps_mode:
-        var forwards = $CameraHolder.global_transform.basis.xform(Vector3.FORWARD)
+        var forwards = $CameraHolder.global_transform.basis * (Vector3.FORWARD)
         $CameraHolder.scale = Vector3.ONE.normalized() * camera_intended_scale
-        $CameraHolder/Camera.transform.origin.z = 10
+        $CameraHolder/Camera3D.transform.origin.z = 10
         $CameraHolder.global_transform.origin += forwards * 10#* 6.0 * camera_intended_scale
     
     prev_fps_mode = $ButtonPerspective.selected == 2
@@ -775,14 +774,14 @@ const directions = [
     Vector3.FORWARD,
     Vector3.BACK,
 ]
-func cube_ray_intersection(cube_origin : Vector3, ray_origin : Vector3, ray_normal : Vector3, max_distance : float):
+func cube_ray_intersection(cube_origin : Vector3, ray_origin : Vector3, ray_normal : Vector3, max_distance : float) -> Variant:
     for dir in directions:
         var stuff = face_ray_intersection(cube_origin + dir*0.5, dir, ray_origin, ray_normal, max_distance)
         if stuff != null:
             return stuff
     return null
 
-func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int = 0):
+func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int = 0) -> Variant:
     #var ray_end = ray_origin + ray_normal
     #var num_steps = ceil(ray_normal.length() + 0.5) # ensure each step is at least slightly smaller than 1.0 units
     #ray_normal = ray_normal / num_steps
@@ -817,7 +816,7 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int =
             #tested[offset] = null
             #if $Voxels.voxels.has(offset):
             var collision_data = cube_ray_intersection(offset, ray_origin, ray_normal, distance_limit)
-            if collision_data:
+            if collision_data != null:
                 var distance = ray_origin.distance_to(collision_data[0])
                 if closest == null or distance < closest[1]:
                     closest = [collision_data, distance, offset]
@@ -838,7 +837,7 @@ func show_controls():
 
 func _process(delta):
     #print(face_ray_intersection(Vector3(), Vector3(1, 0, 0), Vector3(1, 0, 0), Vector3(-2, 0, 0)))
-    if Engine.editor_hint:
+    if Engine.is_editor_hint():
         return
     update_camera()
     
@@ -849,8 +848,8 @@ func _process(delta):
     $ControlsExplanation.modulate.a = move_toward($ControlsExplanation.modulate.a, 0.0, delta*mod_speed)
     
     if $ButtonPerspective.selected == 2:
-        var forwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.FORWARD)
-        var rightwards = $CameraHolder/Camera.global_transform.basis.xform(Vector3.RIGHT)
+        var forwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.FORWARD)
+        var rightwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.RIGHT)
         if Input.is_action_pressed("ui_up"):
             $CameraHolder.global_transform.origin += forwards * delta * 16.0
         if Input.is_action_pressed("ui_down"):
@@ -863,9 +862,9 @@ func _process(delta):
     var i = 0
     for button in $Mats/List.get_children():
         var mat_index = mats.find(current_mat)
-        button.pressed = false
+        button.button_pressed = false
         if i == mat_index:
-            button.pressed = true
+            button.button_pressed = true
         i += 1
     
     $VertEditPanel.visible = current_mat is VoxMat
@@ -878,14 +877,14 @@ func _process(delta):
     
     $ModelTurnCount.visible = current_mat is ModelMat
     $ModelSpacing.visible = current_mat is ModelMat
-    $ModelRotationX.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelRotationX.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
     $ModelRotationY.visible = current_mat is ModelMat
-    $ModelRotationZ.visible = current_mat is ModelMat and $ModelAdvanced.pressed
-    $ModelWiden.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelRotationZ.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
+    $ModelWiden.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
     
-    $ModelOffsetX.visible = current_mat is ModelMat and $ModelAdvanced.pressed
-    $ModelOffsetY.visible = current_mat is ModelMat and $ModelAdvanced.pressed
-    $ModelOffsetZ.visible = current_mat is ModelMat and $ModelAdvanced.pressed
+    $ModelOffsetX.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
+    $ModelOffsetY.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
+    $ModelOffsetZ.visible = current_mat is ModelMat and $ModelAdvanced.button_pressed
     
     if current_mat is DecalMat:
         $Mat2dTilePicker.tex = current_mat.tex
@@ -904,7 +903,7 @@ func place_mat_at(voxels, mat, point, normal):
         voxels.place_voxel(point, mat, $VertEditPanel.prepared_overrides)
     elif mat is ModelMat:
         var info = (
-            int($ModelWiden.pressed) |
+            (int($ModelWiden.button_pressed)) |
             (int($ModelSpacing.value) << 1) |
             (int($ModelTurnCount.value - 1) << 4) |
             (int($ModelRotationX.value) << 6) |
@@ -923,8 +922,8 @@ func place_mat_at(voxels, mat, point, normal):
 func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
-    var cast_start : Vector3 = $CameraHolder/Camera.project_ray_origin(m_pos)
-    var cast_normal : Vector3 = $CameraHolder/Camera.project_ray_normal(m_pos)
+    var cast_start : Vector3 = $CameraHolder/Camera3D.project_ray_origin(m_pos)
+    var cast_normal : Vector3 = $CameraHolder/Camera3D.project_ray_normal(m_pos)
     
     if !view_rect.has_point(m_pos):
         return
@@ -933,10 +932,10 @@ func handle_voxel_input():
     var collision_point = null
     var collision_normal = null
     
-    var start = OS.get_ticks_usec()
+    var start = Time.get_ticks_usec()
     var mode = 1 if input_pick_mode else 0
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, mode)
-    var end = OS.get_ticks_usec()
+    var end = Time.get_ticks_usec()
     
     var time = (end-start)/1000000.0
     if time > 0.1:
@@ -984,7 +983,7 @@ func handle_voxel_input():
         if current_mat is DecalMat and not current_mat is ModelMat:
             var positive = collision_normal.abs()
             var negative : Vector3 = Vector3.ONE - positive
-            $CursorBox.scale = negative.linear_interpolate(Vector3.ONE, 0.2)
+            $CursorBox.scale = negative.lerp(Vector3.ONE, 0.2)
             $CursorBox.global_transform.origin -= collision_normal*0.4
         
         if $ButtonGrid.selected == 0 or ($ButtonGrid.selected == 2 and draw_mode):
@@ -1051,7 +1050,7 @@ func handle_voxel_input():
                 $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
             elif current_mat is ModelMat:
                 var info = (
-                    int($ModelWiden.pressed) |
+                    (int($ModelWiden.button_pressed)) |
                     (int($ModelSpacing.value) << 1) |
                     (int($ModelTurnCount.value - 1) << 4) |
                     (int($ModelRotationX.value) << 6) |
@@ -1077,8 +1076,8 @@ func handle_voxel_input():
                 if $ButtonWarp.selected == 0:
                     draw_use_offset = true
                 else:
-                    var pos_1 = $CameraHolder/Camera.unproject_position(raw_collision_point)
-                    var pos_2 = $CameraHolder/Camera.unproject_position(raw_collision_point + ref_normal)
+                    var pos_1 = $CameraHolder/Camera3D.unproject_position(raw_collision_point)
+                    var pos_2 = $CameraHolder/Camera3D.unproject_position(raw_collision_point + ref_normal)
                     m_warp_amount = pos_2 - pos_1
                     get_viewport().warp_mouse(m_pos + m_warp_amount)
             if $ButtonMode.selected == 2:

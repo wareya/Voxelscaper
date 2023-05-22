@@ -6,3 +6,4 @@ func _gui_input(event : InputEvent):
             selected = (selected - 1 + get_item_count()) % get_item_count()
         elif event.button_index == 5:
             selected = (selected + 1) % get_item_count()
+        get_tree().get_root().set_input_as_handled()

@@ -1,6 +1,7 @@
 .import/
 .builds/
 .trash/
+.godot/
 test/
 temp/
 sounds/ignore

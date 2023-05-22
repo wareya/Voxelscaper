@@ -1,4 +1,4 @@
-extends Viewport
+extends SubViewport
 
 
 # Declare member variables here. Examples:

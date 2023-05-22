@@ -1,0 +1,8 @@
+[gd_resource type="Theme" load_steps=2 format=3 uid="uid://bsfwjrql4xlu7"]
+
+[ext_resource type="FontFile" uid="uid://bttb8efph3i3r" path="res://font/Comme-Regular.ttf" id="1_u7xqd"]
+
+[resource]
+default_font = ExtResource("1_u7xqd")
+default_font_size = 13
+Label/constants/line_spacing = 0

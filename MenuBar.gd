@@ -4,7 +4,7 @@ func button_factory(text : String, which_signal : String, data : Array = []) -> 
     var button = Button.new()
     button.flat = true
     button.text = text
-    button.connect("pressed", self, "emit_signal", [which_signal] + data)
+    self.emit_signal.bindv([which_signal] + data)
     return button
 
 signal file_open
@@ -38,14 +38,14 @@ func pressed(id : int, which : PopupMenu):
     elif which == $Edit.get_popup() and id == 1:
         editor.perform_redo()
 
-onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
+@onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
     var file_popup : PopupMenu = $File.get_popup()
     file_popup.add_item("Save", 0)
     file_popup.add_item("Save As", 1)
     file_popup.add_item("Open", 2)
     file_popup.add_item("Export Godot Mesh Resource", 3)
-    file_popup.connect("index_pressed", self, "pressed", [file_popup])
+    file_popup.connect("index_pressed", Callable(self, "pressed").bind(file_popup))
     
     file_popup.set_item_accelerator(file_popup.get_item_index(0), KEY_MASK_CTRL | KEY_S)
     file_popup.set_item_accelerator(file_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_S)
@@ -54,7 +54,7 @@ func _ready():
     var edit_popup : PopupMenu = $Edit.get_popup()
     edit_popup.add_item("Undo", 0)
     edit_popup.add_item("Redo", 1)
-    edit_popup.connect("index_pressed", self, "pressed", [edit_popup])
+    edit_popup.connect("index_pressed", Callable(self, "pressed").bind(edit_popup))
     edit_popup.set_item_accelerator(edit_popup.get_item_index(0), KEY_MASK_CTRL | KEY_Z)
     edit_popup.set_item_accelerator(edit_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_Z)
     
@@ -62,4 +62,4 @@ func _ready():
     controls_popup.hide_on_checkable_item_selection = false
     controls_popup.add_check_item("Swap Left/Right Click (MC Style)", 0)
     controls_popup.add_item("Show Controls", 1)
-    controls_popup.connect("index_pressed", self, "pressed", [controls_popup])
+    controls_popup.connect("index_pressed", Callable(self, "pressed").bind(controls_popup))

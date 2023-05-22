@@ -5,9 +5,12 @@ var rect = Rect2(Vector2(), Vector2(1, 1))
 var new_rect = Rect2(Vector2(), Vector2(1, 1))
 var tile_count = Vector2(1, 1)
 
-var tex : Texture = null
+var tex : Texture2D = null
 var grid_size = Vector2(16, 16)
 var icon_coord = Vector2(0, 0)
+
+func _init():
+    texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
 
 func _input(_event):
     if _event is InputEventMouseButton:
@@ -65,7 +68,7 @@ func _process(delta):
     icon_coord.x = clamp(icon_coord.x, 0, tile_count.x-1)
     icon_coord.y = clamp(icon_coord.y, 0, tile_count.y-1)
     
-    update()
+    queue_redraw()
 
 
 func _draw():
@@ -76,13 +79,20 @@ func _draw():
     var bottom_left = new_rect.position + new_rect.size * Vector2(0, 1)
     var bottom_right = new_rect.position + new_rect.size
     
-    for x in range(grid_size.x, tex_size.x, grid_size.x):
-        var i = x / tex_size.x
-        draw_line(lerp(top_left, top_right, i), lerp(bottom_left, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 2.0)
+    var c = Color(0.5, 0.5, 0.5, 64.0)
+    c.a = 64.0
+    #print(c.a)
     
-    for y in range(grid_size.y, tex_size.y, grid_size.y):
-        var i = y / tex_size.y
-        draw_line(lerp(top_left, bottom_left, i), lerp(top_right, bottom_right, i), Color(0.5, 0.5, 0.5, 64.0), 2.0)
+    #print(grid_size)
+    if grid_size.x > 0:
+        for x in range(grid_size.x, tex_size.x, grid_size.x):
+            var i = x / tex_size.x
+            draw_line(lerp(top_left, top_right, i), lerp(bottom_left, bottom_right, i), c, 2.0)
+    
+    if grid_size.y > 0:
+        for y in range(grid_size.y, tex_size.y, grid_size.y):
+            var i = y / tex_size.y
+            draw_line(lerp(top_left, bottom_left, i), lerp(top_right, bottom_right, i), c, 2.0)
     
     var icon_pos = Rect2(icon_coord, new_rect.size/tile_count)
     icon_pos.position *= new_rect.size/tile_count
