@@ -25,24 +25,24 @@ ambient_light_color = Color(0.866667, 0.933333, 1, 1)
 ambient_light_sky_contribution = 0.0
 ambient_light_energy = 0.2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqc23"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nw6cf"]
 diffuse_mode = 1
 albedo_texture = ExtResource("3_nptgm")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_biqnf"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_23jyi"]
 diffuse_mode = 1
 albedo_texture = ExtResource("4_shh1p")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_ywiu2"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_p5lbm"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_tqc23"),
+"material": SubResource("StandardMaterial3D_nw6cf"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -52,7 +52,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_biqnf"),
+"material": SubResource("StandardMaterial3D_23jyi"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -116,24 +116,24 @@ shading_mode = 0
 vertex_color_use_as_albedo = true
 albedo_color = Color(0.168627, 0.47451, 1, 0.321569)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lqnxi"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o263v"]
 diffuse_mode = 1
 albedo_texture = ExtResource("3_nptgm")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_lp4sm"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xnebw"]
 diffuse_mode = 1
 albedo_texture = ExtResource("4_shh1p")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_qg7pc"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_umfk8"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_lqnxi"),
+"material": SubResource("StandardMaterial3D_o263v"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -143,7 +143,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_lp4sm"),
+"material": SubResource("StandardMaterial3D_xnebw"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -178,7 +178,7 @@ size = 10.0
 far = 500.0
 
 [node name="Voxels" parent="." instance=ExtResource("1")]
-mesh = SubResource("ArrayMesh_ywiu2")
+mesh = SubResource("ArrayMesh_p5lbm")
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -255,6 +255,7 @@ pixel_size = 0.0625
 texture = ExtResource("6")
 
 [node name="VertEditPanel" type="Control" parent="."]
+visible = false
 clip_contents = true
 layout_mode = 3
 anchors_preset = 1
@@ -277,7 +278,7 @@ stretch = true
 own_world_3d = true
 handle_input_locally = false
 size = Vector2i(256, 256)
-render_target_update_mode = 4
+render_target_update_mode = 0
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="VertEditPanel/Frame/VertEditViewport"]
 transform = Transform3D(-0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581)
@@ -295,7 +296,7 @@ pixel_size = 0.0078
 texture = ExtResource("10")
 
 [node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("1")]
-mesh = SubResource("ArrayMesh_qg7pc")
+mesh = SubResource("ArrayMesh_umfk8")
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]
@@ -424,9 +425,10 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -117.0
-offset_top = 256.0
+offset_top = 257.0
 offset_right = -1.0
-offset_bottom = 280.0
+offset_bottom = 281.0
+grow_horizontal = 0
 script = ExtResource("13")
 
 [node name="Label" type="Label" parent="Mat2dOrientation"]
@@ -438,14 +440,14 @@ offset_bottom = 20.0
 text = "Decal Orientation"
 
 [node name="ModelOffsetZ" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 496.0
+offset_top = 515.0
 offset_right = -1.0
-offset_bottom = 520.0
+offset_bottom = 540.0
+grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource("14")
@@ -459,14 +461,14 @@ offset_bottom = 20.0
 text = "Offset Z"
 
 [node name="ModelOffsetY" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 472.0
+offset_top = 489.0
 offset_right = -1.0
-offset_bottom = 496.0
+offset_bottom = 514.0
+grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource("14")
@@ -480,14 +482,14 @@ offset_bottom = 20.0
 text = "Offset Y"
 
 [node name="ModelOffsetX" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 448.0
+offset_top = 463.0
 offset_right = -1.0
-offset_bottom = 472.0
+offset_bottom = 488.0
+grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
 script = ExtResource("14")
@@ -501,14 +503,14 @@ offset_bottom = 20.0
 text = "Offset X"
 
 [node name="ModelWiden" type="CheckBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 424.0
+offset_top = 438.0
 offset_right = -1.0
-offset_bottom = 448.0
+offset_bottom = 462.0
+grow_horizontal = 0
 
 [node name="Label" type="Label" parent="ModelWiden"]
 layout_mode = 0
@@ -519,14 +521,14 @@ offset_bottom = 20.0
 text = "Widen"
 
 [node name="ModelRotationZ" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 400.0
+offset_top = 412.0
 offset_right = -1.0
-offset_bottom = 424.0
+offset_bottom = 437.0
+grow_horizontal = 0
 max_value = 7.0
 script = ExtResource("14")
 
@@ -539,14 +541,14 @@ offset_bottom = 20.0
 text = "Roll"
 
 [node name="ModelRotationX" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 376.0
+offset_top = 386.0
 offset_right = -1.0
-offset_bottom = 400.0
+offset_bottom = 411.0
+grow_horizontal = 0
 max_value = 7.0
 script = ExtResource("14")
 
@@ -559,14 +561,14 @@ offset_bottom = 20.0
 text = "Pitch"
 
 [node name="ModelAdvanced" type="CheckBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 352.0
+offset_top = 361.0
 offset_right = -1.0
-offset_bottom = 376.0
+offset_bottom = 385.0
+grow_horizontal = 0
 
 [node name="Label" type="Label" parent="ModelAdvanced"]
 layout_mode = 0
@@ -577,14 +579,14 @@ offset_bottom = 20.0
 text = "Advanced"
 
 [node name="ModelRotationY" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 328.0
+offset_top = 335.0
 offset_right = -1.0
-offset_bottom = 352.0
+offset_bottom = 360.0
+grow_horizontal = 0
 max_value = 7.0
 script = ExtResource("14")
 
@@ -597,14 +599,14 @@ offset_bottom = 20.0
 text = "Yaw"
 
 [node name="ModelSpacing" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 304.0
+offset_top = 309.0
 offset_right = -1.0
-offset_bottom = 328.0
+offset_bottom = 334.0
+grow_horizontal = 0
 max_value = 4.0
 script = ExtResource("14")
 
@@ -617,14 +619,14 @@ offset_bottom = 20.0
 text = "Spacing"
 
 [node name="ModelTurnCount" type="SpinBox" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 280.0
+offset_top = 283.0
 offset_right = -1.0
-offset_bottom = 304.0
+offset_bottom = 308.0
+grow_horizontal = 0
 min_value = 1.0
 max_value = 4.0
 value = 1.0
@@ -639,14 +641,14 @@ offset_bottom = 20.0
 text = "Turn Count"
 
 [node name="ModelMatchFloor" type="OptionButton" parent="."]
-visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 256.0
+offset_top = 257.0
 offset_right = -1.0
-offset_bottom = 280.0
+offset_bottom = 282.0
+grow_horizontal = 0
 script = ExtResource("13")
 
 [node name="Label" type="Label" parent="ModelMatchFloor"]
@@ -663,9 +665,10 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -175.0
-offset_top = 256.0
+offset_top = 257.0
 offset_right = -1.0
-offset_bottom = 280.0
+offset_bottom = 281.0
+grow_horizontal = 0
 script = ExtResource("13")
 
 [node name="Label" type="Label" parent="ModelBasePlaneCount"]
