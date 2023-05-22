@@ -12,7 +12,6 @@ class_name VoxEditor
 # - importing real meshes somehow maybe?
 
 class VoxMat extends RefCounted:
-    
     enum TileMode {
         MODE_12x4,
         MODE_4x4,
@@ -1072,6 +1071,7 @@ func handle_voxel_input():
             if current_mat is VoxMat or current_mat is ModelMat:
                 place_mat_at($Voxels, current_mat, new_point, collision_normal)
             elif current_mat is DecalMat:
+                collision_point = collision_point + Vector3.ONE - Vector3.ONE
                 place_mat_at($Voxels, current_mat, collision_point, collision_normal)
         if false:
             if current_mat is VoxMat:

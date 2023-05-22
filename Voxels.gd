@@ -140,6 +140,7 @@ func end_operation():
         undo_buffer.push_back(changed)
         redo_buffer = []
     
+    
     temp_world = {}
     operation_active = false
 
@@ -540,6 +541,7 @@ func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMa
 func erase_decal(position : Vector3, dir : Vector3):
     position = position.round()
     if position in decals:
+        decals[position] = decals[position].duplicate(false)
         decals[position].erase(dir.round())
         if decals[position].size() == 0:
             decals.erase(position)
@@ -956,8 +958,8 @@ func add_voxels(mesh):
     for info in face_tex:
         var texture = info[0][0]
         var mat : VoxEditor.VoxMat = info[0][1]
-        if info[2].size() > 1:
-            print(mat.tiling_mode)
+        #if info[2].size() > 1:
+        #    print(mat.tiling_mode)
         
         var material = StandardMaterial3D.new()
         material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
