@@ -244,6 +244,7 @@ HINT: Middle click drag to turn. Shift middle click drag to pan/translate.
 HINT: Press j to toggle between orthographic preview modes/angles."
 
 [node name="CursorBox" type="CSGBox3D" parent="."]
+visible = false
 size = Vector3(1.1, 1.1, 1.1)
 material = SubResource("7")
 

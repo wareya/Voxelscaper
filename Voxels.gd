@@ -138,8 +138,9 @@ func end_operation():
     
     if changed.size() > 0:
         undo_buffer.push_back(changed)
+        if undo_buffer.size() > 1000:
+            undo_buffer.pop_front()
         redo_buffer = []
-    
     
     temp_world = {}
     operation_active = false
