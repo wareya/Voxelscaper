@@ -6,15 +6,22 @@ class_name VoxEditor
 # - save gltf (need to port to godot 4)
 
 ### nice-to-have list
-# - material transparency modes (none, binary, transparent)
-# ^-- actually this should probably be a main TODO because >water<
 # - deform tool (modifying existing geometry vertex offsets)
-# - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
+# - "reset camera" button
+# - scale setting for worldspace 1x1 voxel mode
 # - background color setting
 # - 1:1 pixel screenshot mode (orthographic, isometric)
 # - importing real meshes somehow maybe?
 
 class VoxMat extends Reference:
+    
+    enum TileMode {
+        MODE_12x4,
+        MODE_4x4,
+        MODE_1x1,
+        MODE_1x1_WORLD,
+    }
+    
     var sides : Texture
     var top   : Texture
     
@@ -22,16 +29,19 @@ class VoxMat extends Reference:
     var transparent_mode : int = 0 # 0 : opaque, 1 : alpha scissor, 2 : actually transparent
     var transparent_inner_face_mode : int = 0 # 0 : show, 1 : don't show
     
-    func _init(_sides : Texture, _top : Texture, _transparent_mode : int, _transparent_inner_face_mode : int):
+    var tiling_mode = TileMode.MODE_12x4
+    
+    func _init(_sides : Texture, _top : Texture, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int):
         sides = _sides
         top = _top
         transparent_mode = _transparent_mode
         transparent_inner_face_mode = _transparent_inner_face_mode
+        tiling_mode = _tiling_mode
     
     func encode() -> Dictionary:
         var top_png = Marshalls.raw_to_base64(top.get_data().save_png_to_buffer())
         var sides_png = Marshalls.raw_to_base64(sides.get_data().save_png_to_buffer())
-        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode}
+        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode}
     
     static func decode(dict : Dictionary):
         if not "type" in dict or dict.type == "voxel":
@@ -45,7 +55,8 @@ class VoxMat extends Reference:
             sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
             var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
             var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
-            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b)
+            var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
+            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c)
         elif dict.type == "model":
             return ModelMat.decode(dict)
         elif dict.type == "decal":
@@ -120,9 +131,9 @@ class ModelMat extends DecalMat:
             return VoxMat.decode(dict)
 
 var mats = [
-    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0),
-    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0),
-    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0),
 ]
 
 func delete_mat(mat):
@@ -146,7 +157,7 @@ func set_current_mat(new_current):
 
 func modify_mat(mat):
     if mat is VoxMat:
-        var matconf = preload("res://MatConfig.tscn").instance()
+        var matconf = load("res://MatConfig.tscn").instance()
         matconf.set_side(mat.sides)
         matconf.set_top(mat.top)
         add_child(matconf)
@@ -157,6 +168,7 @@ func modify_mat(mat):
             mat.top = new_mat[1]
             mat.transparent_mode = new_mat[2]
             mat.transparent_inner_face_mode = new_mat[3]
+            mat.tiling_mode = new_mat[4]
     
     elif mat is DecalMat:
         var config = preload("res://DecalConfig.tscn").instance()
@@ -203,13 +215,13 @@ func _on_files_dropped(files, _screen):
     var which = yield(picker, "done")
     
     if which == "voxel":
-        var matconf = preload("res://MatConfig.tscn").instance()
+        var matconf = load("res://MatConfig.tscn").instance()
         matconf.set_side(image)
         add_child(matconf)
         
         var mat = yield(matconf, "done")
         if mat:
-            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3]))
+            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4]))
     
     elif which == "decal" or which == "model":
         var config = preload("res://DecalConfig.tscn").instance()
@@ -235,21 +247,10 @@ func add_mat_button(mat):
     button.mat = mat
     $Mats/List.add_child(button)
     
-    if mat is VoxMat:
-        var preview = preload("res://CubePreview.tscn").instance()
-        preview.inform_mats(MatConfig.make_mat(mat.sides), MatConfig.make_mat(mat.top))
-        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-        button.add_child(preview)
-    elif mat is ModelMat:
-        var preview = preload("res://CubePreview.tscn").instance()
-        preview.inform_model(mat)
-        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-        button.add_child(preview)
-    elif mat is DecalMat:
-        var preview = preload("res://CubePreview.tscn").instance()
-        preview.inform_decal(mat)
-        preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
-        button.add_child(preview)
+    var preview = load("res://CubePreview.tscn").instance()
+    preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
+    button.add_child(preview)
+    preview.inform_mat(mat)
     
     button.rect_min_size = Vector2(64, 48)
     button.toggle_mode = true
@@ -344,28 +345,6 @@ func _ready():
     $Mat2dOrientation.add_item("180 deg flip", 6)
     $Mat2dOrientation.add_item("270 deg flip", 7)
     $Mat2dOrientation.selected = 0
-    
-    #$ModelPlaceMode.add_item("single 0 deg", 0)
-    #$ModelPlaceMode.add_item("single 45 deg", 1)
-    #$ModelPlaceMode.add_item("single 45 deg wide", 2)
-    #$ModelPlaceMode.add_item("single 90 deg", 3)
-    #$ModelPlaceMode.add_item("single 135 deg", 4)
-    #$ModelPlaceMode.add_item("single 135 deg wide", 5)
-    #$ModelPlaceMode.add_item("cross 0 deg", 6)
-    #$ModelPlaceMode.add_item("cross 45 deg", 7)
-    #$ModelPlaceMode.add_item("cross 45 deg wide", 8)
-    #$ModelPlaceMode.add_item("double 0 deg", 9)
-    #$ModelPlaceMode.add_item("double 45 deg", 10)
-    #$ModelPlaceMode.add_item("double 45 deg wide", 11)
-    #$ModelPlaceMode.add_item("double 90 deg", 12)
-    #$ModelPlaceMode.add_item("double 135 deg", 13)
-    #$ModelPlaceMode.add_item("double 135 deg wide", 14)
-    #$ModelPlaceMode.add_item("cross double 0 deg", 15)
-    #$ModelPlaceMode.add_item("cross double 45 deg", 16)
-    #$ModelPlaceMode.add_item("cross double 45 wide", 17)
-    #$ModelPlaceMode.selected = 0
-    
-    
     
     $ModelMatchFloor.add_item("no", 0)
     $ModelMatchFloor.add_item("yes", 1)
@@ -904,6 +883,27 @@ func _process(delta):
     if $Voxels.operation_active and !draw_mode and !erase_mode:
         $Voxels.end_operation()
 
+func place_mat_at(voxels, mat, point, normal):
+    if mat is VoxMat:
+        voxels.place_voxel(point, mat, $VertEditPanel.prepared_overrides)
+    elif mat is ModelMat:
+        var info = (
+            int($ModelWiden.pressed) |
+            (int($ModelSpacing.value) << 1) |
+            (int($ModelTurnCount.value - 1) << 4) |
+            (int($ModelRotationX.value) << 6) |
+            (int($ModelRotationY.value) << 9) |
+            (int($ModelRotationZ.value) << 12)
+        )
+        var floor_mode = $ModelMatchFloor.selected
+        var offset_x = $ModelOffsetX.value
+        var offset_y = $ModelOffsetY.value
+        var offset_z = $ModelOffsetZ.value
+        voxels.place_model(point, mat, info, floor_mode, offset_x, offset_y, offset_z)
+    elif mat is DecalMat:
+        var idx = $Mat2dOrientation.selected
+        voxels.place_decal(point, normal, mat, idx)
+
 func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
@@ -1024,26 +1024,33 @@ func handle_voxel_input():
         #]
         #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
         #$Voxels.place_voxel(new_point, current_mat, [])
-        if current_mat is VoxMat:
-            $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
-        elif current_mat is ModelMat:
-            var info = (
-                int($ModelWiden.pressed) |
-                (int($ModelSpacing.value) << 1) |
-                (int($ModelTurnCount.value - 1) << 4) |
-                (int($ModelRotationX.value) << 6) |
-                (int($ModelRotationY.value) << 9) |
-                (int($ModelRotationZ.value) << 12)
-            )
-            var floor_mode = $ModelMatchFloor.selected
-            var offset_x = $ModelOffsetX.value
-            var offset_y = $ModelOffsetY.value
-            var offset_z = $ModelOffsetZ.value
-            $Voxels.place_model(new_point, current_mat, info, floor_mode, offset_x, offset_y, offset_z)
-        elif current_mat is DecalMat:
-            var idx = $Mat2dOrientation.selected
-            #var id = $Mat2dOrientation.get_item_id(idx)
-            $Voxels.place_decal(collision_point, collision_normal, current_mat, idx)
+        
+        if true:
+            if current_mat is VoxMat or current_mat is ModelMat:
+                place_mat_at($Voxels, current_mat, new_point, collision_normal)
+            elif current_mat is DecalMat:
+                place_mat_at($Voxels, current_mat, collision_point, collision_normal)
+        if false:
+            if current_mat is VoxMat:
+                $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
+            elif current_mat is ModelMat:
+                var info = (
+                    int($ModelWiden.pressed) |
+                    (int($ModelSpacing.value) << 1) |
+                    (int($ModelTurnCount.value - 1) << 4) |
+                    (int($ModelRotationX.value) << 6) |
+                    (int($ModelRotationY.value) << 9) |
+                    (int($ModelRotationZ.value) << 12)
+                )
+                var floor_mode = $ModelMatchFloor.selected
+                var offset_x = $ModelOffsetX.value
+                var offset_y = $ModelOffsetY.value
+                var offset_z = $ModelOffsetZ.value
+                $Voxels.place_model(new_point, current_mat, info, floor_mode, offset_x, offset_y, offset_z)
+            elif current_mat is DecalMat:
+                var idx = $Mat2dOrientation.selected
+                #var id = $Mat2dOrientation.get_item_id(idx)
+                $Voxels.place_decal(collision_point, collision_normal, current_mat, idx)
         
         if $ButtonTool.selected == 0:
             draw_mode = false

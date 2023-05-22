@@ -49,7 +49,8 @@ signal done
 func done():
     var v1 = $UI/Images/Transparent.selected
     var v2 = $UI/Images/TransparentMode.selected
-    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2])
+    var v3 = $UI/Images/TilingMode.selected
+    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3])
     queue_free()
 
 func cancel():
@@ -83,10 +84,19 @@ func _ready():
     
     $UI/Images/TransparentMode.add_item("Show Inner Faces", 0)
     $UI/Images/TransparentMode.add_item("Hide Inner Faces", 1)
+    
+    $UI/Images/TilingMode.add_item("12x4 Autotile", 0)
+    $UI/Images/TilingMode.add_item("4x4 Autotile", 1)
+    $UI/Images/TilingMode.add_item("1x1 Local", 2)
+    $UI/Images/TilingMode.add_item("1x1 World", 3)
 
 
 func _process(_delta):
-    $UI/CubePreview.inform_mats(side_mat, top_mat)
+    var v1 = $UI/Images/Transparent.selected
+    var v2 = $UI/Images/TransparentMode.selected
+    var v3 = $UI/Images/TilingMode.selected
+    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3)
+    $UI/CubePreview.inform_mat(mat)
     
     $UI/Images/Transparent.visible = top != null
     $UI/Images/TransparentMode.visible = $UI/Images/Transparent.selected != 0 and top != null

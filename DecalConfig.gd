@@ -16,7 +16,6 @@ static func make_mat(decalmat):
     
     return mat
 
-var image = null
 var tex = null
 func set_mat(image):
     if image is Image:

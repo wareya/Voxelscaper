@@ -1,8 +1,6 @@
-[gd_scene load_steps=29 format=2]
+[gd_scene load_steps=23 format=2]
 
 [ext_resource path="res://Voxels.tscn" type="PackedScene" id=1]
-[ext_resource path="res://art/brickwall.png" type="Texture" id=2]
-[ext_resource path="res://art/sandbrick.png" type="Texture" id=3]
 [ext_resource path="res://art/sfdsfgrtj.png" type="Texture" id=4]
 [ext_resource path="res://World.gd" type="Script" id=5]
 [ext_resource path="res://art/grid.png" type="Texture" id=6]
@@ -23,39 +21,7 @@ ambient_light_color = Color( 1, 1, 1, 1 )
 ambient_light_energy = 0.1
 ambient_light_sky_contribution = 0.0
 
-[sub_resource type="SpatialMaterial" id=28]
-params_diffuse_mode = 1
-albedo_texture = ExtResource( 2 )
-
-[sub_resource type="SpatialMaterial" id=29]
-params_diffuse_mode = 1
-albedo_texture = ExtResource( 3 )
-
-[sub_resource type="ArrayMesh" id=30]
-surfaces/0 = {
-"aabb": AABB( -0.5, -0.5, -0.5, 1, 1, 1.00001 ),
-"array_data": PoolByteArray( 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 1, 128, 0, 0, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 1, 128, 0, 0, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 1, 128, 0, 0, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 1, 128, 0, 0, 211, 14, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 0, 0, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 0, 0, 211, 14, 2, 58, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 255, 127, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 255, 127, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 127, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 127, 211, 14, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 0, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 0, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 0, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 0, 211, 14, 2, 58 ),
-"array_index_data": PoolByteArray( 0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0 ),
-"blend_shape_data": [  ],
-"format": 2194707,
-"index_count": 24,
-"material": SubResource( 28 ),
-"primitive": 4,
-"skeleton_aabb": [  ],
-"vertex_count": 16
-}
-surfaces/1 = {
-"aabb": AABB( -0.5, -0.5, -0.5, 1.00001, 1.00001, 1.00001 ),
-"array_data": PoolByteArray( 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 211, 14, 2, 58, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 1, 128, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 1, 128, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 1, 128, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 1, 128, 211, 14, 2, 58 ),
-"array_index_data": PoolByteArray( 0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0 ),
-"blend_shape_data": [  ],
-"format": 2194707,
-"index_count": 12,
-"material": SubResource( 29 ),
-"primitive": 4,
-"skeleton_aabb": [  ],
-"vertex_count": 8
-}
+[sub_resource type="ArrayMesh" id=28]
 
 [sub_resource type="SpatialMaterial" id=11]
 flags_unshaded = true
@@ -121,39 +87,7 @@ ambient_light_sky_contribution = 0.0
 [sub_resource type="World" id=20]
 environment = SubResource( 19 )
 
-[sub_resource type="SpatialMaterial" id=31]
-params_diffuse_mode = 1
-albedo_texture = ExtResource( 2 )
-
-[sub_resource type="SpatialMaterial" id=32]
-params_diffuse_mode = 1
-albedo_texture = ExtResource( 3 )
-
-[sub_resource type="ArrayMesh" id=33]
-surfaces/0 = {
-"aabb": AABB( -0.5, -0.5, -0.5, 1, 1, 1.00001 ),
-"array_data": PoolByteArray( 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 1, 128, 0, 0, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 1, 128, 0, 0, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 1, 128, 0, 0, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 1, 128, 0, 0, 211, 14, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 0, 0, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 0, 0, 211, 14, 2, 58, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 255, 127, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 255, 127, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 127, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 127, 211, 14, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 0, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 0, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 0, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 0, 211, 14, 2, 58 ),
-"array_index_data": PoolByteArray( 0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0 ),
-"blend_shape_data": [  ],
-"format": 2194707,
-"index_count": 24,
-"material": SubResource( 31 ),
-"primitive": 4,
-"skeleton_aabb": [  ],
-"vertex_count": 16
-}
-surfaces/1 = {
-"aabb": AABB( -0.5, -0.5, -0.5, 1.00001, 1.00001, 1.00001 ),
-"array_data": PoolByteArray( 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 78, 45, 253, 59, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 211, 14, 253, 59, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 78, 45, 2, 58, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 211, 14, 2, 58, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 1, 128, 78, 45, 253, 59, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 1, 128, 211, 14, 253, 59, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 1, 128, 78, 45, 2, 58, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 1, 128, 211, 14, 2, 58 ),
-"array_index_data": PoolByteArray( 0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0 ),
-"blend_shape_data": [  ],
-"format": 2194707,
-"index_count": 12,
-"material": SubResource( 32 ),
-"primitive": 4,
-"skeleton_aabb": [  ],
-"vertex_count": 8
-}
+[sub_resource type="ArrayMesh" id=29]
 
 [sub_resource type="DynamicFont" id=27]
 size = 18
@@ -168,9 +102,13 @@ script = ExtResource( 5 )
 transform = Transform( 0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5 )
 shadow_enabled = true
 shadow_bias = 0.05
+directional_shadow_split_1 = 0.25
+directional_shadow_split_2 = 0.4
+directional_shadow_split_3 = 0.8
 directional_shadow_blend_splits = true
 directional_shadow_normal_bias = 0.4
 directional_shadow_bias_split_scale = 1.0
+directional_shadow_max_distance = 50.0
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource( 3 )
@@ -186,7 +124,7 @@ fov = 45.0
 size = 10.0
 
 [node name="Voxels" parent="." instance=ExtResource( 1 )]
-mesh = SubResource( 30 )
+mesh = SubResource( 28 )
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
 transform = Transform( 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0 )
@@ -304,7 +242,7 @@ pixel_size = 0.0078
 texture = ExtResource( 10 )
 
 [node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource( 1 )]
-mesh = SubResource( 33 )
+mesh = SubResource( 29 )
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]

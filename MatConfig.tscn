@@ -80,22 +80,28 @@ margin_bottom = 359.0
 bbcode_enabled = true
 bbcode_text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top afterwards.
 
-Images should be \"Godot 3x3 (minimal)\" autotile tilesheets with no spacing or padding. Try: [color=#40A0FF][url]https://wareya.github.io/webtyler/[/url][/color]"
+Images for 12x4 and 4x4 mode should be autotile tilesheets with no spacing or padding. Try: [color=#40A0FF][url]https://wareya.github.io/webtyler/[/url][/color]"
 text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top afterwards.
 
-Images should be \"Godot 3x3 (minimal)\" autotile tilesheets with no spacing or padding. Try: https://wareya.github.io/webtyler/"
+Images for 12x4 and 4x4 mode should be autotile tilesheets with no spacing or padding. Try: https://wareya.github.io/webtyler/"
 fit_content_height = true
 script = SubResource( 1 )
 
-[node name="Transparent" type="OptionButton" parent="UI/Images"]
+[node name="TilingMode" type="OptionButton" parent="UI/Images"]
 margin_top = 363.0
 margin_right = 220.0
 margin_bottom = 383.0
+text = "Tiling Mode"
 
-[node name="TransparentMode" type="OptionButton" parent="UI/Images"]
+[node name="Transparent" type="OptionButton" parent="UI/Images"]
 margin_top = 387.0
 margin_right = 220.0
 margin_bottom = 407.0
+
+[node name="TransparentMode" type="OptionButton" parent="UI/Images"]
+margin_top = 411.0
+margin_right = 220.0
+margin_bottom = 431.0
 
 [node name="Swap" type="Button" parent="UI/Images"]
 visible = false
@@ -112,7 +118,7 @@ margin_bottom = 347.0
 text = "Done"
 
 [node name="Control" type="Control" parent="UI/Images"]
-margin_top = 411.0
+margin_top = 435.0
 margin_right = 220.0
 margin_bottom = 564.0
 size_flags_vertical = 3

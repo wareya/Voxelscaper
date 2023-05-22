@@ -27,6 +27,12 @@ onready var models = {}
 onready var voxel_corners = {
 }
 
+func clear():
+    voxels = {}
+    decals = {}
+    models = {}
+    voxel_corners = {}
+
 func dict_left(a : Dictionary, b : Dictionary) -> Dictionary:
     var ret = {}
     for key in a:
@@ -390,37 +396,6 @@ func build_verts():
 
 var dir_verts = build_verts()
 
-
-var bitmask_stuff = [
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,1,0, 0,0,0, 0,0,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 0,1,1, 0,0,0, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 0,0,0, 1,1,1,
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,0, 0,0,0, 1,1,0,
-
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,0, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 0,1,1, 1,1,0,
-
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,0,0, 0,1,0, 0,0,0,
-]
-
-func get_bitmask_bit(tile : Vector2, which : int):
-    var bit = tile * 3
-    if which == TileSet.BIND_BOTTOM or which == TileSet.BIND_BOTTOMLEFT or which == TileSet.BIND_BOTTOMRIGHT:
-        bit.y += 2
-    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_LEFT or which == TileSet.BIND_RIGHT:
-        bit.y += 1
-    if which == TileSet.BIND_RIGHT or which == TileSet.BIND_BOTTOMRIGHT or which == TileSet.BIND_TOPRIGHT:
-        bit.x += 2
-    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_BOTTOM or which == TileSet.BIND_TOP:
-        bit.x += 1
-    return bitmask_stuff[bit.x + bit.y*12*3]
-
 const bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
 
 var bitmask_dirs = {
@@ -448,21 +423,86 @@ func generate_bitmask_dirs_by_dir():
 
 var bitmask_dirs_by_dir = generate_bitmask_dirs_by_dir()
 
-func get_tile_bitmask(tile : Vector2):
+func get_bitmask_bit(tile : Vector2, which : int, pool : Array):
+    var bit = tile * 3
+    var stride = pool.size() / 3 / 3 / 4
+    if which == TileSet.BIND_BOTTOM or which == TileSet.BIND_BOTTOMLEFT or which == TileSet.BIND_BOTTOMRIGHT:
+        bit.y += 2
+    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_LEFT or which == TileSet.BIND_RIGHT:
+        bit.y += 1
+    if which == TileSet.BIND_RIGHT or which == TileSet.BIND_BOTTOMRIGHT or which == TileSet.BIND_TOPRIGHT:
+        bit.x += 2
+    elif which == TileSet.BIND_CENTER or which == TileSet.BIND_BOTTOM or which == TileSet.BIND_TOP:
+        bit.x += 1
+    return pool[bit.x + bit.y*stride*3]
+
+var bitmask_stuff_12x4 = [
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,1,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 0,1,1, 0,0,0, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 0,0,0, 1,1,1,
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,0, 0,0,0, 1,1,0,
+
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,0, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 0,1,1, 1,1,0,
+
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,0,0, 0,1,0, 0,0,0,
+]
+
+func get_tile_bitmask_12x4(tile : Vector2):
     var bitmask = 0
     for bit in bitmask_bindings:
-        if get_bitmask_bit(tile, bit):
+        if get_bitmask_bit(tile, bit, bitmask_stuff_12x4):
             bitmask |= bit
     return bitmask
 
-func build_uvs():
+func build_uvs_12x4():
     var uvs = {}
     for y in range(4):
         for x in range(12):
-            uvs[get_tile_bitmask(Vector2(x, y))] = Vector2(x, y)
+            uvs[get_tile_bitmask_12x4(Vector2(x, y))] = Vector2(x, y)
     return uvs
 
-var bitmask_uvs = build_uvs()
+var bitmask_uvs_12x4 = build_uvs_12x4()
+
+var bitmask_stuff_4x4 = [
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+]
+
+func get_tile_bitmask_4x4(tile : Vector2):
+    var bitmask = 0
+    for bit in bitmask_bindings:
+        if get_bitmask_bit(tile, bit, bitmask_stuff_4x4):
+            bitmask |= bit
+    return bitmask
+
+func build_uvs_4x4():
+    var uvs = {}
+    for y in range(4):
+        for x in range(4):
+            uvs[get_tile_bitmask_4x4(Vector2(x, y))] = Vector2(x, y)
+    return uvs
+
+var bitmask_uvs_4x4 = build_uvs_4x4()
 
 func get_decal_uv_scale(i : int) -> Transform2D:
     var ret : Transform2D = Transform2D.IDENTITY
@@ -902,6 +942,8 @@ func add_voxels(mesh):
     for info in face_tex:
         var texture = info[0][0]
         var mat : VoxEditor.VoxMat = info[0][1]
+        if info[2].size() > 1:
+            print(mat.tiling_mode)
         
         var material = SpatialMaterial.new()
         material.roughness = 1.0
@@ -934,7 +976,6 @@ func add_voxels(mesh):
                 if occluding_voxel_exists(pos+dir, vox) and !face_is_shifted(pos+dir, -dir) and !face_is_shifted(pos, dir):
                     continue
                 
-                var unit_uv = Vector2(1.0/12.0, 1/4.0)
                 var uvs = ref_uvs.duplicate()
                 if pos in uv_data_cache and dir in uv_data_cache[pos]:
                     uvs = uv_data_cache[pos][dir]
@@ -969,21 +1010,32 @@ func add_voxels(mesh):
                     }
                     for bind in smart_bind_sets.keys():
                         var other = smart_bind_sets[bind]
+                        # disable corner if either edge disabled
                         if bitmask & other != other:
                             bitmask &= ~bind
+                        # enable corner if both edges enabled and 4x4 mode
+                        if mat.tiling_mode == VoxEditor.VoxMat.TileMode.MODE_4x4:
+                            if bitmask & other == other:
+                                bitmask |= bind
+                    
                     for i in range(uvs.size()):
                         uvs[i].x = lerp(0.5, uvs[i].x, uv_shrink)
                         uvs[i].y = lerp(0.5, uvs[i].y, uv_shrink)
                         
                         uvs[i].y = 1.0-uvs[i].y
                         
-                        
-                        if bitmask in bitmask_uvs:
-                            uvs[i] += bitmask_uvs[bitmask]
-                        else:
-                            uvs[i] += bitmask_uvs[TileSet.BIND_CENTER]
-                        
-                        uvs[i] = unit_uv * uvs[i]
+                        if mat.tiling_mode == VoxEditor.VoxMat.TileMode.MODE_12x4:
+                            if bitmask in bitmask_uvs_12x4:
+                                uvs[i] += bitmask_uvs_12x4[bitmask]
+                            else:
+                                uvs[i] += bitmask_uvs_12x4[TileSet.BIND_CENTER]
+                            uvs[i] = Vector2(1.0/12.0, 1/4.0) * uvs[i]
+                        elif mat.tiling_mode == VoxEditor.VoxMat.TileMode.MODE_4x4:
+                            if bitmask in bitmask_uvs_4x4:
+                                uvs[i] += bitmask_uvs_4x4[bitmask]
+                            else:
+                                uvs[i] += bitmask_uvs_4x4[TileSet.BIND_CENTER]
+                            uvs[i] = Vector2(1.0/4.0, 1/4.0) * uvs[i]
                     
                     if not pos in uv_data_cache:
                         uv_data_cache[pos] = {}
@@ -1015,15 +1067,27 @@ func add_voxels(mesh):
                 var index_base = verts.size()
                 
                 for i in [0, 1, 2, 3]:
-                    tex_uvs.push_back(uvs[i])
+                    var uv = uvs[i]
                     var vert = dir_verts[dir][i]
                     
                     var b = (vert*2.0).round()
                     if b in vox_corners:
                         vert = vox_corners[b]/2.0
                     
+                    if mat.tiling_mode == VoxEditor.VoxMat.TileMode.MODE_1x1_WORLD:
+                        if dir.abs() == Vector3.UP:
+                            uv = Vector2(vert.x, vert.z) + Vector2(0.5, 0.5)
+                        elif dir.abs() == Vector3.RIGHT:
+                            uv = Vector2(vert.z * -sign(dir.x), -vert.y) + Vector2(0.5, 0.5)
+                        else:
+                            uv = Vector2(vert.x * sign(dir.z), -vert.y) + Vector2(0.5, 0.5)
+                        
+                        uv.x = lerp(0.5, uv.x, uv_shrink)
+                        uv.y = lerp(0.5, uv.y, uv_shrink)
+                    
                     verts.push_back(vert + pos)
                     normals.push_back(normal)
+                    tex_uvs.push_back(uv)
                 
                 for i in order:
                     indexes.push_back(i + index_base)

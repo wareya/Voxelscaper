@@ -113,4 +113,6 @@ quality/directional_shadow/size.mobile=1024
 quality/shadow_atlas/size=1024
 quality/shadow_atlas/size.mobile=1024
 quality/filters/anisotropic_filter_level=16
+gles2/compatibility/disable_half_float=true
+gles2/compatibility/enable_high_float.Android=true
 environment/default_environment="res://default_env.tres"
