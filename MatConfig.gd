@@ -47,7 +47,9 @@ func set_top(image):
 
 signal done
 func done():
-    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture])
+    var v1 = $UI/Images/Transparent.selected
+    var v2 = $UI/Images/TransparentMode.selected
+    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2])
     queue_free()
 
 func cancel():
@@ -74,10 +76,20 @@ func _ready():
     $UI/CubePreview.anchor_right = 1.0
     $UI/CubePreview.anchor_right = 0.0
     $UI/Images/Cancel.connect("pressed", self, "cancel")
+    
+    $UI/Images/Transparent.add_item("Opaque", 0)
+    $UI/Images/Transparent.add_item("Alpha Scissor", 1)
+    $UI/Images/Transparent.add_item("Transparent", 2)
+    
+    $UI/Images/TransparentMode.add_item("Show Inner Faces", 0)
+    $UI/Images/TransparentMode.add_item("Hide Inner Faces", 1)
 
 
 func _process(_delta):
     $UI/CubePreview.inform_mats(side_mat, top_mat)
+    
+    $UI/Images/Transparent.visible = top != null
+    $UI/Images/TransparentMode.visible = $UI/Images/Transparent.selected != 0 and top != null
 
 func _input(_event):
     if _event is InputEventKey:

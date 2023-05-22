@@ -5,24 +5,33 @@ class_name VoxEditor
 ### TODO LIST
 # - save gltf (need to port to godot 4)
 
-### long-term TODO list
+### nice-to-have list
 # - material transparency modes (none, binary, transparent)
+# ^-- actually this should probably be a main TODO because >water<
 # - deform tool (modifying existing geometry vertex offsets)
 # - other voxel material modes (worldspace UVs, 4x4 instead of 12x12, 1x1 instead of 12x12)
+# - background color setting
+# - 1:1 pixel screenshot mode (orthographic, isometric)
 # - importing real meshes somehow maybe?
 
 class VoxMat extends Reference:
     var sides : Texture
     var top   : Texture
     
-    func _init(_sides : Texture, _top : Texture):
+    # FIXME: previews don't work
+    var transparent_mode : int = 0 # 0 : opaque, 1 : alpha scissor, 2 : actually transparent
+    var transparent_inner_face_mode : int = 0 # 0 : show, 1 : don't show
+    
+    func _init(_sides : Texture, _top : Texture, _transparent_mode : int, _transparent_inner_face_mode : int):
         sides = _sides
         top = _top
+        transparent_mode = _transparent_mode
+        transparent_inner_face_mode = _transparent_inner_face_mode
     
     func encode() -> Dictionary:
         var top_png = Marshalls.raw_to_base64(top.get_data().save_png_to_buffer())
         var sides_png = Marshalls.raw_to_base64(sides.get_data().save_png_to_buffer())
-        return {"type": "voxel", "top": top_png, "sides": sides_png}
+        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode}
     
     static func decode(dict : Dictionary):
         if not "type" in dict or dict.type == "voxel":
@@ -34,7 +43,9 @@ class VoxMat extends Reference:
             top_tex.create_from_image(top_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
             var sides_tex = ImageTexture.new()
             sides_tex.create_from_image(sides_image, ImageTexture.FLAG_CONVERT_TO_LINEAR)
-            return VoxMat.new(sides_tex, top_tex)
+            var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
+            var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
+            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b)
         elif dict.type == "model":
             return ModelMat.decode(dict)
         elif dict.type == "decal":
@@ -109,9 +120,9 @@ class ModelMat extends DecalMat:
             return VoxMat.decode(dict)
 
 var mats = [
-    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png")),
-    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png")),
-    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png")),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0),
 ]
 
 func delete_mat(mat):
@@ -144,6 +155,8 @@ func modify_mat(mat):
         if new_mat:
             mat.sides = new_mat[0]
             mat.top = new_mat[1]
+            mat.transparent_mode = new_mat[2]
+            mat.transparent_inner_face_mode = new_mat[3]
     
     elif mat is DecalMat:
         var config = preload("res://DecalConfig.tscn").instance()
@@ -196,7 +209,7 @@ func _on_files_dropped(files, _screen):
         
         var mat = yield(matconf, "done")
         if mat:
-            add_mat(VoxMat.new(mat[0], mat[1]))
+            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3]))
     
     elif which == "decal" or which == "model":
         var config = preload("res://DecalConfig.tscn").instance()

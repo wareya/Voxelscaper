@@ -11,6 +11,16 @@ onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 
 onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
+func occluding_voxel_exists(position, source_mat):
+    if position in voxels:
+        if (voxels[position] == source_mat
+        and source_mat.transparent_mode != 0
+        and source_mat.transparent_inner_face_mode == 1):
+            return true
+        if voxels[position].transparent_mode == 0:
+            return true
+    return false
+
 onready var decals = {}
 onready var models = {}
 
@@ -316,13 +326,16 @@ func refresh_surface_mapping():
     voxels_by_top   = {}
     for pos in voxels.keys():
         var vox = voxels[pos]
-        if not voxels_by_sides.has(vox.sides):
-            voxels_by_sides[vox.sides] = []
-        voxels_by_sides[vox.sides].push_back(pos)
         
-        if not voxels_by_top.has(vox.top):
-            voxels_by_top[vox.top] = []
-        voxels_by_top[vox.top].push_back(pos)
+        var key = [vox.sides, vox]
+        if not voxels_by_sides.has(key):
+            voxels_by_sides[key] = []
+        voxels_by_sides[key].push_back(pos)
+        
+        key = [vox.top, vox]
+        if not voxels_by_top.has(key):
+            voxels_by_top[key] = []
+        voxels_by_top[key].push_back(pos)
     
     decals_by_mat = {}
     for pos in decals.keys():
@@ -887,12 +900,21 @@ func add_voxels(mesh):
         face_tex.push_back([tex, false, voxels_by_top[tex]])
     
     for info in face_tex:
-        var texture = info[0]
+        var texture = info[0][0]
+        var mat : VoxEditor.VoxMat = info[0][1]
         
         var material = SpatialMaterial.new()
         material.roughness = 1.0
         material.params_diffuse_mode |= SpatialMaterial.DIFFUSE_LAMBERT
         material.albedo_texture = texture
+        
+        var inner_faces = false
+        if mat.transparent_mode == 1:
+            material.params_use_alpha_scissor = true
+            inner_faces = mat.transparent_inner_face_mode != 0
+        elif mat.transparent_mode == 2:
+            material.flags_transparent = true
+            inner_faces = mat.transparent_inner_face_mode != 0
         
         var verts = PoolVector3Array()
         var tex_uvs = PoolVector2Array()
@@ -909,7 +931,7 @@ func add_voxels(mesh):
             var vox = voxels[pos]
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
             for dir in sides if is_side else unsides:
-                if voxels.has(pos+dir) and !face_is_shifted(pos+dir, -dir) and !face_is_shifted(pos, dir):
+                if occluding_voxel_exists(pos+dir, vox) and !face_is_shifted(pos+dir, -dir) and !face_is_shifted(pos, dir):
                     continue
                 
                 var unit_uv = Vector2(1.0/12.0, 1/4.0)
@@ -933,7 +955,7 @@ func add_voxels(mesh):
                         
                         if neighbor_test and is_match:
                             bitmask |= bit
-                        if voxels.get(neighbor_pos + dir):
+                        if voxels.get(neighbor_pos + dir) and occluding_voxel_exists(neighbor_pos + dir, vox):
                             bitmask &= ~bit
                         # FIXME handle floor-wall transitions better if material asks for it
                     
