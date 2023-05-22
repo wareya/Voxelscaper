@@ -1,6 +1,5 @@
 class_name Helpers
 
-
 static func vec2_to_array(vec : Vector2) -> Array:
     return [vec.x, vec.y]
 

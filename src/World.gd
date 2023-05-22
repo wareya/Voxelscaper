@@ -165,7 +165,7 @@ func modify_mat(mat):
             mat.tiling_mode = new_mat[4]
     
     elif mat is DecalMat:
-        var config = preload("res://DecalConfig.tscn").instantiate()
+        var config = preload("res://src/DecalConfig.tscn").instantiate()
         config.set_mat(mat.tex)
         config.set_icon_coord(mat.icon_coord)
         config.set_grid_size(mat.grid_size)
@@ -204,12 +204,12 @@ func _on_files_dropped(files):
         existant[0].set_mat(image)
         return
     
-    var picker = preload("res://MaterialModePicker.tscn").instantiate()
+    var picker = preload("res://src/MaterialModePicker.tscn").instantiate()
     add_child(picker)
     var which = await picker.done
     
     if which == "voxel":
-        var matconf = load("res://MatConfig.tscn").instantiate()
+        var matconf = load("res://src/MatConfig.tscn").instantiate()
         matconf.set_side(image)
         add_child(matconf)
         
@@ -218,7 +218,7 @@ func _on_files_dropped(files):
             add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4]))
     
     elif which == "decal" or which == "model":
-        var config = preload("res://DecalConfig.tscn").instantiate()
+        var config = preload("res://src/DecalConfig.tscn").instantiate()
         config.set_mat(image)
         add_child(config)
         
@@ -237,11 +237,11 @@ func _on_files_dropped(files):
 
 func add_mat_button(mat):
     var button = Button.new()
-    button.set_script(preload("res://MatButton.gd"))
+    button.set_script(preload("res://src/MatButton.gd"))
     button.mat = mat
     $Mats/List.add_child(button)
     
-    var preview = load("res://CubePreview.tscn").instantiate()
+    var preview = load("res://src/CubePreview.tscn").instantiate()
     preview.mouse_filter = Control.MOUSE_FILTER_IGNORE
     button.add_child(preview)
     preview.inform_mat(mat)

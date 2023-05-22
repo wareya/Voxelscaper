@@ -1,21 +1,21 @@
 [gd_scene load_steps=28 format=3 uid="uid://d3g1asoupvk7r"]
 
-[ext_resource type="PackedScene" path="res://Voxels.tscn" id="1"]
-[ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="3_nptgm"]
-[ext_resource type="Texture2D" uid="uid://c201at7q0hl40" path="res://art/sfdsfgrtj.png" id="4"]
-[ext_resource type="Texture2D" uid="uid://cohvwgn25ipik" path="res://art/sandbrick.png" id="4_shh1p"]
-[ext_resource type="Script" path="res://World.gd" id="5"]
-[ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6"]
-[ext_resource type="Script" path="res://VertEditPanel.gd" id="7"]
-[ext_resource type="FontFile" uid="uid://cfoqc4o1oy14d" path="res://font/IBMPlexSans-Medium.ttf" id="8"]
-[ext_resource type="Script" path="res://VertEditInputCatcher.gd" id="9"]
-[ext_resource type="Texture2D" uid="uid://bne6k7rae1jy3" path="res://art/minigrid.png" id="10"]
-[ext_resource type="FontFile" uid="uid://bttb8efph3i3r" path="res://font/Comme-Regular.ttf" id="10_2dnov"]
-[ext_resource type="Script" path="res://MenuBar.gd" id="11"]
-[ext_resource type="Script" path="res://Mat2dTilePicker.gd" id="12"]
-[ext_resource type="Script" path="res://Mat2dOrientation.gd" id="13"]
-[ext_resource type="Script" path="res://ModelOffset.gd" id="14"]
-[ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="15"]
+[ext_resource type="Script" path="res://src/World.gd" id="1_72pa5"]
+[ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_653mq"]
+[ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="3_mlmyj"]
+[ext_resource type="Texture2D" uid="uid://cohvwgn25ipik" path="res://art/sandbrick.png" id="4_70l8j"]
+[ext_resource type="Texture2D" uid="uid://c201at7q0hl40" path="res://art/sfdsfgrtj.png" id="5_qm25g"]
+[ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6_3fypg"]
+[ext_resource type="Script" path="res://src/VertEditPanel.gd" id="7_vyoah"]
+[ext_resource type="Texture2D" uid="uid://bne6k7rae1jy3" path="res://art/minigrid.png" id="8_kpv6x"]
+[ext_resource type="Script" path="res://src/VertEditInputCatcher.gd" id="9_oq18w"]
+[ext_resource type="FontFile" uid="uid://bttb8efph3i3r" path="res://font/Comme-Regular.ttf" id="10_vvv0a"]
+[ext_resource type="FontFile" uid="uid://cfoqc4o1oy14d" path="res://font/IBMPlexSans-Medium.ttf" id="11_vw8oi"]
+[ext_resource type="Script" path="res://src/Mat2dTilePicker.gd" id="12_6ud1y"]
+[ext_resource type="Script" path="res://src/Mat2dOrientation.gd" id="13_yimsc"]
+[ext_resource type="Script" path="res://src/ModelOffset.gd" id="14_dty2u"]
+[ext_resource type="Script" path="res://src/MenuBar.gd" id="15_kbgwl"]
+[ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="16_sxhao"]
 
 [sub_resource type="Environment" id="3"]
 background_mode = 1
@@ -25,24 +25,24 @@ ambient_light_color = Color(0.866667, 0.933333, 1, 1)
 ambient_light_sky_contribution = 0.0
 ambient_light_energy = 0.2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_nw6cf"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vjald"]
 diffuse_mode = 1
-albedo_texture = ExtResource("3_nptgm")
+albedo_texture = ExtResource("3_mlmyj")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_23jyi"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gl0tl"]
 diffuse_mode = 1
-albedo_texture = ExtResource("4_shh1p")
+albedo_texture = ExtResource("4_70l8j")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_p5lbm"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_jvlaq"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_nw6cf"),
+"material": SubResource("StandardMaterial3D_vjald"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -52,7 +52,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_23jyi"),
+"material": SubResource("StandardMaterial3D_gl0tl"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -65,7 +65,7 @@ alpha_antialiasing_mode = 0
 shading_mode = 0
 diffuse_mode = 2
 vertex_color_use_as_albedo = true
-albedo_texture = ExtResource("4")
+albedo_texture = ExtResource("5_qm25g")
 billboard_mode = 2
 
 [sub_resource type="GDScript" id="12"]
@@ -116,24 +116,24 @@ shading_mode = 0
 vertex_color_use_as_albedo = true
 albedo_color = Color(0.168627, 0.47451, 1, 0.321569)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o263v"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xibwr"]
 diffuse_mode = 1
-albedo_texture = ExtResource("3_nptgm")
+albedo_texture = ExtResource("3_mlmyj")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xnebw"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mclrc"]
 diffuse_mode = 1
-albedo_texture = ExtResource("4_shh1p")
+albedo_texture = ExtResource("4_70l8j")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_umfk8"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_n42pg"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_o263v"),
+"material": SubResource("StandardMaterial3D_xibwr"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -143,7 +143,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_xnebw"),
+"material": SubResource("StandardMaterial3D_mclrc"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -151,12 +151,12 @@ _surfaces = [{
 
 [sub_resource type="LabelSettings" id="LabelSettings_jl3bd"]
 line_spacing = 0.0
-font = ExtResource("10_2dnov")
+font = ExtResource("10_vvv0a")
 font_size = 12
 outline_color = Color(0, 0, 0, 1)
 
 [node name="World" type="Node3D" groups=["VoxEditor"]]
-script = ExtResource("5")
+script = ExtResource("1_72pa5")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["Sun"]]
 transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5)
@@ -177,8 +177,8 @@ fov = 45.0
 size = 10.0
 far = 500.0
 
-[node name="Voxels" parent="." instance=ExtResource("1")]
-mesh = SubResource("ArrayMesh_p5lbm")
+[node name="Voxels" parent="." instance=ExtResource("2_653mq")]
+mesh = SubResource("ArrayMesh_jvlaq")
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -190,7 +190,7 @@ billboard = 2
 shaded = true
 double_sided = false
 alpha_cut = 1
-texture = ExtResource("4")
+texture = ExtResource("5_qm25g")
 script = SubResource("12")
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
@@ -252,7 +252,7 @@ material = SubResource("7")
 visible = false
 cast_shadow = 0
 pixel_size = 0.0625
-texture = ExtResource("6")
+texture = ExtResource("6_3fypg")
 
 [node name="VertEditPanel" type="Control" parent="."]
 visible = false
@@ -264,7 +264,7 @@ anchor_right = 1.0
 offset_left = -256.0
 offset_bottom = 287.0
 grow_horizontal = 0
-script = ExtResource("7")
+script = ExtResource("7_vyoah")
 
 [node name="Frame" type="SubViewportContainer" parent="VertEditPanel"]
 show_behind_parent = true
@@ -293,10 +293,10 @@ fov = 35.0
 [node name="Grid" type="Sprite3D" parent="VertEditPanel/Frame/VertEditViewport"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.51)
 pixel_size = 0.0078
-texture = ExtResource("10")
+texture = ExtResource("8_kpv6x")
 
-[node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("1")]
-mesh = SubResource("ArrayMesh_umfk8")
+[node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("2_653mq")]
+mesh = SubResource("ArrayMesh_n42pg")
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]
@@ -306,7 +306,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("9")
+script = ExtResource("9_oq18w")
 
 [node name="PlaneLock" type="Button" parent="VertEditPanel/Frame/VertEditViewport"]
 toggle_mode = true
@@ -337,7 +337,7 @@ layout_mode = 2
 tooltip_text = "Rotate Left"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "↶"
 clip_text = true
@@ -349,7 +349,7 @@ layout_mode = 2
 tooltip_text = "Rotate Right"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "↷"
 clip_text = true
@@ -361,7 +361,7 @@ layout_mode = 2
 tooltip_text = "Flip Horizontally"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "↔"
 clip_text = true
@@ -373,7 +373,7 @@ layout_mode = 2
 tooltip_text = "Flip Vertically"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "↕"
 clip_text = true
@@ -385,7 +385,7 @@ layout_mode = 2
 tooltip_text = "Clear Vertex Edits"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "❌"
 clip_text = true
@@ -397,7 +397,7 @@ layout_mode = 2
 tooltip_text = "Reset Camera3D"
 theme_override_constants/outline_size = 0
 theme_override_constants/h_separation = 0
-theme_override_fonts/font = ExtResource("8")
+theme_override_fonts/font = ExtResource("11_vw8oi")
 theme_override_font_sizes/font_size = 16
 text = "¬"
 clip_text = true
@@ -411,7 +411,7 @@ anchor_right = 1.0
 offset_left = -256.0
 offset_bottom = 256.0
 grow_horizontal = 0
-script = ExtResource("12")
+script = ExtResource("12_6ud1y")
 
 [node name="Panel" type="Panel" parent="Mat2dTilePicker"]
 show_behind_parent = true
@@ -429,7 +429,7 @@ offset_top = 257.0
 offset_right = -1.0
 offset_bottom = 281.0
 grow_horizontal = 0
-script = ExtResource("13")
+script = ExtResource("13_yimsc")
 
 [node name="Label" type="Label" parent="Mat2dOrientation"]
 layout_mode = 0
@@ -450,7 +450,7 @@ offset_bottom = 540.0
 grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelOffsetZ"]
 layout_mode = 0
@@ -471,7 +471,7 @@ offset_bottom = 514.0
 grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelOffsetY"]
 layout_mode = 0
@@ -492,7 +492,7 @@ offset_bottom = 488.0
 grow_horizontal = 0
 min_value = -4.0
 max_value = 4.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelOffsetX"]
 layout_mode = 0
@@ -530,7 +530,7 @@ offset_right = -1.0
 offset_bottom = 437.0
 grow_horizontal = 0
 max_value = 7.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelRotationZ"]
 layout_mode = 0
@@ -550,7 +550,7 @@ offset_right = -1.0
 offset_bottom = 411.0
 grow_horizontal = 0
 max_value = 7.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelRotationX"]
 layout_mode = 0
@@ -588,7 +588,7 @@ offset_right = -1.0
 offset_bottom = 360.0
 grow_horizontal = 0
 max_value = 7.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelRotationY"]
 layout_mode = 0
@@ -608,7 +608,7 @@ offset_right = -1.0
 offset_bottom = 334.0
 grow_horizontal = 0
 max_value = 4.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelSpacing"]
 layout_mode = 0
@@ -630,7 +630,7 @@ grow_horizontal = 0
 min_value = 1.0
 max_value = 4.0
 value = 1.0
-script = ExtResource("14")
+script = ExtResource("14_dty2u")
 
 [node name="Label" type="Label" parent="ModelTurnCount"]
 layout_mode = 0
@@ -649,7 +649,7 @@ offset_top = 257.0
 offset_right = -1.0
 offset_bottom = 282.0
 grow_horizontal = 0
-script = ExtResource("13")
+script = ExtResource("13_yimsc")
 
 [node name="Label" type="Label" parent="ModelMatchFloor"]
 layout_mode = 0
@@ -669,7 +669,7 @@ offset_top = 257.0
 offset_right = -1.0
 offset_bottom = 281.0
 grow_horizontal = 0
-script = ExtResource("13")
+script = ExtResource("13_yimsc")
 
 [node name="Label" type="Label" parent="ModelBasePlaneCount"]
 layout_mode = 0
@@ -699,7 +699,7 @@ offset_left = 8.0
 offset_top = 8.0
 offset_right = 83.0
 offset_bottom = 30.0
-script = ExtResource("11")
+script = ExtResource("15_kbgwl")
 
 [node name="File" type="MenuButton" parent="MenuBar"]
 layout_mode = 2
@@ -757,7 +757,7 @@ offset_right = 33.0
 offset_bottom = 33.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("15")
+texture = ExtResource("16_sxhao")
 patch_margin_left = 32
 patch_margin_top = 32
 patch_margin_right = 32

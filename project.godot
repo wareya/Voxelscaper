@@ -11,9 +11,9 @@ config_version=5
 [application]
 
 config/name="Voxelscaper"
-run/main_scene="res://World.tscn"
+run/main_scene="res://src/World.tscn"
 config/features=PackedStringArray("4.0")
-config/icon="res://icon.png"
+config/icon="res://src/icon.png"
 
 [debug]
 
@@ -25,7 +25,7 @@ window/subwindows/embed_subwindows=false
 
 [gui]
 
-theme/custom="res://new_theme.tres"
+theme/custom="res://src/new_theme.tres"
 theme/custom_font="res://font/Comme-Regular.ttf"
 
 [input]
@@ -91,7 +91,7 @@ common/enable_pause_aware_picking=true
 [rendering]
 
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
-environment/defaults/default_environment="res://default_env.tres"
+environment/defaults/default_environment="res://src/default_env.tres"
 quality/directional_shadow/size=1024
 quality/directional_shadow/size.mobile=1024
 lights_and_shadows/shadow_atlas/size=1024

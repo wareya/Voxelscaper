@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://src/Voxels.gd" id="2"]
+
+
+[node name="Voxels" type="MeshInstance3D"]
+script = ExtResource( 2 )

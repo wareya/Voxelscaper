@@ -1,7 +1,7 @@
 [gd_scene load_steps=7 format=3 uid="uid://gr3yxfiqnx56"]
 
-[ext_resource type="Script" path="res://CubePreview.gd" id="1"]
-[ext_resource type="PackedScene" path="res://Voxels.tscn" id="2"]
+[ext_resource type="Script" path="res://src/CubePreview.gd" id="1_beb5u"]
+[ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_crmsp"]
 
 [sub_resource type="Environment" id="Environment_3lx66"]
 ambient_light_source = 2
@@ -20,7 +20,7 @@ anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 stretch = true
-script = ExtResource("1")
+script = ExtResource("1_beb5u")
 
 [node name="SubViewport" type="SubViewport" parent="."]
 own_world_3d = true
@@ -42,7 +42,7 @@ projection = 1
 fov = 30.0
 size = 3.3
 
-[node name="Voxels" parent="SubViewport" instance=ExtResource("2")]
+[node name="Voxels" parent="SubViewport" instance=ExtResource("2_crmsp")]
 mesh = SubResource("ArrayMesh_42h1w")
 
 [node name="SideA" type="MeshInstance3D" parent="SubViewport"]
