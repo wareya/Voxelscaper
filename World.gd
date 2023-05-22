@@ -6,6 +6,7 @@ class_name VoxEditor
 # - save gltf (need to port to godot 4)
 
 ### nice-to-have list
+# - remember VoxMat properties when editing
 # - deform tool (modifying existing geometry vertex offsets)
 # - "reset camera" button
 # - scale setting for worldspace 1x1 voxel mode
@@ -280,6 +281,20 @@ func save_world_as_resource(fname):
         m.surface_set_material(i, mat)
     var _e = ResourceSaver.save(fname, m)
 
+func save_map_resource():
+    var dialog = FileDialog.new()
+    dialog.resizable = true
+    dialog.access = FileDialog.ACCESS_FILESYSTEM
+    dialog.mode = FileDialog.MODE_SAVE_FILE
+    dialog.add_filter("*.tres ; Godot Resource Files")
+    dialog.current_file = "voxel_mesh.tres"
+    add_child(dialog)
+    dialog.popup_centered_ratio()
+    
+    dialog.connect("file_selected", self, "save_world_as_resource")
+    yield(dialog, "visibility_changed")
+    remove_child(dialog)
+
 func perform_undo():
     $Voxels.perform_undo()
 func perform_redo():
@@ -334,6 +349,7 @@ func _ready():
     
     $MenuBar.connect("file_save", self, "default_save")
     $MenuBar.connect("file_save_as", self, "save_map")
+    $MenuBar.connect("file_export_resource", self, "save_map_resource")
     $MenuBar.connect("file_open", self, "open_map")
     
     $Mat2dOrientation.add_item("0 deg", 0)

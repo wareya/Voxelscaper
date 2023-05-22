@@ -555,10 +555,12 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 margin_top = -64.0
+margin_right = -1.0
 mouse_filter = 2
+scroll_vertical_enabled = false
 
 [node name="List" type="HBoxContainer" parent="Mats"]
-margin_right = 1024.0
+margin_right = 1023.0
 margin_bottom = 64.0
 mouse_filter = 2
 size_flags_horizontal = 3
