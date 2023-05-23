@@ -991,8 +991,15 @@ func add_voxels(mesh):
             var vox = voxels[pos]
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
             for dir in sides if is_side else unsides:
-                if occluding_voxel_exists(pos+dir, vox) and !face_is_shifted(pos+dir, -dir) and !face_is_shifted(pos, dir):
-                    continue
+                if occluding_voxel_exists(pos+dir, vox):
+                    var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
+                    var other_b = dir.cross(other_a)
+                    var matches = matching_edges_match(pos, pos+dir, other_a)
+                    matches = matches and matching_edges_match(pos, pos+dir, -other_a)
+                    matches = matches and matching_edges_match(pos, pos+dir,  other_b)
+                    matches = matches and matching_edges_match(pos, pos+dir, -other_b)
+                    if matches:
+                        continue
                 
                 var uvs = ref_uvs.duplicate()
                 if pos in uv_data_cache and dir in uv_data_cache[pos]:

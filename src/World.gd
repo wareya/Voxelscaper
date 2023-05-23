@@ -151,7 +151,7 @@ func set_current_mat(new_current):
 
 func modify_mat(mat):
     if mat is VoxMat:
-        var matconf = load("res://MatConfig.tscn").instantiate()
+        var matconf = load("res://src/MatConfig.tscn").instantiate()
         matconf.set_side(mat.sides)
         matconf.set_top(mat.top)
         add_child(matconf)
@@ -193,6 +193,8 @@ func _on_files_dropped(files):
     if error and fname.ends_with(".json"):
         open_data_from(fname)
         return
+    
+    image.fix_alpha_edges()
     
     var existant = get_tree().get_nodes_in_group("MatConfig")
     if existant.size() > 0:
