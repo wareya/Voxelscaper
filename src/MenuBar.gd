@@ -61,6 +61,8 @@ func pressed(id : int, which : PopupMenu):
             scene.update_minimum_size()
             window.size = scene.get_combined_minimum_size()
             window.popup_centered()
+    elif which == $Config.get_popup() and id == 1:
+        editor.reset_camera()
 
 @onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
@@ -91,4 +93,5 @@ func _ready():
     
     var config_popup : PopupMenu = $Config.get_popup()
     config_popup.add_item("Configure Lighting & Background", 0)
+    config_popup.add_item("Reset Camera", 1)
     config_popup.connect("index_pressed", pressed.bind(config_popup))

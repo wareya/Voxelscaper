@@ -57,7 +57,7 @@ class VoxMat extends RefCounted:
             var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
             var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
             var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
-            var vec_a = Helpers.array_to_vec2(dict.subdivide_amount) if "subdivide_amount" in dict else Vector2()
+            var vec_a = Helpers.array_to_vec2(dict.subdivide_amount) if "subdivide_amount" in dict else Vector2.ONE
             var vec_b = Helpers.array_to_vec2(dict.subdivide_coord) if "subdivide_coord" in dict else Vector2()
             return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b)
         elif dict.type == "model":
@@ -335,9 +335,16 @@ func perform_redo():
 
 func get_sun():
     return $DirectionalLight3D
-
 func get_env():
     return get_world_3d().environment
+func reset_camera():
+    $CameraHolder.rotation_degrees = Vector3(-30, -45, 0)
+    $CameraHolder/Camera3D.projection = Camera3D.PROJECTION_ORTHOGONAL
+    $CameraHolder/Camera3D.size = 10
+    camera_intended_scale = $CameraHolder/Camera3D.size / 5.0
+    $CameraHolder.scale = Vector3.ONE.normalized() * camera_intended_scale
+    $CameraHolder.position = Vector3(0, 1, 0)
+    $ButtonPerspective.selected = 0
 
 func _ready():
     if Engine.is_editor_hint():
@@ -454,6 +461,7 @@ func open_data_from(fname):
     var result = test_json_conv.get_data()
     if !error:
         $Voxels.deserialize(result)
+        reset_camera()
     else:
         var dialog = AcceptDialog.new()
         dialog.dialog_text = "File is malformed, failed to open."
