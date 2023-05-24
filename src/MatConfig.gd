@@ -42,6 +42,18 @@ func set_top(image):
         top = $UI/Images/TopI.texture.get_image()
         top_mat = make_mat(image)
 
+func set_mat(mat):
+    set_side(mat.sides)
+    set_top(mat.top)
+    
+    $UI/Images/TilingMode.selected = mat.tiling_mode
+    $UI/Images/Transparent.selected = mat.transparent_mode
+    $UI/Images/TransparentMode.selected = mat.transparent_inner_face_mode
+    
+    print(mat.transparent_mode)
+    print($UI/Images/Transparent.selected)
+    print(is_inside_tree())
+
 signal done
 func do_done():
     var v1 = $UI/Images/Transparent.selected
@@ -70,9 +82,7 @@ func swap():
 func _ready():
     $UI/Images/Swap.connect("pressed", Callable(self, "swap"))
     $UI/Images/Done.connect("pressed", Callable(self, "do_done"))
-    await get_tree().process_frame
-    $UI/CubePreview.anchor_right = 1.0
-    $UI/CubePreview.anchor_right = 0.0
+    
     $UI/Images/Cancel.connect("pressed", Callable(self, "cancel"))
     
     $UI/Images/Transparent.add_item("Opaque", 0)
@@ -86,6 +96,10 @@ func _ready():
     $UI/Images/TilingMode.add_item("4x4 Autotile", 1)
     $UI/Images/TilingMode.add_item("1x1 Local", 2)
     $UI/Images/TilingMode.add_item("1x1 World", 3)
+    
+    await get_tree().process_frame
+    $UI/CubePreview.anchor_right = 1.0
+    $UI/CubePreview.anchor_right = 0.0
 
 
 func _process(_delta):

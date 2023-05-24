@@ -603,7 +603,6 @@ func face_is_disconnected(pos, face_normal, test_dir):
     if !pos in voxel_corners:
         return false
     for corner in voxel_corners[pos]:
-        # FIXME replace with actual sew test
         if corner.dot(test_dir) > 0.0:
             var new = voxel_corners[pos][corner]
             var offset = new - corner
@@ -1023,7 +1022,6 @@ func add_voxels(mesh):
                             bitmask |= bit
                         if voxels.get(neighbor_pos + dir) and occluding_voxel_exists(neighbor_pos + dir, vox):
                             bitmask &= ~bit
-                        # FIXME handle floor-wall transitions better if material asks for it
                     
                     bitmask |= BIND_CENTER
                     

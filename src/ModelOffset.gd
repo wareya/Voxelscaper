@@ -6,7 +6,8 @@ func _gui_input(event : InputEvent):
     if event is InputEventMouseButton and event.is_pressed():
         if event.button_index == 4:
             value += step
+            get_tree().get_root().set_input_as_handled()
         elif event.button_index == 5:
             value -= step
+            get_tree().get_root().set_input_as_handled()
         value = clamp(value, min_value, max_value)
-        get_tree().get_root().set_input_as_handled()

@@ -22,7 +22,6 @@ class VoxMat extends RefCounted:
     var sides : Texture2D
     var top   : Texture2D
     
-    # FIXME: previews don't work
     var transparent_mode : int = 0 # 0 : opaque, 1 : alpha scissor, 2 : actually transparent
     var transparent_inner_face_mode : int = 0 # 0 : show, 1 : don't show
     
@@ -152,9 +151,8 @@ func set_current_mat(new_current):
 func modify_mat(mat):
     if mat is VoxMat:
         var matconf = load("res://src/MatConfig.tscn").instantiate()
-        matconf.set_side(mat.sides)
-        matconf.set_top(mat.top)
         add_child(matconf)
+        matconf.set_mat(mat)
         
         var new_mat = await matconf.done
         if new_mat:
@@ -166,10 +164,10 @@ func modify_mat(mat):
     
     elif mat is DecalMat:
         var config = preload("res://src/DecalConfig.tscn").instantiate()
+        add_child(config)
         config.set_mat(mat.tex)
         config.set_icon_coord(mat.icon_coord)
         config.set_grid_size(mat.grid_size)
-        add_child(config)
         
         var info = await config.done
         if info:
