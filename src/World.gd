@@ -27,17 +27,24 @@ class VoxMat extends RefCounted:
     
     var tiling_mode = TileMode.MODE_12x4
     
-    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int):
+    var subdivide_amount : Vector2
+    var subdivide_coord : Vector2
+    
+    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int, _subdivide_amount : Vector2, _subdivide_coord : Vector2):
         sides = _sides
         top = _top
         transparent_mode = _transparent_mode
         transparent_inner_face_mode = _transparent_inner_face_mode
         tiling_mode = _tiling_mode
+        subdivide_amount = _subdivide_amount
+        subdivide_coord = _subdivide_coord
     
     func encode() -> Dictionary:
         var top_png = Marshalls.raw_to_base64(top.get_image().save_png_to_buffer())
         var sides_png = Marshalls.raw_to_base64(sides.get_image().save_png_to_buffer())
-        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode}
+        var vec_a = Helpers.vec2_to_array(subdivide_amount)
+        var vec_b = Helpers.vec2_to_array(subdivide_coord)
+        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b}
     
     static func decode(dict : Dictionary):
         if not "type" in dict or dict.type == "voxel":
@@ -50,7 +57,9 @@ class VoxMat extends RefCounted:
             var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
             var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
             var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
-            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c)
+            var vec_a = Helpers.array_to_vec2(dict.subdivide_amount) if "subdivide_amount" in dict else Vector2()
+            var vec_b = Helpers.array_to_vec2(dict.subdivide_coord) if "subdivide_coord" in dict else Vector2()
+            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b)
         elif dict.type == "model":
             return ModelMat.decode(dict)
         elif dict.type == "decal":
@@ -124,9 +133,9 @@ class ModelMat extends DecalMat:
             return VoxMat.decode(dict)
 
 var mats = [
-    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0),
-    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0),
-    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0, Vector2.ONE, Vector2()),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0, Vector2.ONE, Vector2()),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0, Vector2.ONE, Vector2()),
 ]
 
 func delete_mat(mat):
@@ -161,6 +170,8 @@ func modify_mat(mat):
             mat.transparent_mode = new_mat[2]
             mat.transparent_inner_face_mode = new_mat[3]
             mat.tiling_mode = new_mat[4]
+            mat.subdivide_amount = new_mat[5]
+            mat.subdivide_coord = new_mat[6]
     
     elif mat is DecalMat:
         var config = preload("res://src/DecalConfig.tscn").instantiate()
@@ -215,7 +226,7 @@ func _on_files_dropped(files):
         
         var mat = await matconf.done
         if mat:
-            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4]))
+            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6]))
     
     elif which == "decal" or which == "model":
         var config = preload("res://src/DecalConfig.tscn").instantiate()

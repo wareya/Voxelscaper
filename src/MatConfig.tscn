@@ -1,6 +1,7 @@
-[gd_scene load_steps=4 format=3 uid="uid://b8q744xg6p65m"]
+[gd_scene load_steps=5 format=3 uid="uid://b8q744xg6p65m"]
 
 [ext_resource type="Script" path="res://src/MatConfig.gd" id="1_wialq"]
+[ext_resource type="Script" path="res://src/SpinboxFix.gd" id="2_rd45n"]
 [ext_resource type="PackedScene" uid="uid://gr3yxfiqnx56" path="res://src/CubePreview.tscn" id="2_wwgxm"]
 
 [sub_resource type="GDScript" id="1"]
@@ -55,7 +56,7 @@ text = "Side:"
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="TopL" type="Label" parent="UI/Images"]
 layout_mode = 2
@@ -65,7 +66,7 @@ text = "Top: (none)"
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 expand_mode = 1
-stretch_mode = 6
+stretch_mode = 5
 
 [node name="Richie" type="RichTextLabel" parent="UI/Images"]
 layout_mode = 2
@@ -94,6 +95,55 @@ text = "Swap"
 visible = false
 layout_mode = 2
 text = "Done"
+
+[node name="GridContainer" type="GridContainer" parent="UI/Images"]
+visible = false
+layout_mode = 2
+columns = 2
+
+[node name="Label" type="Label" parent="UI/Images/GridContainer"]
+layout_mode = 2
+text = "Tileset Subdivide X:"
+
+[node name="SubdivideX" type="SpinBox" parent="UI/Images/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 64.0
+value = 1.0
+script = ExtResource("2_rd45n")
+
+[node name="Label2" type="Label" parent="UI/Images/GridContainer"]
+layout_mode = 2
+text = "Tileset Subdivide Y:"
+
+[node name="SubdivideY" type="SpinBox" parent="UI/Images/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 64.0
+value = 1.0
+script = ExtResource("2_rd45n")
+
+[node name="Label3" type="Label" parent="UI/Images/GridContainer"]
+layout_mode = 2
+text = "Subdivide Offset X:"
+
+[node name="SubdivideXOffset" type="SpinBox" parent="UI/Images/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 64.0
+script = ExtResource("2_rd45n")
+
+[node name="Label4" type="Label" parent="UI/Images/GridContainer"]
+layout_mode = 2
+text = "Subdivide Offset Y:"
+
+[node name="SubdivideYOffset" type="SpinBox" parent="UI/Images/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 64.0
+script = ExtResource("2_rd45n")
 
 [node name="Control" type="Control" parent="UI/Images"]
 layout_mode = 2

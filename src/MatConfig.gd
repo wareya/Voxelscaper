@@ -30,6 +30,7 @@ func set_top(image):
     
     $UI/Images/Swap.visible = true
     $UI/Images/Done.visible = true
+    $UI/Images/GridContainer.visible = true
     
     if image is Image:
         top = image
@@ -50,6 +51,11 @@ func set_mat(mat):
     $UI/Images/Transparent.selected = mat.transparent_mode
     $UI/Images/TransparentMode.selected = mat.transparent_inner_face_mode
     
+    $UI/Images/GridContainer/SubdivideX.value = mat.subdivide_amount.x
+    $UI/Images/GridContainer/SubdivideY.value = mat.subdivide_amount.y
+    $UI/Images/GridContainer/SubdivideXOffset.value = mat.subdivide_coord.x
+    $UI/Images/GridContainer/SubdivideYOffset.value = mat.subdivide_coord.y
+    
     print(mat.transparent_mode)
     print($UI/Images/Transparent.selected)
     print(is_inside_tree())
@@ -59,7 +65,9 @@ func do_done():
     var v1 = $UI/Images/Transparent.selected
     var v2 = $UI/Images/TransparentMode.selected
     var v3 = $UI/Images/TilingMode.selected
-    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3])
+    var v4 = get_subdivide()
+    var v5 = get_subdivide_offset()
+    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5])
     queue_free()
 
 func cancel():
@@ -101,12 +109,19 @@ func _ready():
     $UI/CubePreview.anchor_right = 1.0
     $UI/CubePreview.anchor_right = 0.0
 
+func get_subdivide():
+    return Vector2($UI/Images/GridContainer/SubdivideX.value, $UI/Images/GridContainer/SubdivideY.value)
+func get_subdivide_offset():
+    return Vector2($UI/Images/GridContainer/SubdivideXOffset.value, $UI/Images/GridContainer/SubdivideYOffset.value)
 
 func _process(_delta):
     var v1 = $UI/Images/Transparent.selected
     var v2 = $UI/Images/TransparentMode.selected
     var v3 = $UI/Images/TilingMode.selected
-    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3)
+    var v4 = get_subdivide()
+    var v5 = get_subdivide_offset()
+    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5)
+    
     $UI/CubePreview.inform_mat(mat)
     
     $UI/Images/TopI.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC

@@ -1059,6 +1059,9 @@ func add_voxels(mesh):
                             else:
                                 uvs[i] += bitmask_uvs_4x4[BIND_CENTER]
                             uvs[i] = Vector2(1.0/4.0, 1/4.0) * uvs[i]
+                        
+                        uvs[i] /= mat.subdivide_amount
+                        uvs[i] += mat.subdivide_coord/mat.subdivide_amount
                     
                     if not pos in uv_data_cache:
                         uv_data_cache[pos] = {}
@@ -1107,6 +1110,16 @@ func add_voxels(mesh):
                         
                         uv.x = lerp(0.5, uv.x, uv_shrink)
                         uv.y = lerp(0.5, uv.y, uv_shrink)
+                        
+                        if dir.abs() == Vector3.UP:
+                            uv -= Vector2(pos.x, pos.z)
+                        elif dir.abs() == Vector3.RIGHT:
+                            uv -= Vector2(pos.z * -sign(dir.x), -pos.y)
+                        else:
+                            uv -= Vector2(pos.x * sign(dir.z), -pos.y)
+                        
+                        uv /= mat.subdivide_amount
+                        uv += mat.subdivide_coord/mat.subdivide_amount
                     
                     verts.push_back(vert + pos)
                     normals.push_back(normal)
