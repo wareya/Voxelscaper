@@ -19,6 +19,8 @@ func inform_mat(mat):
         $SubViewport/Node3D.rotation_degrees.y = 0.0
     
     $SubViewport/Voxels.full_remesh()
+    
+    $SubViewport.render_target_update_mode = SubViewport.UPDATE_ONCE
 
 func force_update():
-    $SubViewport.update_worlds()
+    $SubViewport.render_target_update_mode = SubViewport.UPDATE_ONCE

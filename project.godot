@@ -13,6 +13,7 @@ config_version=5
 config/name="Voxelscaper"
 run/main_scene="res://src/World.tscn"
 config/features=PackedStringArray("4.0")
+run/low_processor_mode=true
 config/icon="res://src/icon.png"
 
 [debug]
@@ -22,6 +23,7 @@ gdscript/warnings/return_value_discarded=false
 [display]
 
 window/subwindows/embed_subwindows=false
+window/vsync/vsync_mode=2
 
 [gui]
 
@@ -91,6 +93,7 @@ common/enable_pause_aware_picking=true
 [rendering]
 
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
+anti_aliasing/quality/msaa_2d=2
 environment/defaults/default_environment="res://src/default_env.tres"
 quality/directional_shadow/size=1024
 quality/directional_shadow/size.mobile=1024

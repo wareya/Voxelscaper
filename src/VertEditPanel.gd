@@ -129,6 +129,11 @@ var drag_initial_value = null
 var drag_mode = false
 var camera_mode = false
 
+func trigger_remesh():
+    var voxels = $Frame/VertEditViewport/Voxel
+    voxels.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
+    voxels.remesh()
+
 func _indirect_input(_event):
     if !visible:
         return
@@ -160,7 +165,8 @@ func _indirect_input(_event):
             vert = (vert*rounding_amount).round()/rounding_amount
             set_override(drag_target, vert)
         
-        prepare_overrides()
+        if Input.is_action_just_released("m1"):
+            prepare_overrides()
         
         drag_initial_value = null
         drag_target = null
@@ -221,63 +227,46 @@ func _indirect_input(_event):
 var prepared_overrides = {}
 
 func prepare_overrides():
+    var prev_overrides = prepared_overrides
     prepared_overrides = {}
     for _vert in ref_verts:
         var vert = get_override(_vert)
         vert = (vert*rounding_amount).round()/rounding_amount
-        
-        #if drag_target == _vert and $Frame/VertEditViewport/PlaneLock.pressed:
-        #    var cam : Camera = $Frame/VertEditViewport/CameraHolder/VertEditCamera
-        #    
-        #    var front : Vector3 = axialize(cam.global_transform.basis.xform(Vector3.FORWARD))
-        #    var positive = front.abs()
-        #    var negative = Vector3.ONE - positive
-        #    print(positive, negative)
-        #    vert = vert * negative + drag_initial_value * positive
-        #    print(drag_initial_value, vert)
-        
         vert = flush_negative_zero(vert)
-        
         if _vert != vert:
             prepared_overrides[_vert*2.0] = vert*2.0
     
-    #print()
-    #for v in prepared_overrides:
-    #    print(v)
-
+    for _vert in ref_verts:
+        _vert = _vert*2.0
+        if (_vert in prepared_overrides) != (_vert in prev_overrides):
+            trigger_remesh()
+            break
+        elif _vert in prepared_overrides and prepared_overrides[_vert] != prev_overrides[_vert]:
+            trigger_remesh()
+            break
+    
 var rounding_amount = 8.0
 
 func _draw():
     var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     
-    #var rect = get_global_rect()
-    #rect.position -= rect_global_position
-    #draw_rect(rect, Color.red, true)
     var target = null
     
+    var mouse_pos = get_local_mouse_position()
     var dist = 10000000.0
+    var verts = []
     for _vert in ref_verts:
         var vert = get_override(_vert)
         
         vert = (vert*rounding_amount).round()/rounding_amount
         var pos = cam.unproject_position(vert)
-        var pos_dist = get_local_mouse_position().distance_to(pos)
+        var pos_dist = mouse_pos.distance_to(pos)
         if pos_dist < dist and pos_dist < 8.0:
             target = vert
             dist = pos_dist
     
-    var verts = []
-    for _vert in ref_verts:
-        var vert = get_override(_vert)
-        vert = (vert*rounding_amount).round()/rounding_amount
-        #var depth = -(vert) * cam.global_transform.z
         var depth = -(vert * cam.global_transform.inverse()).z
         verts.push_back([vert, _vert, depth])
-    
-    var voxels = $Frame/VertEditViewport/Voxel
-    #voxels.place_voxel(Vector3(), voxels.voxels.values()[0], overrides_copy)
-    voxels.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
-    voxels.remesh()
     
     verts.sort_custom(func compare(a, b): return a[1] > b[1])
     
@@ -294,7 +283,5 @@ func _draw():
         if vert == target and drag_target == null:
             color = Color.YELLOW
         
-        #draw_circle(pos, 4.0, color)
-        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, Color.BLACK, 5.4, true)
-        draw_arc(pos, 2.0, 0.0, PI*2.01, 24, color, 4.0, true)
-    pass
+        var tex = preload("res://src/Splotter.tres")
+        draw_texture(tex, pos - tex.get_size()/2.0, color)

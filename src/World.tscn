@@ -25,24 +25,24 @@ ambient_light_color = Color(0.866667, 0.933333, 1, 1)
 ambient_light_sky_contribution = 0.0
 ambient_light_energy = 0.2
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vjald"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_5t43o"]
 diffuse_mode = 1
 albedo_texture = ExtResource("3_mlmyj")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_gl0tl"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kgj6m"]
 diffuse_mode = 1
 albedo_texture = ExtResource("4_70l8j")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_jvlaq"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_5epnx"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_vjald"),
+"material": SubResource("StandardMaterial3D_5t43o"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -52,7 +52,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_gl0tl"),
+"material": SubResource("StandardMaterial3D_kgj6m"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -116,24 +116,24 @@ shading_mode = 0
 vertex_color_use_as_albedo = true
 albedo_color = Color(0.168627, 0.47451, 1, 0.321569)
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_xibwr"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_kfjys"]
 diffuse_mode = 1
 albedo_texture = ExtResource("3_mlmyj")
 texture_filter = 4
 
-[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_mclrc"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_roniy"]
 diffuse_mode = 1
 albedo_texture = ExtResource("4_70l8j")
 texture_filter = 4
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_n42pg"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_h0mgr"]
 _surfaces = [{
 "aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
 "attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
 "format": 4115,
 "index_count": 24,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
-"material": SubResource("StandardMaterial3D_xibwr"),
+"material": SubResource("StandardMaterial3D_kfjys"),
 "primitive": 3,
 "vertex_count": 16,
 "vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
@@ -143,7 +143,7 @@ _surfaces = [{
 "format": 4115,
 "index_count": 12,
 "index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0),
-"material": SubResource("StandardMaterial3D_mclrc"),
+"material": SubResource("StandardMaterial3D_roniy"),
 "primitive": 3,
 "vertex_count": 8,
 "vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
@@ -178,7 +178,7 @@ size = 10.0
 far = 500.0
 
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
-mesh = SubResource("ArrayMesh_jvlaq")
+mesh = SubResource("ArrayMesh_5epnx")
 
 [node name="Sprite3D" type="Sprite3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -296,7 +296,7 @@ pixel_size = 0.0078
 texture = ExtResource("8_kpv6x")
 
 [node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("2_653mq")]
-mesh = SubResource("ArrayMesh_n42pg")
+mesh = SubResource("ArrayMesh_h0mgr")
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]
@@ -722,10 +722,10 @@ flat = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -176.0
-offset_top = 30.0
-offset_right = 174.0
-offset_bottom = 245.0
+offset_left = -196.0
+offset_top = 32.0
+offset_right = 196.0
+offset_bottom = 270.0
 grow_horizontal = 2
 theme_override_colors/font_color = Color(1, 1, 1, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
@@ -743,7 +743,11 @@ SHIFT + middle click drag: pan camera
 alt + left mouse: pick material from world
 alt + right mouse: pick voxel deformation from world
 
-j: cycle 2d-style previews (orthographic, isometric)"
+j: cycle 2d-style previews (orthographic, isometric)
+
+Drop an image file onto this window to add new materials."
+autowrap_mode = 2
+metadata/_edit_group_ = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="ControlsExplanation"]
 show_behind_parent = true

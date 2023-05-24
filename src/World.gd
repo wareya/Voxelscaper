@@ -591,12 +591,14 @@ func _unhandled_input(_event):
             $Voxels.start_operation()
         elif !Input.is_action_pressed(main):
             draw_mode = false
+            last_collision_point = null
         
         if Input.is_action_just_pressed(sub):
             erase_mode = true
             $Voxels.start_operation()
         elif !Input.is_action_pressed(sub):
             erase_mode = false
+            last_collision_point = null
     
     if Input.is_action_just_pressed("m3"):
         camera_mode = true
@@ -605,7 +607,7 @@ func _unhandled_input(_event):
     
     if draw_mode or erase_mode or camera_mode:
         $VertEditPanel/Frame/VertEditViewport.handle_input_locally = true
-        
+    
     if _event is InputEventKey:
         var event : InputEventKey = _event
         if event.is_pressed() and event.keycode == KEY_J:
@@ -948,6 +950,7 @@ func place_mat_at(voxels, mat, point, normal):
         var idx = $Mat2dOrientation.selected
         voxels.place_decal(point, normal, mat, idx)
 
+var last_collision_point = null
 func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
@@ -970,16 +973,12 @@ func handle_voxel_input():
     if time > 0.1:
         print("raycast time: ", time)
     
-    #if cast.is_colliding():
     if collision_data:
-        #collision_normal = cast.get_collision_normal()
-        #raw_collision_point = cast.get_collision_point()
         collision_normal = collision_data[1]
         raw_collision_point = collision_data[0]
         collision_point = (raw_collision_point - collision_normal*0.5).round()
         # get rid of negative zero
         collision_point = collision_point + Vector3.ONE - Vector3.ONE
-    #cast.queue_free()
     
     if !draw_mode and !erase_mode:
         ref_point = null
@@ -989,9 +988,10 @@ func handle_voxel_input():
         #    get_viewport().warp_mouse(m_pos - m_warp_amount)
         #    m_warp_amount = Vector2()
     
+    var alt_offset = !(current_mat is VoxMat or current_mat is ModelMat)
     if ref_point:
         var offset = ref_normal*0.5
-        if draw_use_offset:
+        if draw_use_offset and !alt_offset:
             offset += -ref_normal
         var new_point = ray_plane_intersection(cast_start, cast_normal, ref_point + offset, ref_normal)
         if new_point:
@@ -1002,12 +1002,18 @@ func handle_voxel_input():
             collision_point = null
             collision_normal = null
     
+    var draw_type = $ButtonMode.selected
+    if alt_offset:
+        draw_type = 0
+    
     if collision_point != null:
         #var origin = collision_point if ref_point == null else ref_point
         #var normal = collision_normal if ref_normal == null else ref_normal
         
         $CursorBox.show()
         $CursorBox.global_transform.origin = collision_point
+        if alt_offset and ref_point != null:
+            $CursorBox.global_transform.origin += collision_normal
         $CursorBox.scale = Vector3.ONE
         if current_mat is DecalMat and not current_mat is ModelMat:
             var positive = collision_normal.abs()
@@ -1018,7 +1024,7 @@ func handle_voxel_input():
         if $ButtonGrid.selected == 0 or ($ButtonGrid.selected == 2 and draw_mode):
             $Grid.show()
             $Grid.global_transform.origin = collision_point + collision_normal*0.501
-            if draw_use_offset:
+            if draw_use_offset and !alt_offset:
                 $Grid.global_transform.origin -= collision_normal
             
             if abs(collision_normal.x) > 0.8:
@@ -1034,11 +1040,11 @@ func handle_voxel_input():
             $Grid.hide()
         
         if ref_point == null:
-            if $ButtonMode.selected == 0:
+            if draw_type == 0:
                 $CursorBox.global_transform.origin += collision_normal
-            elif $ButtonMode.selected == 2 and abs(collision_normal.y) != 0.0:
+            elif draw_type == 2 and abs(collision_normal.y) != 0.0:
                 $CursorBox.global_transform.origin += collision_normal
-            elif $ButtonMode.selected == 3 and abs(collision_normal.y) == 0.0:
+            elif draw_type == 3 and abs(collision_normal.y) == 0.0:
                 $CursorBox.global_transform.origin += collision_normal
         
     else:
@@ -1049,60 +1055,30 @@ func handle_voxel_input():
         var new_point = collision_point
         
         if ref_point == null:
-            if $ButtonMode.selected == 0:
+            if draw_type == 0:
                 new_point += collision_normal
-            elif $ButtonMode.selected == 2 and abs(collision_normal.y) != 0.0:
+            elif draw_type == 2 and abs(collision_normal.y) != 0.0:
                 new_point += collision_normal
-            elif $ButtonMode.selected == 3 and abs(collision_normal.y) == 0.0:
+            elif draw_type == 3 and abs(collision_normal.y) == 0.0:
                 new_point += collision_normal
         
-        #var asdf =  [
-        #    [Vector3( 1,  1,  1), Vector3( 1,  0,  1)],
-        #    [Vector3(-1,  1,  1), Vector3(-1,  0,  1)],
-        #]
-        #var asdf2 =  [
-        #    [Vector3( 1,  1, -1), Vector3( 1,  0, -1)],
-        #    [Vector3(-1,  1, -1), Vector3(-1,  0, -1)],
-        #    [Vector3( 1,  1,  1), Vector3( 1, -1,  1)],
-        #    [Vector3(-1,  1,  1), Vector3(-1, -1,  1)],
-        #]
-        #$Voxels.place_voxel(new_point, current_mat, [[Vector3(1.0, 1.0, 1.0), Vector3(1.0, 0.25, 1.0)]])
-        #$Voxels.place_voxel(new_point, current_mat, [])
-        
-        if true:
+        if new_point != last_collision_point:
             if current_mat is VoxMat or current_mat is ModelMat:
                 place_mat_at($Voxels, current_mat, new_point, collision_normal)
             elif current_mat is DecalMat:
                 collision_point = collision_point + Vector3.ONE - Vector3.ONE
                 place_mat_at($Voxels, current_mat, collision_point, collision_normal)
-        if false:
-            if current_mat is VoxMat:
-                $Voxels.place_voxel(new_point, current_mat, $VertEditPanel.prepared_overrides)
-            elif current_mat is ModelMat:
-                var info = (
-                    (int($ModelWiden.button_pressed)) |
-                    (int($ModelSpacing.value) << 1) |
-                    (int($ModelTurnCount.value - 1) << 4) |
-                    (int($ModelRotationX.value) << 6) |
-                    (int($ModelRotationY.value) << 9) |
-                    (int($ModelRotationZ.value) << 12)
-                )
-                var floor_mode = $ModelMatchFloor.selected
-                var offset_x = $ModelOffsetX.value
-                var offset_y = $ModelOffsetY.value
-                var offset_z = $ModelOffsetZ.value
-                $Voxels.place_model(new_point, current_mat, info, floor_mode, offset_x, offset_y, offset_z)
-            elif current_mat is DecalMat:
-                var idx = $Mat2dOrientation.selected
-                #var id = $Mat2dOrientation.get_item_id(idx)
-                $Voxels.place_decal(collision_point, collision_normal, current_mat, idx)
+        
+        last_collision_point = new_point
         
         if $ButtonTool.selected == 0:
             draw_mode = false
         elif ref_point == null:
             ref_point = new_point
+            if alt_offset:
+                ref_point = collision_point
             ref_normal = collision_normal
-            if $ButtonMode.selected == 0:
+            if draw_type == 0:
                 if $ButtonWarp.selected == 0:
                     draw_use_offset = true
                 else:
@@ -1110,36 +1086,39 @@ func handle_voxel_input():
                     var pos_2 = $CameraHolder/Camera3D.unproject_position(raw_collision_point + ref_normal)
                     m_warp_amount = pos_2 - pos_1
                     get_viewport().warp_mouse(m_pos + m_warp_amount)
-            if $ButtonMode.selected == 2:
+            if draw_type == 2:
                 var x_ish = abs(cast_normal.x) > abs(cast_normal.z)
                 if x_ish:
                     ref_normal = Vector3(sign(-cast_normal.x), 0, 0)
                 else:
                     ref_normal = Vector3(0, 0, sign(-cast_normal.z))
-            if $ButtonMode.selected == 3:
+            if draw_type == 3:
                 ref_normal = Vector3(0, -sign(cast_normal.y), 0)
     
     if erase_mode and collision_normal != null and collision_point != null:
         var new_point = collision_point
-        if current_mat is VoxMat:
-            $Voxels.erase_voxel(new_point)
-        elif current_mat is ModelMat:
-            $Voxels.erase_model(new_point)
-        elif current_mat is DecalMat:
-            $Voxels.erase_decal(new_point, collision_normal)
+        if new_point != last_collision_point:
+            if current_mat is VoxMat:
+                $Voxels.erase_voxel(new_point)
+            elif current_mat is ModelMat:
+                $Voxels.erase_model(new_point)
+            elif current_mat is DecalMat:
+                $Voxels.erase_decal(new_point, collision_normal)
+        
+        last_collision_point = new_point
         
         if $ButtonTool.selected == 0:
             erase_mode = false
         elif ref_point == null:
             ref_point = new_point
             ref_normal = collision_normal
-            if $ButtonMode.selected == 2:
+            if draw_type == 2:
                 var x_ish = abs(cast_normal.x) > abs(cast_normal.z)
                 if x_ish:
                     ref_normal = Vector3(sign(-cast_normal.x), 0, 0)
                 else:
                     ref_normal = Vector3(0, 0, sign(-cast_normal.z))
-            if $ButtonMode.selected == 3:
+            if draw_type == 3:
                 ref_normal = Vector3(0, -sign(cast_normal.y), 0)
     
     
