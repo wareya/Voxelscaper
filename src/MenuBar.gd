@@ -27,6 +27,11 @@ func pressed(id : int, which : PopupMenu):
     elif which == $File.get_popup() and selection == "Export GLTF Model":
         emit_signal("file_export_gltf")
     
+    if which == $Edit.get_popup() and id == 0:
+        editor.perform_undo()
+    elif which == $Edit.get_popup() and id == 1:
+        editor.perform_redo()
+    
     if which == $Controls.get_popup() and id == 0:
         var idx = which.get_item_index(id)
         var on = which.is_item_checked(idx)
@@ -36,10 +41,26 @@ func pressed(id : int, which : PopupMenu):
     elif which == $Controls.get_popup() and id == 1:
         editor.show_controls()
     
-    if which == $Edit.get_popup() and id == 0:
-        editor.perform_undo()
-    elif which == $Edit.get_popup() and id == 1:
-        editor.perform_redo()
+    if which == $Config.get_popup() and id == 0:
+        var exists = get_tree().get_nodes_in_group("LightControl").size() > 0
+        if exists:
+            var other : Control = get_tree().get_nodes_in_group("LightControl")[0]
+            if !other.is_visible_in_tree():
+                other.get_parent().queue_free()
+            else:
+                var win = other.get_parent() as Window
+                win.grab_focus()
+        if !exists:
+            var scene = preload("res://src/LightControl.tscn").instantiate()
+            var window = Window.new()
+            window.title = "Lighting Config"
+            window.add_child(scene)
+            window.close_requested.connect(window.queue_free)
+            window.visible = false
+            get_parent().add_child(window)
+            scene.update_minimum_size()
+            window.size = scene.get_combined_minimum_size()
+            window.popup_centered()
 
 @onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
@@ -49,7 +70,7 @@ func _ready():
     file_popup.add_item("Open", 2)
     file_popup.add_item("Export Godot Mesh Resource", 3)
     file_popup.add_item("Export GLTF Model", 4)
-    file_popup.connect("index_pressed", Callable(self, "pressed").bind(file_popup))
+    file_popup.connect("index_pressed", pressed.bind(file_popup))
     
     file_popup.set_item_accelerator(file_popup.get_item_index(0), KEY_MASK_CTRL | KEY_S)
     file_popup.set_item_accelerator(file_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_S)
@@ -58,7 +79,7 @@ func _ready():
     var edit_popup : PopupMenu = $Edit.get_popup()
     edit_popup.add_item("Undo", 0)
     edit_popup.add_item("Redo", 1)
-    edit_popup.connect("index_pressed", Callable(self, "pressed").bind(edit_popup))
+    edit_popup.connect("index_pressed", pressed.bind(edit_popup))
     edit_popup.set_item_accelerator(edit_popup.get_item_index(0), KEY_MASK_CTRL | KEY_Z)
     edit_popup.set_item_accelerator(edit_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_Z)
     
@@ -66,4 +87,8 @@ func _ready():
     controls_popup.hide_on_checkable_item_selection = false
     controls_popup.add_check_item("Swap Left/Right Click (MC Style)", 0)
     controls_popup.add_item("Show Controls", 1)
-    controls_popup.connect("index_pressed", Callable(self, "pressed").bind(controls_popup))
+    controls_popup.connect("index_pressed", pressed.bind(controls_popup))
+    
+    var config_popup : PopupMenu = $Config.get_popup()
+    config_popup.add_item("Configure Lighting & Background", 0)
+    config_popup.connect("index_pressed", pressed.bind(config_popup))

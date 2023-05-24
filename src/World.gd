@@ -333,6 +333,12 @@ func perform_undo():
 func perform_redo():
     $Voxels.perform_redo()
 
+func get_sun():
+    return $DirectionalLight3D
+
+func get_env():
+    return get_world_3d().environment
+
 func _ready():
     if Engine.is_editor_hint():
         return

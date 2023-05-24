@@ -1,0 +1,80 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxthhdgtssn4m"]
+
+[ext_resource type="Script" path="res://src/LightControl.gd" id="1_mppbu"]
+
+[node name="LightControl" type="GridContainer" groups=["LightControl"]]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+columns = 3
+script = ExtResource("1_mppbu")
+
+[node name="Label" type="Label" parent="."]
+layout_mode = 2
+text = "Sun Color"
+
+[node name="Label2" type="Label" parent="."]
+layout_mode = 2
+text = "Ambient Color"
+
+[node name="Label3" type="Label" parent="."]
+layout_mode = 2
+text = "Background Color"
+
+[node name="SunColor" type="ColorPicker" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+edit_alpha = false
+picker_shape = 1
+can_add_swatches = false
+sampler_visible = false
+color_modes_visible = false
+sliders_visible = false
+hex_visible = false
+presets_visible = false
+
+[node name="Label3" type="Label" parent="SunColor"]
+layout_mode = 2
+text = "Sun Rotation"
+
+[node name="HSlider" type="HSlider" parent="SunColor"]
+layout_mode = 2
+max_value = 360.0
+
+[node name="Label4" type="Label" parent="SunColor"]
+layout_mode = 2
+text = "Sun Pitch"
+
+[node name="HSlider2" type="HSlider" parent="SunColor"]
+layout_mode = 2
+min_value = -90.0
+max_value = 90.0
+
+[node name="AmbientColor" type="ColorPicker" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+edit_alpha = false
+picker_shape = 1
+can_add_swatches = false
+sampler_visible = false
+color_modes_visible = false
+sliders_visible = false
+hex_visible = false
+presets_visible = false
+
+[node name="BackgroundColor" type="ColorPicker" parent="."]
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 0
+edit_alpha = false
+picker_shape = 1
+can_add_swatches = false
+sampler_visible = false
+color_modes_visible = false
+sliders_visible = false
+hex_visible = false
+presets_visible = false
