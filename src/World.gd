@@ -11,6 +11,12 @@ class_name VoxEditor
 # - 1:1 pixel screenshot mode (orthographic, isometric)
 # - importing real meshes somehow maybe?
 
+var low_distortion_meshing : bool = false
+func set_low_distortion_meshing(new_val : bool):
+    low_distortion_meshing = new_val
+    $Voxels.full_remesh()
+    $VertEditPanel/Frame/VertEditViewport/Voxel.full_remesh()
+
 class VoxMat extends RefCounted:
     enum TileMode {
         MODE_12x4,
@@ -1146,6 +1152,3 @@ func handle_voxel_input():
                     ref_normal = Vector3(0, 0, sign(-cast_normal.z))
             if draw_type == 3:
                 ref_normal = Vector3(0, -sign(cast_normal.y), 0)
-    
-    
-    

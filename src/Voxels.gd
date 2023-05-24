@@ -683,6 +683,34 @@ func full_remesh():
     refresh_surface_mapping()
     remesh()
 
+func undistort_array_quads(verts, tex_uvs, normals, indexes):
+    var old_indexes = indexes
+    indexes = PackedInt32Array()
+    var i = 0
+    var face_count = 0
+    while i < verts.size():
+        var a = (verts[i + 0] + verts[i + 3])/2.0
+        var b = (verts[i + 1] + verts[i + 2])/2.0
+        if a.distance_to(b) > 0.1:
+            var vert_sum = verts[i + 0] + verts[i + 1] + verts[i + 2] + verts[i + 3]
+            verts.insert(i + 4, vert_sum / 4.0)
+            var uv_sum = tex_uvs[i + 0] + tex_uvs[i + 1] + tex_uvs[i + 2] + tex_uvs[i + 3]
+            tex_uvs.insert(i + 4, uv_sum / 4.0)
+            var normal_sum = normals[i + 0] + normals[i + 1] + normals[i + 2] + normals[i + 3]
+            normals.insert(i + 4, (normal_sum / 4.0).normalized())
+            for v in [[0, 1, 4], [1, 3, 4], [3, 2, 4], [2, 0, 4]]:
+                indexes.push_back(i + v[0])
+                indexes.push_back(i + v[1])
+                indexes.push_back(i + v[2])
+            i += 5
+        else:
+            var diff = i - face_count*4
+            for j in 6:
+                indexes.push_back(old_indexes[face_count*6 + j] + diff)
+            i += 4
+        face_count += 1
+    return indexes
+
 func add_decals(mesh):
     for mat in decals_by_mat.keys():
         var texture = mat.tex
@@ -760,7 +788,10 @@ func add_decals(mesh):
                 
             for i in order:
                 indexes.push_back(i + index_base)
-            
+        
+        if editor.low_distortion_meshing:
+            indexes = undistort_array_quads(verts, tex_uvs, normals, indexes)
+        
         var arrays = []
         arrays.resize(Mesh.ARRAY_MAX)
         arrays[Mesh.ARRAY_VERTEX] = verts
@@ -1130,6 +1161,9 @@ func add_voxels(mesh):
         
         var end = Time.get_ticks_usec()
         
+        if editor.low_distortion_meshing:
+            indexes = undistort_array_quads(verts, tex_uvs, normals, indexes)
+                    
         var arrays = []
         arrays.resize(Mesh.ARRAY_MAX)
         arrays[Mesh.ARRAY_VERTEX] = verts

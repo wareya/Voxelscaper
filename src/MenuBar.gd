@@ -63,6 +63,12 @@ func pressed(id : int, which : PopupMenu):
             window.popup_centered()
     elif which == $Config.get_popup() and id == 1:
         editor.reset_camera()
+    elif which == $Config.get_popup() and id == 2:
+        var idx = which.get_item_index(id)
+        var on = which.is_item_checked(idx)
+        on = !on
+        which.set_item_checked(idx, on)
+        editor.set_low_distortion_meshing(on)
 
 @onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
@@ -92,6 +98,8 @@ func _ready():
     controls_popup.connect("index_pressed", pressed.bind(controls_popup))
     
     var config_popup : PopupMenu = $Config.get_popup()
+    config_popup.hide_on_checkable_item_selection = false
     config_popup.add_item("Configure Lighting & Background", 0)
     config_popup.add_item("Reset Camera", 1)
+    config_popup.add_check_item("Use Low Distortion Meshing", 2)
     config_popup.connect("index_pressed", pressed.bind(config_popup))
