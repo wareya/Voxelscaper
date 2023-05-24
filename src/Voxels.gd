@@ -561,7 +561,7 @@ func erase_model(position : Vector3):
     models.erase(position.round())
     is_dirty = true
 
-func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = []):
+func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = {}):
     position = position.round()
     voxels[position] = material
     if ramp_corners.size() > 0:

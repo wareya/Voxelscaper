@@ -929,9 +929,12 @@ func _process(delta):
     if $Voxels.operation_active and !draw_mode and !erase_mode:
         $Voxels.end_operation()
 
-func place_mat_at(voxels, mat, point, normal):
+func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
     if mat is VoxMat:
-        voxels.place_voxel(point, mat, $VertEditPanel.prepared_overrides)
+        if use_overrides:
+            voxels.place_voxel(point, mat, $VertEditPanel.prepared_overrides)
+        else:
+            voxels.place_voxel(point, mat)
     elif mat is ModelMat:
         var info = (
             (int($ModelWiden.button_pressed)) |
