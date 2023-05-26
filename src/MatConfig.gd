@@ -28,6 +28,8 @@ var top_mat : StandardMaterial3D = null
 func set_top(image):
     $UI/Images/TopL.text = "Top:"
     
+    $UI/CubePreview/Richie.visible = false
+    
     $UI/Images/Swap.visible = true
     $UI/Images/Done.visible = true
     $UI/Images/GridContainer.visible = true
@@ -56,6 +58,8 @@ func set_mat(mat):
     $UI/Images/GridContainer/SubdivideXOffset.value = mat.subdivide_coord.x
     $UI/Images/GridContainer/SubdivideYOffset.value = mat.subdivide_coord.y
     
+    $UI/Images/BottomMode.button_pressed = mat.bottom_is_sidelike
+    
     print(mat.transparent_mode)
     print($UI/Images/Transparent.selected)
     print(is_inside_tree())
@@ -67,7 +71,8 @@ func do_done():
     var v3 = $UI/Images/TilingMode.selected
     var v4 = get_subdivide()
     var v5 = get_subdivide_offset()
-    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5])
+    var v6 = $UI/Images/BottomMode.button_pressed
+    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5, v6])
     queue_free()
 
 func cancel():
@@ -120,7 +125,8 @@ func _process(_delta):
     var v3 = $UI/Images/TilingMode.selected
     var v4 = get_subdivide()
     var v5 = get_subdivide_offset()
-    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5)
+    var v6 = $UI/Images/BottomMode.button_pressed
+    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5, v6)
     
     $UI/CubePreview.inform_mat(mat)
     

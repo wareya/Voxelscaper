@@ -718,7 +718,7 @@ func add_decals(mesh):
         var grid_size = mat.grid_size
         
         var material = StandardMaterial3D.new()
-        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
         material.roughness = 1.0
         material.diffuse_mode = StandardMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
@@ -852,7 +852,7 @@ func add_models(mesh):
         var grid_size = mat.grid_size
         
         var material = StandardMaterial3D.new()
-        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
         material.roughness = 1.0
         material.diffuse_mode = StandardMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
@@ -989,11 +989,9 @@ func add_voxels(mesh):
     for info in face_tex:
         var texture = info[0][0]
         var mat : VoxEditor.VoxMat = info[0][1]
-        #if info[2].size() > 1:
-        #    print(mat.tiling_mode)
         
         var material = StandardMaterial3D.new()
-        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
+        material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
         material.roughness = 1.0
         material.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
@@ -1005,6 +1003,11 @@ func add_voxels(mesh):
         elif mat.transparent_mode == 2:
             material.flags_transparent = true
             inner_faces = mat.transparent_inner_face_mode != 0
+        
+        var local_sides = sides.duplicate()
+        var local_unsides = unsides.duplicate()
+        if mat.bottom_is_sidelike:
+            local_sides.push_back(local_unsides.pop_back())
         
         var verts = PackedVector3Array()
         var tex_uvs = PackedVector2Array()
@@ -1020,7 +1023,7 @@ func add_voxels(mesh):
         for pos in list:
             var vox = voxels[pos]
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
-            for dir in sides if is_side else unsides:
+            for dir in local_sides if is_side else local_unsides:
                 if occluding_voxel_exists(pos+dir, vox):
                     var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
                     var other_b = dir.cross(other_a)

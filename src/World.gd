@@ -32,11 +32,12 @@ class VoxMat extends RefCounted:
     var transparent_inner_face_mode : int = 0 # 0 : show, 1 : don't show
     
     var tiling_mode = TileMode.MODE_12x4
+    var bottom_is_sidelike : bool = false
     
     var subdivide_amount : Vector2
     var subdivide_coord : Vector2
     
-    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int, _subdivide_amount : Vector2, _subdivide_coord : Vector2):
+    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int, _subdivide_amount : Vector2, _subdivide_coord : Vector2, _bottom_is_sidelike : bool):
         sides = _sides
         top = _top
         transparent_mode = _transparent_mode
@@ -44,13 +45,14 @@ class VoxMat extends RefCounted:
         tiling_mode = _tiling_mode
         subdivide_amount = _subdivide_amount
         subdivide_coord = _subdivide_coord
+        bottom_is_sidelike = _bottom_is_sidelike
     
     func encode() -> Dictionary:
         var top_png = Marshalls.raw_to_base64(top.get_image().save_png_to_buffer())
         var sides_png = Marshalls.raw_to_base64(sides.get_image().save_png_to_buffer())
         var vec_a = Helpers.vec2_to_array(subdivide_amount)
         var vec_b = Helpers.vec2_to_array(subdivide_coord)
-        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b}
+        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b, "bottom_is_sidelike" : bottom_is_sidelike}
     
     static func decode(dict : Dictionary):
         if not "type" in dict or dict.type == "voxel":
@@ -65,7 +67,8 @@ class VoxMat extends RefCounted:
             var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
             var vec_a = Helpers.array_to_vec2(dict.subdivide_amount) if "subdivide_amount" in dict else Vector2.ONE
             var vec_b = Helpers.array_to_vec2(dict.subdivide_coord) if "subdivide_coord" in dict else Vector2()
-            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b)
+            var bottom_is_sidelike = dict.bottom_is_sidelike if "bottom_is_sidelike" in dict else false
+            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b, bottom_is_sidelike)
         elif dict.type == "model":
             return ModelMat.decode(dict)
         elif dict.type == "decal":
@@ -139,9 +142,9 @@ class ModelMat extends DecalMat:
             return VoxMat.decode(dict)
 
 var mats = [
-    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0, Vector2.ONE, Vector2()),
-    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0, Vector2.ONE, Vector2()),
-    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0, Vector2.ONE, Vector2()),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
 ]
 
 func delete_mat(mat):
@@ -178,6 +181,7 @@ func modify_mat(mat):
             mat.tiling_mode = new_mat[4]
             mat.subdivide_amount = new_mat[5]
             mat.subdivide_coord = new_mat[6]
+            mat.bottom_is_sidelike = new_mat[7]
     
     elif mat is DecalMat:
         var config = preload("res://src/DecalConfig.tscn").instantiate()
@@ -232,7 +236,7 @@ func _on_files_dropped(files):
         
         var mat = await matconf.done
         if mat:
-            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6]))
+            add_mat(VoxMat.new(mat[0], mat[1], mat[2], mat[3], mat[4], mat[5], mat[6], mat[7]))
     
     elif which == "decal" or which == "model":
         var config = preload("res://src/DecalConfig.tscn").instantiate()

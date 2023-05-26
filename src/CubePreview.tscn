@@ -31,7 +31,7 @@ size = Vector2i(1152, 648)
 render_target_update_mode = 4
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="SubViewport"]
-transform = Transform3D(0.173648, 0.852868, -0.492404, 0, 0.5, 0.866025, 0.984808, -0.150384, 0.086824, 0, 2.26911, 2.99581)
+transform = Transform3D(0.173648, 0.852868, -0.492404, 0, 0.5, 0.866025, 0.984808, -0.150384, 0.0868241, 0, 2.26911, 2.99581)
 
 [node name="Node3D" type="Node3D" parent="SubViewport"]
 transform = Transform3D(0.707107, 0.353553, -0.612372, 0, 0.866025, 0.5, 0.707107, -0.353553, 0.612372, 0, 0, 0)

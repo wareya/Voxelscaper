@@ -69,6 +69,14 @@ func pressed(id : int, which : PopupMenu):
         on = !on
         which.set_item_checked(idx, on)
         editor.set_low_distortion_meshing(on)
+    elif which == $Config.get_popup() and id == 3:
+        var idx = which.get_item_index(id)
+        var on = which.is_item_checked(idx)
+        on = !on
+        which.set_item_checked(idx, on)
+        var aa_controller = get_tree().get_first_node_in_group("AAEffect")
+        if aa_controller:
+            aa_controller.visible = on
 
 @onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
@@ -102,4 +110,5 @@ func _ready():
     config_popup.add_item("Configure Lighting & Background", 0)
     config_popup.add_item("Reset Camera", 1)
     config_popup.add_check_item("Use Low Distortion Meshing", 2)
+    config_popup.add_check_item("Anti-Aliasing", 3)
     config_popup.connect("index_pressed", pressed.bind(config_popup))

@@ -68,17 +68,6 @@ layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Richie" type="RichTextLabel" parent="UI/Images"]
-layout_mode = 2
-theme_override_font_sizes/normal_font_size = 11
-bbcode_enabled = true
-text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top afterwards.
-
-Images for 12x4 and 4x4 mode should be autotile tilesheets with no spacing or padding. Try:
-[url]https://wareya.github.io/webtyler/[/url]"
-fit_content = true
-script = SubResource("1")
-
 [node name="TilingMode" type="OptionButton" parent="UI/Images"]
 layout_mode = 2
 
@@ -144,6 +133,10 @@ size_flags_horizontal = 3
 max_value = 64.0
 script = ExtResource("2_rd45n")
 
+[node name="BottomMode" type="CheckBox" parent="UI/Images"]
+layout_mode = 2
+text = "Make Bottom Use Side Texture"
+
 [node name="Control" type="Control" parent="UI/Images"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -158,3 +151,16 @@ layout_mode = 2
 
 [node name="CubePreview" parent="UI" instance=ExtResource("2_wwgxm")]
 layout_mode = 2
+input_locked = false
+
+[node name="Richie" type="RichTextLabel" parent="UI/CubePreview"]
+custom_minimum_size = Vector2(300, 0)
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 11
+bbcode_enabled = true
+text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top afterwards.
+
+Images for 12x4 and 4x4 mode should be autotile tilesheets with no spacing or padding. Try:
+[url]https://wareya.github.io/webtyler/[/url]"
+fit_content = true
+script = SubResource("1")

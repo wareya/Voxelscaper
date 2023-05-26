@@ -1,8 +1,8 @@
-[gd_scene load_steps=22 format=3 uid="uid://dohn0cg0a1l80"]
+[gd_scene load_steps=23 format=3 uid="uid://dohn0cg0a1l80"]
 
 [ext_resource type="Script" path="res://src/World.gd" id="1_72pa5"]
 [ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_653mq"]
-[ext_resource type="Texture2D" uid="uid://c201at7q0hl40" path="res://art/sfdsfgrtj.png" id="5_qm25g"]
+[ext_resource type="Shader" path="res://src/PostEffect.gdshader" id="2_sbdt1"]
 [ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6_3fypg"]
 [ext_resource type="Script" path="res://src/VertEditPanel.gd" id="7_vyoah"]
 [ext_resource type="Texture2D" uid="uid://bne6k7rae1jy3" path="res://art/minigrid.png" id="8_kpv6x"]
@@ -15,6 +15,19 @@
 [ext_resource type="Script" path="res://src/MenuBar.gd" id="15_kbgwl"]
 [ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="16_sxhao"]
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_2nfeu"]
+render_priority = -128
+shader = ExtResource("2_sbdt1")
+shader_parameter/DepthThreshold = 0.1
+shader_parameter/LumaLikenessThreshold = 0.15
+shader_parameter/NormalDotOffset = 0.9
+shader_parameter/Range = 5
+shader_parameter/Gamma = 2.2
+
+[sub_resource type="QuadMesh" id="QuadMesh_my40a"]
+flip_faces = true
+size = Vector2(2, 2)
+
 [sub_resource type="Environment" id="3"]
 background_mode = 1
 background_color = Color(0.486275, 0.654902, 0.835294, 1)
@@ -23,58 +36,6 @@ ambient_light_color = Color(0.305882, 0.32549, 0.34902, 1)
 ambient_light_sky_contribution = 0.0
 
 [sub_resource type="ArrayMesh" id="ArrayMesh_cslns"]
-
-[sub_resource type="StandardMaterial3D" id="11"]
-transparency = 2
-alpha_scissor_threshold = 0.98
-alpha_antialiasing_mode = 0
-shading_mode = 0
-diffuse_mode = 2
-vertex_color_use_as_albedo = true
-albedo_texture = ExtResource("5_qm25g")
-billboard_mode = 2
-
-[sub_resource type="GDScript" id="12"]
-script/source = "extends Sprite3D
-
-
-# Declare member variables here. Examples:
-# var a = 2
-# var b = \"text\"
-
-
-# Called when the node enters the scene tree for the first time.
-func _ready():
-    pass # Replace with function body.
-
-func do_cast(offset : Vector3 = Vector3()):
-    var light : DirectionalLight3D = get_parent().get_node(\"DirectionalLight3D\")
-    var cast : RayCast3D = RayCast3D.new()
-    add_child(cast)
-    cast.global_transform.origin = global_transform.origin + offset
-    cast.target_position = light.global_transform.origin - cast.global_transform.origin
-    cast.target_position = cast.target_position.normalized()
-    cast.target_position *= light.directional_shadow_max_distance
-    cast.force_raycast_update()
-    #var raw_collision_point = null
-    #var collision_point = null
-    #var collision_normal = null
-    cast.queue_free()
-    return cast.is_colliding()
-
-
-# Called every frame. 'delta' is the elapsed time since the previous frame.
-func _process(delta):
-    var offsets = [Vector3(), Vector3(0, -0.25, 0), Vector3(0, 0.5, 0)]
-    var amount = 0.0
-    for offset in offsets:
-        if do_cast(offset):
-            amount += 1.0/offsets.size()
-    var target_color = Color(1.00, 1.00, 1.00).lerp(Color(0.25, 0.25, 0.25), amount)
-    modulate = modulate.lerp(target_color, 1.0 - pow(0.001, delta))
-    
-    pass
-"
 
 [sub_resource type="StandardMaterial3D" id="7"]
 transparency = 1
@@ -90,8 +51,17 @@ font = ExtResource("10_vvv0a")
 font_size = 12
 outline_color = Color(0, 0, 0, 1)
 
+[sub_resource type="BoxMesh" id="BoxMesh_ytrye"]
+
 [node name="World" type="Node3D" groups=["VoxEditor"]]
 script = ExtResource("1_72pa5")
+
+[node name="PostEffect" type="MeshInstance3D" parent="." groups=["AAEffect"]]
+visible = false
+material_override = SubResource("ShaderMaterial_2nfeu")
+cast_shadow = 0
+gi_mode = 0
+mesh = SubResource("QuadMesh_my40a")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["Sun"]]
 transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5)
@@ -114,19 +84,6 @@ far = 500.0
 
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
 mesh = SubResource("ArrayMesh_cslns")
-
-[node name="Sprite3D" type="Sprite3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
-visible = false
-material_override = SubResource("11")
-offset = Vector2(0, 8)
-pixel_size = 0.0625
-billboard = 2
-shaded = true
-double_sided = false
-alpha_cut = 1
-texture = ExtResource("5_qm25g")
-script = SubResource("12")
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
 offset_left = 8.0
@@ -707,3 +664,13 @@ patch_margin_left = 32
 patch_margin_top = 32
 patch_margin_right = 32
 patch_margin_bottom = 32
+
+[node name="CSGBox3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.196731, 0.0419879, 0.119513)
+visible = false
+mesh = SubResource("BoxMesh_ytrye")
+
+[node name="CSGBox3D2" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.794877, 0.0419879, -1.14121)
+visible = false
+mesh = SubResource("BoxMesh_ytrye")
