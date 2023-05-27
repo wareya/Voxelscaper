@@ -25,50 +25,84 @@ class VoxMat extends RefCounted:
         MODE_1x1_WORLD,
     }
     
-    var sides : Texture2D
-    var top   : Texture2D
+    var textures : Array[Texture2D]
+    
+    var sides  : Texture2D
+    var top    : Texture2D
+    var bottom : Texture2D
     
     var transparent_mode : int = 0 # 0 : opaque, 1 : alpha scissor, 2 : actually transparent
     var transparent_inner_face_mode : int = 0 # 0 : show, 1 : don't show
     
     var tiling_mode = TileMode.MODE_12x4
-    var bottom_is_sidelike : bool = false
     
     var subdivide_amount : Vector2
     var subdivide_coord : Vector2
     
-    func _init(_sides : Texture2D, _top : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int, _subdivide_amount : Vector2, _subdivide_coord : Vector2, _bottom_is_sidelike : bool):
+    func _init(_sides : Texture2D, _top : Texture2D, _bottom : Texture2D, _transparent_mode : int, _transparent_inner_face_mode : int, _tiling_mode : int, _subdivide_amount : Vector2, _subdivide_coord : Vector2):
+        if _bottom and _top and _bottom.get_image().compute_image_metrics(_top.get_image(), false).max == 0:
+            _bottom = _top
+            print("deduplicating texture...")
+        if _bottom and _sides and _bottom.get_image().compute_image_metrics(_sides.get_image(), false).max == 0:
+            _bottom = _sides
+            print("deduplicating texture...")
+        if _top and _sides and _top.get_image().compute_image_metrics(_sides.get_image(), false).max == 0:
+            _top = _sides
+            print("deduplicating texture...")
+        
+        textures.push_back(_sides)
+        if _top != _sides:
+            textures.push_back(_top)
+        if _bottom != _top and _bottom != _sides:
+            textures.push_back(_bottom)
         sides = _sides
         top = _top
+        bottom = _bottom
+        
         transparent_mode = _transparent_mode
         transparent_inner_face_mode = _transparent_inner_face_mode
         tiling_mode = _tiling_mode
         subdivide_amount = _subdivide_amount
         subdivide_coord = _subdivide_coord
-        bottom_is_sidelike = _bottom_is_sidelike
     
     func encode() -> Dictionary:
-        var top_png = Marshalls.raw_to_base64(top.get_image().save_png_to_buffer())
-        var sides_png = Marshalls.raw_to_base64(sides.get_image().save_png_to_buffer())
+        var pngs = []
+        for tex in textures:
+            pngs.push_back(Marshalls.raw_to_base64(tex.get_image().save_png_to_buffer()))
+        var top_idx = textures.find(top)
+        var sides_idx = textures.find(sides)
+        var bottom_idx = textures.find(bottom)
         var vec_a = Helpers.vec2_to_array(subdivide_amount)
         var vec_b = Helpers.vec2_to_array(subdivide_coord)
-        return {"type": "voxel", "top": top_png, "sides": sides_png, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b, "bottom_is_sidelike" : bottom_is_sidelike}
+        return {"type": "voxel", "pngs": pngs, "top_id" : top_idx, "sides_id": sides_idx, "bottom_id": bottom_idx, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b}
     
     static func decode(dict : Dictionary):
         if not "type" in dict or dict.type == "voxel":
-            var top_image = Image.new()
-            top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
-            var sides_image = Image.new()
-            sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
-            var top_tex = ImageTexture.create_from_image(top_image)
-            var sides_tex = ImageTexture.create_from_image(sides_image)
             var mode_a = dict.transparent_mode if "transparent_mode" in dict else 0
             var mode_b = dict.transparent_inner_face_mode if "transparent_inner_face_mode" in dict else 0
             var mode_c = dict.tiling_mode if "tiling_mode" in dict else 0
             var vec_a = Helpers.array_to_vec2(dict.subdivide_amount) if "subdivide_amount" in dict else Vector2.ONE
             var vec_b = Helpers.array_to_vec2(dict.subdivide_coord) if "subdivide_coord" in dict else Vector2()
-            var bottom_is_sidelike = dict.bottom_is_sidelike if "bottom_is_sidelike" in dict else false
-            return VoxMat.new(sides_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b, bottom_is_sidelike)
+            
+            if "top" in dict: # old image-per-side format
+                var top_image = Image.new()
+                top_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["top"]))
+                var sides_image = Image.new()
+                sides_image.load_png_from_buffer(Marshalls.base64_to_raw(dict["sides"]))
+                var top_tex = ImageTexture.create_from_image(top_image)
+                var sides_tex = ImageTexture.create_from_image(sides_image)
+                return VoxMat.new(sides_tex, top_tex, top_tex, mode_a, mode_b, mode_c, vec_a, vec_b)
+            else: # new index-per-side, image list format
+                var images = []
+                for img_base64 in dict.pngs:
+                    var image = Image.new()
+                    image.load_png_from_buffer(Marshalls.base64_to_raw(img_base64))
+                    images.push_back(image)
+                var top_tex = ImageTexture.create_from_image(images[dict.top_id])
+                var sides_tex = ImageTexture.create_from_image(images[dict.sides_id])
+                var bottom_tex = ImageTexture.create_from_image(images[dict.bottom_id])
+                return VoxMat.new(sides_tex, top_tex, bottom_tex, mode_a, mode_b, mode_c, vec_a, vec_b)
+            
         elif dict.type == "model":
             return ModelMat.decode(dict)
         elif dict.type == "decal":
@@ -142,9 +176,9 @@ class ModelMat extends DecalMat:
             return VoxMat.decode(dict)
 
 var mats = [
-    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
-    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
-    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), 0, 0, 0, Vector2.ONE, Vector2(), false),
+    VoxMat.new(preload("res://art/brickwall.png"), preload("res://art/sandbrick.png"), preload("res://art/sandbrick.png"), 0, 0, 0, Vector2.ONE, Vector2()),
+    VoxMat.new(preload("res://art/wood.png"), preload("res://art/sandwood.png"), preload("res://art/sandwood.png"), 0, 0, 0, Vector2.ONE, Vector2()),
+    VoxMat.new(preload("res://art/grasswall.png"), preload("res://art/grass.png"), preload("res://art/dirtwall.png"), 0, 0, 0, Vector2.ONE, Vector2()),
 ]
 
 func delete_mat(mat):
@@ -176,12 +210,12 @@ func modify_mat(mat):
         if new_mat:
             mat.sides = new_mat[0]
             mat.top = new_mat[1]
-            mat.transparent_mode = new_mat[2]
-            mat.transparent_inner_face_mode = new_mat[3]
-            mat.tiling_mode = new_mat[4]
-            mat.subdivide_amount = new_mat[5]
-            mat.subdivide_coord = new_mat[6]
-            mat.bottom_is_sidelike = new_mat[7]
+            mat.bottom = new_mat[2]
+            mat.transparent_mode = new_mat[3]
+            mat.transparent_inner_face_mode = new_mat[4]
+            mat.tiling_mode = new_mat[5]
+            mat.subdivide_amount = new_mat[6]
+            mat.subdivide_coord = new_mat[7]
     
     elif mat is DecalMat:
         var config = preload("res://src/DecalConfig.tscn").instantiate()
@@ -217,7 +251,7 @@ func _on_files_dropped(files):
     
     var existant = get_tree().get_nodes_in_group("MatConfig")
     if existant.size() > 0:
-        existant[0].set_top(image)
+        existant[0].add_texture(image)
         return
     
     existant = get_tree().get_nodes_in_group("DecalConfig")
@@ -231,8 +265,8 @@ func _on_files_dropped(files):
     
     if which == "voxel":
         var matconf = load("res://src/MatConfig.tscn").instantiate()
-        matconf.set_side(image)
         add_child(matconf)
+        matconf.add_texture(image)
         
         var mat = await matconf.done
         if mat:
@@ -285,13 +319,21 @@ func add_mat(mat):
 
 func save_world_as_resource(fname):
     var m : Mesh = $Voxels.mesh.duplicate(true)
+    var textures = {}
     for i in m.get_surface_count():
-        var mat : StandardMaterial3D = m.surface_get_material(i).duplicate(true)
-        var stex : Texture2D = mat.albedo_texture.duplicate(true)
-        var img = stex.get_image()
-        var tex = ImageTexture.create_from_image(img)
-        mat.albedo_texture = tex
-        m.surface_set_material(i, mat)
+        var mat : StandardMaterial3D = m.surface_get_material(i).duplicate()
+        var raw_stex : Texture2D = mat.albedo_texture
+        if not raw_stex in textures:
+            var stex = raw_stex.duplicate()
+            var img = stex.get_image()
+            var tex = ImageTexture.create_from_image(img)
+            mat.albedo_texture = tex
+            m.surface_set_material(i, mat)
+            textures[raw_stex] = tex
+        else:
+            print("reusing texture...")
+            mat.albedo_texture = textures[raw_stex]
+            m.surface_set_material(i, mat)
     var _e = ResourceSaver.save(m, fname)
 
 func save_map_resource():

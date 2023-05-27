@@ -48,6 +48,16 @@ text = "
 Material Editor
 "
 
+[node name="TopL" type="Label" parent="UI/Images"]
+layout_mode = 2
+text = "Top:"
+
+[node name="TopI" type="TextureRect" parent="UI/Images"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
 [node name="SideL" type="Label" parent="UI/Images"]
 layout_mode = 2
 text = "Side:"
@@ -58,11 +68,11 @@ layout_mode = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TopL" type="Label" parent="UI/Images"]
+[node name="BottomL" type="Label" parent="UI/Images"]
 layout_mode = 2
-text = "Top: (none)"
+text = "Bottom:"
 
-[node name="TopI" type="TextureRect" parent="UI/Images"]
+[node name="BottomI" type="TextureRect" parent="UI/Images"]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 expand_mode = 1
@@ -79,9 +89,14 @@ layout_mode = 2
 
 [node name="Swap" type="Button" parent="UI/Images"]
 layout_mode = 2
-text = "Swap"
+text = "Swap Top <-> Bottom"
+
+[node name="Cycle" type="Button" parent="UI/Images"]
+layout_mode = 2
+text = "Cycle Top -> Sides -> Bottom"
 
 [node name="Done" type="Button" parent="UI/Images"]
+visible = false
 layout_mode = 2
 text = "Done"
 
@@ -133,10 +148,6 @@ size_flags_horizontal = 3
 max_value = 64.0
 script = ExtResource("2_rd45n")
 
-[node name="BottomMode" type="CheckBox" parent="UI/Images"]
-layout_mode = 2
-text = "Make Bottom Use Side Texture"
-
 [node name="Control" type="Control" parent="UI/Images"]
 layout_mode = 2
 size_flags_vertical = 3
@@ -154,11 +165,11 @@ layout_mode = 2
 input_locked = false
 
 [node name="Richie" type="RichTextLabel" parent="UI/CubePreview"]
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(270, 0)
 layout_mode = 2
 theme_override_font_sizes/normal_font_size = 11
 bbcode_enabled = true
-text = "Please drag and drop another image to add the \"Top\" texture. You can swap the Side and Top afterwards.
+text = "Please drag and drop an image to texture each direction. The \"Done\" button appears once all directions have been added.
 
 Images for 12x4 and 4x4 mode should be autotile tilesheets with no spacing or padding. Try:
 [url]https://wareya.github.io/webtyler/[/url]"

@@ -22,18 +22,11 @@ func set_side(image):
         $UI/Images/SideI.texture = tex
         side = $UI/Images/SideI.texture.get_image()
         side_mat = make_mat(image)
+    update_display()
 
 var top = null
 var top_mat : StandardMaterial3D = null
 func set_top(image):
-    $UI/Images/TopL.text = "Top:"
-    
-    $UI/CubePreview/Richie.visible = false
-    
-    $UI/Images/Swap.visible = true
-    $UI/Images/Done.visible = true
-    $UI/Images/GridContainer.visible = true
-    
     if image is Image:
         top = image
         var tex = ImageTexture.create_from_image(image)
@@ -44,10 +37,27 @@ func set_top(image):
         $UI/Images/TopI.texture = tex
         top = $UI/Images/TopI.texture.get_image()
         top_mat = make_mat(image)
+    update_display()
+
+var bottom = null
+var bottom_mat : StandardMaterial3D = null
+func set_bottom(image):
+    if image is Image:
+        bottom = image
+        var tex = ImageTexture.create_from_image(image)
+        $UI/Images/BottomI.texture = tex
+        bottom_mat = make_mat(tex.duplicate())
+    elif image is Texture2D:
+        var tex = ImageTexture.create_from_image(image.get_image())
+        $UI/Images/BottomI.texture = tex
+        bottom = $UI/Images/BottomI.texture.get_image()
+        bottom_mat = make_mat(image)
+    update_display()
 
 func set_mat(mat):
     set_side(mat.sides)
     set_top(mat.top)
+    set_bottom(mat.bottom)
     
     $UI/Images/TilingMode.selected = mat.tiling_mode
     $UI/Images/Transparent.selected = mat.transparent_mode
@@ -58,11 +68,7 @@ func set_mat(mat):
     $UI/Images/GridContainer/SubdivideXOffset.value = mat.subdivide_coord.x
     $UI/Images/GridContainer/SubdivideYOffset.value = mat.subdivide_coord.y
     
-    $UI/Images/BottomMode.button_pressed = mat.bottom_is_sidelike
-    
-    print(mat.transparent_mode)
-    print($UI/Images/Transparent.selected)
-    print(is_inside_tree())
+    update_display()
 
 signal done
 func do_done():
@@ -71,8 +77,7 @@ func do_done():
     var v3 = $UI/Images/TilingMode.selected
     var v4 = get_subdivide()
     var v5 = get_subdivide_offset()
-    var v6 = $UI/Images/BottomMode.button_pressed
-    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5, v6])
+    emit_signal("done", [$UI/Images/SideI.texture, $UI/Images/TopI.texture, $UI/Images/BottomI.texture, v1, v2, v3, v4, v5])
     queue_free()
 
 func cancel():
@@ -80,20 +85,41 @@ func cancel():
     queue_free()
 
 func swap():
-    var temp = side
+    var temp = bottom
+    bottom = top
+    top = temp
+    
+    temp = $UI/Images/BottomI.texture
+    $UI/Images/BottomI.texture = $UI/Images/TopI.texture
+    $UI/Images/TopI.texture = temp
+    
+    temp = bottom_mat
+    bottom_mat = top_mat
+    top_mat = temp
+    
+    update_display()
+
+func cycle():
+    var temp = bottom
+    bottom = side
     side = top
     top = temp
     
-    temp = $UI/Images/SideI.texture
+    temp = $UI/Images/BottomI.texture
+    $UI/Images/BottomI.texture = $UI/Images/SideI.texture
     $UI/Images/SideI.texture = $UI/Images/TopI.texture
     $UI/Images/TopI.texture = temp
     
-    temp = side_mat.albedo_texture
-    side_mat.albedo_texture = top_mat.albedo_texture
-    top_mat.albedo_texture = temp
+    temp = bottom_mat
+    bottom_mat = side_mat
+    side_mat = top_mat
+    top_mat = temp
+    
+    update_display()
 
 func _ready():
     $UI/Images/Swap.connect("pressed", Callable(self, "swap"))
+    $UI/Images/Cycle.connect("pressed", Callable(self, "cycle"))
     $UI/Images/Done.connect("pressed", Callable(self, "do_done"))
     
     $UI/Images/Cancel.connect("pressed", Callable(self, "cancel"))
@@ -119,25 +145,52 @@ func get_subdivide():
 func get_subdivide_offset():
     return Vector2($UI/Images/GridContainer/SubdivideXOffset.value, $UI/Images/GridContainer/SubdivideYOffset.value)
 
-func _process(_delta):
+func get_mat():
     var v1 = $UI/Images/Transparent.selected
     var v2 = $UI/Images/TransparentMode.selected
     var v3 = $UI/Images/TilingMode.selected
     var v4 = get_subdivide()
     var v5 = get_subdivide_offset()
-    var v6 = $UI/Images/BottomMode.button_pressed
-    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, v1, v2, v3, v4, v5, v6)
+    var mat = VoxEditor.VoxMat.new($UI/Images/SideI.texture, $UI/Images/TopI.texture, $UI/Images/BottomI.texture, v1, v2, v3, v4, v5)
+    return mat
+
+func update_display():
+    var mat = get_mat()
     
     $UI/CubePreview.inform_mat(mat)
     
     $UI/Images/TopI.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
     $UI/Images/SideI.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST_WITH_MIPMAPS_ANISOTROPIC
     
-    $UI/Images/Transparent.visible = top != null
-    $UI/Images/TransparentMode.visible = $UI/Images/Transparent.selected != 0 and top != null
+    $UI/Images/TransparentMode.visible = $UI/Images/Transparent.selected != 0
+
+func add_texture(tex):
+    trigger_picker(tex)
+
+var picker = null
+func trigger_picker(tex):
+    picker = preload("res://src/VoxelSidePicker.tscn").instantiate()
+    add_child(picker)
+    var which = await picker.done
+    if which == "top":
+        set_top(tex)
+    elif which == "bottom":
+        set_bottom(tex)
+    elif which == "side":
+        set_side(tex)
+    
+    picker.queue_free()
+    picker = null
 
 func _input(_event):
     if _event is InputEventKey:
         var event : InputEventKey = _event
         if event.pressed and event.keycode == KEY_ESCAPE:
-            cancel()
+            if picker:
+                picker.queue_free()
+                picker = null
+            else:
+                cancel()
+
+func _process(_delta):
+    $UI/Images/Done.visible = side != null and top != null and bottom != null

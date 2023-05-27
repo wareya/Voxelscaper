@@ -1,0 +1,46 @@
+[gd_scene load_steps=2 format=3 uid="uid://mu21d180gexu"]
+
+[ext_resource type="Script" path="res://src/VoxelSidePicker.gd" id="1_xs8yt"]
+
+[node name="VoxelSidePicker" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_xs8yt")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.752941)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="List" type="VBoxContainer" parent="Center"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="Center/List"]
+layout_mode = 2
+text = "Select which faces you want
+this texture to be applied to."
+horizontal_alignment = 1
+
+[node name="Top" type="Button" parent="Center/List"]
+layout_mode = 2
+text = "Top"
+
+[node name="Side" type="Button" parent="Center/List"]
+layout_mode = 2
+text = "Side"
+
+[node name="Bottom" type="Button" parent="Center/List"]
+layout_mode = 2
+text = "Bottom"
+
+[node name="Cancel" type="Button" parent="Center/List"]
+layout_mode = 2
+text = "Cancel"

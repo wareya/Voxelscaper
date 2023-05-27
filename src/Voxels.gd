@@ -326,24 +326,15 @@ var unsides = [
 
 var decals_by_mat = {}
 var models_by_mat = {}
-
-var voxels_by_sides = {}
-var voxels_by_top   = {}
+var voxels_by_mat = {}
 func refresh_surface_mapping():
-    voxels_by_sides = {}
-    voxels_by_top   = {}
+    voxels_by_mat = {}
     for pos in voxels.keys():
-        var vox = voxels[pos]
+        var mat = voxels[pos]
         
-        var key = [vox.sides, vox]
-        if not voxels_by_sides.has(key):
-            voxels_by_sides[key] = []
-        voxels_by_sides[key].push_back(pos)
-        
-        key = [vox.top, vox]
-        if not voxels_by_top.has(key):
-            voxels_by_top[key] = []
-        voxels_by_top[key].push_back(pos)
+        if not voxels_by_mat.has(mat):
+            voxels_by_mat[mat] = []
+        voxels_by_mat[mat].push_back(pos)
     
     decals_by_mat = {}
     for pos in decals.keys():
@@ -981,10 +972,10 @@ func add_models(mesh):
 
 func add_voxels(mesh):
     var face_tex = []
-    for tex in voxels_by_sides.keys():
-        face_tex.push_back([tex, true, voxels_by_sides[tex]])
-    for tex in voxels_by_top.keys():
-        face_tex.push_back([tex, false, voxels_by_top[tex]])
+    for mat in voxels_by_mat.keys():
+        face_tex.push_back([[mat.sides, mat], "side", voxels_by_mat[mat]])
+        face_tex.push_back([[mat.top, mat], "top", voxels_by_mat[mat]])
+        face_tex.push_back([[mat.bottom, mat], "bottom", voxels_by_mat[mat]])
     
     for info in face_tex:
         var texture = info[0][0]
@@ -1004,10 +995,13 @@ func add_voxels(mesh):
             material.flags_transparent = true
             inner_faces = mat.transparent_inner_face_mode != 0
         
-        var local_sides = sides.duplicate()
-        var local_unsides = unsides.duplicate()
-        if mat.bottom_is_sidelike:
-            local_sides.push_back(local_unsides.pop_back())
+        var dirs = []
+        if info[1] == "side":
+            dirs = sides.duplicate()
+        elif info[1] == "top":
+            dirs = [Vector3.UP]
+        else:
+            dirs = [Vector3.DOWN]
         
         var verts = PackedVector3Array()
         var tex_uvs = PackedVector2Array()
@@ -1023,7 +1017,7 @@ func add_voxels(mesh):
         for pos in list:
             var vox = voxels[pos]
             var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
-            for dir in local_sides if is_side else local_unsides:
+            for dir in dirs:
                 if occluding_voxel_exists(pos+dir, vox):
                     var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
                     var other_b = dir.cross(other_a)
