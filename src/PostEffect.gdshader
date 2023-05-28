@@ -113,7 +113,68 @@ float is_similar_color_f(float color_diff)
     return is_similar_color(color_diff) ? 0.0 : 1.0;
 }
 
-void fragment() {
+struct edge_info {
+    float left_like;
+    float right_like;
+    bool left_open;
+    bool right_open;
+};
+
+edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, float view_dot, mat4 mat, float sqrt_far, vec3 center_normal, vec3 center_color, int range)
+{
+    float left_like = 0.0;
+    float right_like = 0.0;
+    bool left_open = true;
+    bool right_open = true;
+    
+    vec2 b_plus = vec2(0.0, -1.0) * to_px_2;
+    vec2 a_plus_raw = vec2(1.0, 0.0) * to_px_2;
+    
+    for(int xsign = -1; xsign <= 1; xsign += 2)
+    {
+        vec2 a_plus = a_plus_raw*float(xsign);
+        
+        float left_plus  = xsign > 0 ? 0.0 : 1.0;
+        float right_plus = xsign < 0 ? 0.0 : 1.0;
+        for(int x = 1; x <= range; x += 1)
+        {
+            vec2 coord_a = texcoord + a_plus*float(x);
+            vec2 coord_b = coord_a + b_plus;
+            bool info_a = false;
+            bool info_b = false;
+            // pick likeness comparison info depending on aa mode
+            if (aa_mode == 1)
+            {
+                info_a = is_similar_depth(depth_compare(coord_a, center, view_dot, mat, sqrt_far));
+                info_b = is_similar_depth(depth_compare(coord_b, center, view_dot, mat, sqrt_far));
+            }
+            else if (aa_mode == 2)
+            {
+                info_a = is_similar_normal(normal_compare(coord_a, center_normal));
+                info_b = is_similar_normal(normal_compare(coord_b, center_normal));
+            }
+            else// if (aa_mode == 3)
+            {
+                info_a = is_similar_color(color_compare(coord_a, center_color));
+                info_b = is_similar_color(color_compare(coord_b, center_color));
+            }
+            // set closed ends appropriately if closed
+            left_open  = left_open  && (info_b || info_a || xsign ==  1);
+            right_open = right_open && (info_b || info_a || xsign == -1);
+            // break on end
+            if(info_b || !info_a)
+                break;
+            // otherwise continue following edge
+            left_like  += left_plus;
+            right_like += right_plus;
+        }
+    }
+    edge_info ret = edge_info(left_like, right_like, left_open, right_open);
+    return ret;
+}
+
+void fragment()
+{
     vec2 texcoord = SCREEN_UV;
     vec4 base_color = texture(screen_texture, texcoord);
     
@@ -234,7 +295,7 @@ void fragment() {
         }
         
         // compare eight neighbors
-        // (eight are needed instead of four because otherwise this pattern is ambiguous:)
+        // (eight are needed because otherwise this pattern is ambiguous w/r/t up/down vs left/right:)
         // (X X .)
         // (X X .)
         // (X . .)
@@ -253,6 +314,16 @@ void fragment() {
         float bl_compare = DO_DIAGONALS ? b*0.5 + l*0.5 : 0.0;
         float br_compare = DO_DIAGONALS ? b*0.5 + r*0.5 : 0.0;
         
+        float comparisons[8] = {t_compare, b_compare, l_compare, r_compare, tl_compare, tr_compare, bl_compare, br_compare};
+        mat2 mats[8] = {mat2(vec2(res.x, 0.0), vec2(0.0, res.y)),
+                        mat2(vec2(res.x, 0.0), vec2(0.0, -res.y)),
+                        mat2(vec2(0.0, res.x), vec2(res.y, 0.0)),
+                        mat2(vec2(0.0, -res.x), vec2(res.y, 0.0)),
+                        mat2(vec2(-res.x,  res.x), vec2(res.y, 0.0)),
+                        mat2(vec2(-res.x, -res.x), vec2(res.y, 0.0)),
+                        mat2(vec2( res.x, -res.x), vec2(res.y, 0.0)),
+                        mat2(vec2( res.x,  res.x), vec2(res.y, 0.0))};
+        
         // figure out what type of edge we're on and configure the edge search accordingly
         
         bool skip = false;
@@ -261,72 +332,56 @@ void fragment() {
         
         // pick walking transform based on what direction the edge is going in
         mat2 to_px_2 = mat2(vec2(0.0, 0.0), vec2(0.0, 0.0));
-        if(t_compare == max_compare)
-            to_px_2 = mat2(vec2(res.x, 0.0), vec2(0.0, res.y));
-        else if(b_compare == max_compare)
-            to_px_2 = mat2(vec2(res.x, 0.0), vec2(0.0, -res.y));
-        else if(l_compare == max_compare)
-            to_px_2 = mat2(vec2(0.0, res.x), vec2(res.y, 0.0));
-        else if(r_compare == max_compare)
-            to_px_2 = mat2(vec2(0.0, -res.x), vec2(res.y, 0.0));
-        else if(tl_compare == max_compare)
-            to_px_2 = mat2(vec2(-res.x,  res.x), vec2(res.y, 0.0));
-        else if(br_compare == max_compare)
-            to_px_2 = mat2(vec2(-res.x, -res.x), vec2(res.y, 0.0));
-        else if(tr_compare == max_compare)
-            to_px_2 = mat2(vec2( res.x, -res.x), vec2(res.y, 0.0));
-        else// if(bl_compare == max_compare)
-            to_px_2 = mat2(vec2( res.x,  res.x), vec2(res.y, 0.0));
+        int found = -1;
+        if (DO_DIAGONALS)
+        {
+            for(int i = 0; i < 8; i++)
+            {
+                if (comparisons[i] == max_compare)
+                {
+                    if (found >= 0)
+                    {
+                        // If we found two equal best candidates, run two edge followings at a low range
+                        // to figure out which one is longer, then use that.
+                        // This is needed to disambituate this type of pattern:
+                        // (X X X)
+                        // (X . .)
+                        // (. . .)
+                        // as to whether it's diagonal or not.
+                        edge_info first = follow_edge(texcoord, mats[found], aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color, 2);
+                        edge_info second = follow_edge(texcoord, mats[i], aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color, 2);
+                        if (second.left_like + second.right_like > first.left_like + first.right_like)
+                        {
+                            found = i;
+                            break;
+                        }
+                        else
+                            break;
+                        // always break to ensure that we don't run edge-following several times in worst-case scenarios
+                    }
+                    else
+                        found = i;
+                }
+            }
+            to_px_2 = mats[found];
+        }
+        else
+        {
+            for(int i = 0; i < 8 && found < 0; i++)
+            {
+                if (comparisons[i] == max_compare)
+                    found = i;
+            }
+        }
         
         if(!skip)
         {
             // follow edge and find the ratio of like to unlike pixels to estimate
-            float left_like = 0.0;
-            float right_like = 0.0;
-            bool left_open = true;
-            bool right_open = true;
-            
-            vec2 b_plus = vec2(0.0, -1.0)*to_px_2;
-            
-            for(int xsign = -1; xsign <= 1; xsign += 2)
-            {
-                vec2 a_plus = vec2(1.0,  0.0)*to_px_2*float(xsign);
-                
-                float left_plus  = xsign > 0 ? 0.0 : 1.0;
-                float right_plus = xsign < 0 ? 0.0 : 1.0;
-                for(int x = 1; x <= Range; x += 1)
-                {
-                    vec2 coord_a = texcoord + a_plus*float(x);
-                    vec2 coord_b = coord_a + b_plus;
-                    bool info_a = false;
-                    bool info_b = false;
-                    // pick likeness comparison info depending on aa mode
-                    if (aa_mode == 1)
-                    {
-                        info_a = is_similar_depth(depth_compare(coord_a, center, view_dot, mat, sqrt_far));
-                        info_b = is_similar_depth(depth_compare(coord_b, center, view_dot, mat, sqrt_far));
-                    }
-                    else if (aa_mode == 2)
-                    {
-                        info_a = is_similar_normal(normal_compare(coord_a, center_normal));
-                        info_b = is_similar_normal(normal_compare(coord_b, center_normal));
-                    }
-                    else// if (aa_mode == 3)
-                    {
-                        info_a = is_similar_color(color_compare(coord_a, center_color));
-                        info_b = is_similar_color(color_compare(coord_b, center_color));
-                    }
-                    // set closed ends appropriately if closed
-                    left_open  = left_open  && (info_b || info_a || xsign ==  1);
-                    right_open = right_open && (info_b || info_a || xsign == -1);
-                    // break on end
-                    if(info_b || !info_a)
-                        break;
-                    // otherwise continue following edge
-                    left_like  += left_plus;
-                    right_like += right_plus;
-                }
-            }
+            edge_info info = follow_edge(texcoord, to_px_2, aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color, Range);
+            bool left_open = info.left_open;
+            bool right_open = info.right_open;
+            float left_like = info.left_like;
+            float right_like = info.right_like;
             
             // fix up data for convex bits
             if(!left_open && !right_open)
@@ -342,7 +397,7 @@ void fragment() {
                 blend_amount = ((left_open ? left_like : right_like)+0.5)/(pixel_range) - 0.5;
             blend_amount = clamp(blend_amount, 0.0, 1.0);
             
-            vec4 next_color = texture(screen_texture, texcoord + b_plus);
+            vec4 next_color = texture(screen_texture, texcoord + vec2(0.0, -1.0) * to_px_2);
             
             // blend neighboring edge pixel into center pixel based on ratio of low to high pixels
             // this is the step that approximately reconstructs the original shape

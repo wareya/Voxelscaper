@@ -283,5 +283,5 @@ func _draw():
         if vert == target and drag_target == null:
             color = Color.YELLOW
         
-        var tex = preload("res://src/Splotter.tres")
+        var tex = preload("res://art/Splotter.tres")
         draw_texture(tex, pos - tex.get_size()/2.0, color)

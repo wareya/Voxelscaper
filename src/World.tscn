@@ -1,6 +1,7 @@
-[gd_scene load_steps=23 format=3 uid="uid://dohn0cg0a1l80"]
+[gd_scene load_steps=28 format=3 uid="uid://dohn0cg0a1l80"]
 
 [ext_resource type="Script" path="res://src/World.gd" id="1_72pa5"]
+[ext_resource type="Script" path="res://src/GizmoHelper.gd" id="2_2uu1h"]
 [ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_653mq"]
 [ext_resource type="Shader" path="res://src/PostEffect.gdshader" id="2_sbdt1"]
 [ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6_3fypg"]
@@ -14,6 +15,22 @@
 [ext_resource type="Script" path="res://src/Mat2dOrientation.gd" id="13_yimsc"]
 [ext_resource type="Script" path="res://src/MenuBar.gd" id="15_kbgwl"]
 [ext_resource type="Texture2D" uid="uid://b8k88lte2xbmp" path="res://art/blob.png" id="16_sxhao"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8w840"]
+transparency = 1
+shading_mode = 0
+diffuse_mode = 1
+specular_mode = 2
+vertex_color_use_as_albedo = true
+albedo_color = Color(1, 1, 1, 0.490196)
+
+[sub_resource type="ImmediateMesh" id="ImmediateMesh_g8lg4"]
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ne6ht"]
+albedo_color = Color(0, 0, 0, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_aeig4"]
+size = Vector3(0.25, 0.25, 0.25)
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2nfeu"]
 render_priority = -128
@@ -53,8 +70,22 @@ outline_color = Color(0, 0, 0, 1)
 
 [sub_resource type="BoxMesh" id="BoxMesh_ytrye"]
 
-[node name="World" type="Node3D" groups=["VoxEditor"]]
+[node name="World" type="MeshInstance3D" groups=["VoxEditor"]]
+material_override = SubResource("StandardMaterial3D_8w840")
+mesh = SubResource("ImmediateMesh_g8lg4")
 script = ExtResource("1_72pa5")
+
+[node name="GizmoHelper" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+script = ExtResource("2_2uu1h")
+
+[node name="ShaderTestCubeKeepHidden" type="MeshInstance3D" parent="."]
+visible = false
+material_override = SubResource("StandardMaterial3D_ne6ht")
+mesh = SubResource("BoxMesh_aeig4")
 
 [node name="PostEffect" type="MeshInstance3D" parent="." groups=["AAEffect"]]
 visible = false
@@ -84,6 +115,20 @@ far = 500.0
 
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
 mesh = SubResource("ArrayMesh_cslns")
+
+[node name="ButtonMove" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 266.0
+offset_right = 183.0
+offset_bottom = 296.0
+text = "Move"
+
+[node name="ButtonSelect" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 228.0
+offset_right = 183.0
+offset_bottom = 258.0
+text = "Select"
 
 [node name="ButtonGrid" type="OptionButton" parent="."]
 offset_left = 8.0

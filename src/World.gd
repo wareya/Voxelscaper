@@ -1,5 +1,5 @@
 @tool
-extends Node3D
+extends MeshInstance3D
 class_name VoxEditor
 
 ### nice-to-have list
@@ -164,9 +164,9 @@ class ModelMat extends DecalMat:
         if "type" in dict and dict.type == "model":
             var image = Image.new()
             image.load_png_from_buffer(Marshalls.base64_to_raw(dict["tex"]))
-            var tex = ImageTexture.create_from_image(image)
+            var new_tex = ImageTexture.create_from_image(image)
             var ret = ModelMat.new(
-                tex,
+                new_tex,
                 Helpers.array_to_vec2(dict.grid_size),
                 Helpers.array_to_vec2(dict.icon_coord)
             )
@@ -941,6 +941,9 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int =
 func show_controls():
     $ControlsExplanation.modulate.a = 1.0
 
+# 0 = material, 1 = select, 2 = move, 3 = paste
+var tool_mode = 1
+
 func _process(delta):
     #print(face_ray_intersection(Vector3(), Vector3(1, 0, 0), Vector3(1, 0, 0), Vector3(-2, 0, 0)))
     if Engine.is_editor_hint():
@@ -966,8 +969,8 @@ func _process(delta):
             $CameraHolder.global_transform.origin -= rightwards * delta * 16.0
     
     var i = 0
+    var mat_index = mats.find(current_mat)
     for button in $Mats/List.get_children():
-        var mat_index = mats.find(current_mat)
         button.button_pressed = false
         if i == mat_index:
             button.button_pressed = true
@@ -999,10 +1002,50 @@ func _process(delta):
         $Mat2dTilePicker.think()
         current_mat.current_coord = $Mat2dTilePicker.icon_coord
     
-    handle_voxel_input()
+    if tool_mode == 0:
+        handle_voxel_input()
     
     if $Voxels.operation_active and !draw_mode and !erase_mode:
         $Voxels.end_operation()
+    
+    tool_mode = 0
+    
+    draw_2d_gizmos()
+    #draw_gizmos()
+
+func draw_2d_gizmos():
+    if tool_mode >= 0:
+        var origin = collision_point if collision_point != null else Vector3()
+        $GizmoHelper.inform_gizmos([[origin + Vector3(0.5, 0, 0), Color.ORANGE]])
+
+func draw_gizmos():
+    var target : ImmediateMesh = mesh as ImmediateMesh
+    target.clear_surfaces()
+    if tool_mode >= 0:
+        var parts = 4
+        var origin = collision_point if collision_point != null else Vector3()
+        target.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+        var slice_verts : Array[Vector3] = [Vector3(0, 0.35, 0), Vector3(0, 0.35, 2), Vector3(0, 0.85, 2), Vector3(0, 0, 3.5)]
+        var verts : Array[Vector3] = []
+        for i in parts:
+            for vert in slice_verts:
+                verts.push_back(vert.rotated(Vector3(0, 0, 1), (i+0.5)/parts*2.0*PI)*0.2 + origin + Vector3(0, 0, 0.5))
+        for i in parts:
+            for j in slice_verts.size()-1:
+                var base = i*slice_verts.size() + j
+                var next = i*slice_verts.size() + j + slice_verts.size()
+                var a = verts[(base + 0) % verts.size()]
+                var b = verts[(base + 1) % verts.size()]
+                var c = verts[(next + 0) % verts.size()]
+                var d = verts[(next + 1) % verts.size()]
+                target.surface_set_color(Color.BLUE)
+                target.surface_add_vertex(a)
+                target.surface_add_vertex(b)
+                target.surface_add_vertex(c)
+                target.surface_add_vertex(c)
+                target.surface_add_vertex(b)
+                target.surface_add_vertex(d)
+        target.surface_end()
 
 func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
     if mat is VoxMat:
@@ -1028,6 +1071,7 @@ func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
         var idx = $Mat2dOrientation.selected
         voxels.place_decal(point, normal, mat, idx)
 
+var collision_point = null
 var last_collision_point = null
 func handle_voxel_input():
     var view_rect : Rect2 = get_viewport().get_visible_rect()
@@ -1039,7 +1083,7 @@ func handle_voxel_input():
         return
     
     var raw_collision_point = null
-    var collision_point = null
+    collision_point = null
     var collision_normal = null
     
     var start = Time.get_ticks_usec()
@@ -1198,3 +1242,6 @@ func handle_voxel_input():
                     ref_normal = Vector3(0, 0, sign(-cast_normal.z))
             if draw_type == 3:
                 ref_normal = Vector3(0, -sign(cast_normal.y), 0)
+
+func _draw():
+    pass
