@@ -115,7 +115,6 @@ common/enable_pause_aware_picking=true
 [rendering]
 
 lights_and_shadows/directional_shadow/soft_shadow_filter_quality=3
-anti_aliasing/quality/msaa_2d=2
 environment/defaults/default_environment="res://src/default_env.tres"
 quality/directional_shadow/size=1024
 quality/directional_shadow/size.mobile=1024

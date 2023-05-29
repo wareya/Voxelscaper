@@ -74,6 +74,7 @@ func pressed(id : int, which : PopupMenu):
         var on = which.is_item_checked(idx)
         on = !on
         which.set_item_checked(idx, on)
+        #get_viewport().use_taa = on # causes noticeable jitter/bounce when moving mouse
         var aa_controller = get_tree().get_first_node_in_group("AAEffect")
         if aa_controller:
             aa_controller.visible = on

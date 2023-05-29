@@ -1010,10 +1010,10 @@ func _process(delta):
     
     tool_mode = 0
     
-    draw_2d_gizmos()
+    handle_2d_gizmos()
     #draw_gizmos()
 
-func draw_2d_gizmos():
+func handle_2d_gizmos():
     if tool_mode >= 0:
         var origin = collision_point if collision_point != null else Vector3()
         $GizmoHelper.inform_gizmos([[origin + Vector3(0.5, 0, 0), Color.ORANGE]])

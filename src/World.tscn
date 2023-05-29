@@ -1,10 +1,12 @@
-[gd_scene load_steps=28 format=3 uid="uid://dohn0cg0a1l80"]
+[gd_scene load_steps=39 format=3 uid="uid://dohn0cg0a1l80"]
 
 [ext_resource type="Script" path="res://src/World.gd" id="1_72pa5"]
 [ext_resource type="Script" path="res://src/GizmoHelper.gd" id="2_2uu1h"]
 [ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_653mq"]
 [ext_resource type="Shader" path="res://src/PostEffect.gdshader" id="2_sbdt1"]
+[ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="5_f680v"]
 [ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6_3fypg"]
+[ext_resource type="Texture2D" uid="uid://cohvwgn25ipik" path="res://art/sandbrick.png" id="6_fm6m6"]
 [ext_resource type="Script" path="res://src/VertEditPanel.gd" id="7_vyoah"]
 [ext_resource type="Texture2D" uid="uid://bne6k7rae1jy3" path="res://art/minigrid.png" id="8_kpv6x"]
 [ext_resource type="Script" path="res://src/VertEditInputCatcher.gd" id="9_oq18w"]
@@ -26,18 +28,34 @@ albedo_color = Color(1, 1, 1, 0.490196)
 
 [sub_resource type="ImmediateMesh" id="ImmediateMesh_g8lg4"]
 
+[sub_resource type="FastNoiseLite" id="FastNoiseLite_x624e"]
+noise_type = 2
+fractal_gain = 3.452
+cellular_distance_function = 1
+cellular_return_type = 0
+
+[sub_resource type="NoiseTexture2D" id="NoiseTexture2D_5lrgu"]
+generate_mipmaps = false
+noise = SubResource("FastNoiseLite_x624e")
+
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ne6ht"]
-albedo_color = Color(0, 0, 0, 1)
+shading_mode = 0
+diffuse_mode = 3
+albedo_texture = SubResource("NoiseTexture2D_5lrgu")
+uv1_scale = Vector3(8, 8, 8)
+texture_filter = 0
 
 [sub_resource type="BoxMesh" id="BoxMesh_aeig4"]
 size = Vector3(0.25, 0.25, 0.25)
+
+[sub_resource type="CylinderMesh" id="CylinderMesh_fs0dq"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2nfeu"]
 render_priority = -128
 shader = ExtResource("2_sbdt1")
 shader_parameter/DepthThreshold = 0.1
 shader_parameter/LumaLikenessThreshold = 0.15
-shader_parameter/NormalDotOffset = 0.9
+shader_parameter/NormalThreshold = 0.9
 shader_parameter/Range = 5
 shader_parameter/Gamma = 2.2
 
@@ -52,7 +70,53 @@ ambient_light_source = 2
 ambient_light_color = Color(0.305882, 0.32549, 0.34902, 1)
 ambient_light_sky_contribution = 0.0
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_cslns"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_8t8aw"]
+diffuse_mode = 1
+albedo_texture = ExtResource("5_f680v")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tqlhs"]
+diffuse_mode = 1
+albedo_texture = ExtResource("6_fm6m6")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ump1v"]
+diffuse_mode = 1
+albedo_texture = ExtResource("6_fm6m6")
+texture_filter = 0
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_uooju"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 24,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
+"material": SubResource("StandardMaterial3D_8t8aw"),
+"primitive": 3,
+"vertex_count": 16,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
+}, {
+"aabb": AABB(-0.5, 0.5, -0.5, 1.00001, 1.00136e-05, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 6,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0),
+"material": SubResource("StandardMaterial3D_tqlhs"),
+"primitive": 3,
+"vertex_count": 4,
+"vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255)
+}, {
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1.00136e-05, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 6,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0),
+"material": SubResource("StandardMaterial3D_ump1v"),
+"primitive": 3,
+"vertex_count": 4,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
+}]
 
 [sub_resource type="StandardMaterial3D" id="7"]
 transparency = 1
@@ -60,7 +124,53 @@ shading_mode = 0
 vertex_color_use_as_albedo = true
 albedo_color = Color(0.168627, 0.47451, 1, 0.321569)
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_n8kco"]
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_muwea"]
+diffuse_mode = 1
+albedo_texture = ExtResource("5_f680v")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_bpx5y"]
+diffuse_mode = 1
+albedo_texture = ExtResource("6_fm6m6")
+texture_filter = 0
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_04jap"]
+diffuse_mode = 1
+albedo_texture = ExtResource("6_fm6m6")
+texture_filter = 0
+
+[sub_resource type="ArrayMesh" id="ArrayMesh_a1hlg"]
+_surfaces = [{
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63, 55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 24,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0, 4, 0, 5, 0, 6, 0, 6, 0, 5, 0, 7, 0, 8, 0, 9, 0, 10, 0, 10, 0, 9, 0, 11, 0, 12, 0, 13, 0, 14, 0, 14, 0, 13, 0, 15, 0),
+"material": SubResource("StandardMaterial3D_muwea"),
+"primitive": 3,
+"vertex_count": 16,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 255, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 255, 255, 255, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 127)
+}, {
+"aabb": AABB(-0.5, 0.5, -0.5, 1.00001, 1.00136e-05, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 6,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0),
+"material": SubResource("StandardMaterial3D_bpx5y"),
+"primitive": 3,
+"vertex_count": 4,
+"vertex_data": PackedByteArray(0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 63, 255, 127, 255, 255, 0, 0, 0, 63, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255, 0, 0, 0, 191, 0, 0, 0, 63, 0, 0, 0, 191, 255, 127, 255, 255)
+}, {
+"aabb": AABB(-0.5, -0.5, -0.5, 1, 1.00136e-05, 1.00001),
+"attribute_data": PackedByteArray(55, 208, 169, 61, 20, 174, 127, 63, 14, 116, 218, 57, 20, 174, 127, 63, 55, 208, 169, 61, 236, 81, 64, 63, 14, 116, 218, 57, 236, 81, 64, 63),
+"format": 4115,
+"index_count": 6,
+"index_data": PackedByteArray(0, 0, 1, 0, 2, 0, 2, 0, 1, 0, 3, 0),
+"material": SubResource("StandardMaterial3D_04jap"),
+"primitive": 3,
+"vertex_count": 4,
+"vertex_data": PackedByteArray(0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 63, 255, 127, 0, 0, 0, 0, 0, 191, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0, 0, 0, 0, 63, 0, 0, 0, 191, 0, 0, 0, 191, 255, 127, 0, 0)
+}]
 
 [sub_resource type="LabelSettings" id="LabelSettings_jl3bd"]
 line_spacing = 0.0
@@ -86,6 +196,11 @@ script = ExtResource("2_2uu1h")
 visible = false
 material_override = SubResource("StandardMaterial3D_ne6ht")
 mesh = SubResource("BoxMesh_aeig4")
+
+[node name="ShaderTestCubeKeepHidden2" type="MeshInstance3D" parent="."]
+transform = Transform3D(0.0243199, -0.049331, 0, 0.049331, 0.0243199, 0, 0, 0, 0.055, -0.0501815, 0.121219, -0.0153788)
+visible = false
+mesh = SubResource("CylinderMesh_fs0dq")
 
 [node name="PostEffect" type="MeshInstance3D" parent="." groups=["AAEffect"]]
 visible = false
@@ -114,7 +229,7 @@ size = 10.0
 far = 500.0
 
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
-mesh = SubResource("ArrayMesh_cslns")
+mesh = SubResource("ArrayMesh_uooju")
 
 [node name="ButtonMove" type="Button" parent="."]
 offset_left = 8.0
@@ -233,7 +348,7 @@ pixel_size = 0.0078
 texture = ExtResource("8_kpv6x")
 
 [node name="Voxel" parent="VertEditPanel/Frame/VertEditViewport" instance=ExtResource("2_653mq")]
-mesh = SubResource("ArrayMesh_n8kco")
+mesh = SubResource("ArrayMesh_a1hlg")
 skeleton = NodePath("../../../..")
 
 [node name="VertEditInputCatcher" type="Control" parent="VertEditPanel/Frame/VertEditViewport"]
