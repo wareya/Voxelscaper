@@ -1048,9 +1048,14 @@ func closest_point_line(line_a : Vector2, line_b : Vector2, point : Vector2):
         return cand_b
 
 var gizmo_drag_dir = Vector3()
+var gizmo_drag_dir_unrounded = null
 func handle_2d_gizmos():
     var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
     var mouse_pos = $GizmoHelper.get_local_mouse_position()
+    
+    if !draw_mode:
+        gizmo_drag_dir = Vector3()
+        gizmo_drag_dir_unrounded = null
     
     var aabb = AABB(selection_start, Vector3())
     aabb = aabb.abs()
@@ -1070,6 +1075,8 @@ func handle_2d_gizmos():
         var pos_z = lerp(start.z, end.z, t.z)
         
         var coord = Vector3(pos_x, pos_y, pos_z)
+        if gizmo_drag_dir_unrounded != null and dir == gizmo_drag_dir:
+            coord = gizmo_drag_dir_unrounded
         
         var pos = cam.unproject_position(coord)
         var pos_dist = mouse_pos.distance_to(pos)
@@ -1082,9 +1089,6 @@ func handle_2d_gizmos():
     
     gizmos.sort_custom(func compare(a, b): return a[1] < b[1])
     
-    if !draw_mode:
-        gizmo_drag_dir = Vector3()
-    
     if gizmos[0][1] < 8.0:
         if main_just_pressed:
             gizmo_drag_dir = gizmos[0][5]
@@ -1094,6 +1098,8 @@ func handle_2d_gizmos():
     for gizmo in gizmos:
         gizmos_dict[gizmo[5]] = gizmo
     if gizmo_drag_dir in gizmos_dict:
+        gizmos_dict[gizmo_drag_dir][4] = Color.CYAN
+        
         var pos = gizmos_dict[gizmo_drag_dir][2]
         var old_pos = pos
         var pos2 = cam.unproject_position(gizmos_dict[gizmo_drag_dir][0] + gizmo_drag_dir)
@@ -1103,13 +1109,15 @@ func handle_2d_gizmos():
         
         var old_coord = gizmos_dict[gizmo_drag_dir][0]
         var new_coord : Vector3 = cam.project_position(pos, depth)
+        # limit movement to only the handle's direction component
         new_coord = old_coord + (new_coord - old_coord).project(gizmo_drag_dir)
         var opposite_coord = gizmos_dict[-gizmo_drag_dir][0]
-        if (new_coord - opposite_coord).dot(gizmo_drag_dir) > 0.99:
+        var n = (new_coord - opposite_coord - gizmo_drag_dir).normalized()
+        if n.dot(gizmo_drag_dir) > 0.99:
             gizmos_dict[gizmo_drag_dir][0] = new_coord
         else:
             gizmos_dict[gizmo_drag_dir][0] = opposite_coord + gizmo_drag_dir
-        gizmos_dict[gizmo_drag_dir][4] = Color.CYAN
+        gizmo_drag_dir_unrounded = new_coord
     
     var new_aabb = AABB(gizmos[0][0], Vector3())
     for info in gizmos:
@@ -1117,9 +1125,7 @@ func handle_2d_gizmos():
     new_aabb.position += Vector3.ONE * 0.5
     new_aabb.end -= Vector3.ONE
     new_aabb = new_aabb.abs()
-    #print("-----")
-    #print(aabb)
-    #print(new_aabb)
+    
     selection_start = new_aabb.position.round()
     selection_end = new_aabb.end.round()
     
