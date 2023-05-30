@@ -13,7 +13,6 @@ config_version=5
 config/name="Voxelscaper"
 run/main_scene="res://src/World.tscn"
 config/features=PackedStringArray("4.0")
-run/low_processor_mode=true
 config/icon="res://src/icon.png"
 
 [debug]
@@ -23,7 +22,7 @@ gdscript/warnings/return_value_discarded=false
 [display]
 
 window/subwindows/embed_subwindows=false
-window/vsync/vsync_mode=2
+window/vsync/vsync_mode=0
 
 [gui]
 

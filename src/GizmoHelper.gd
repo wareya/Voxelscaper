@@ -17,3 +17,4 @@ func _draw():
             continue
         var coord_2d = camera.unproject_position(coord)
         draw_texture(icon, coord_2d + offset, color)
+    coords = []

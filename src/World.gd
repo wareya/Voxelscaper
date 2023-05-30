@@ -638,6 +638,8 @@ var lock_mode = 0
 var input_pick_mode = false
 signal hide_menus
 var control_swap = false
+var main_just_pressed = false
+var sub_just_pressed = false
 func _unhandled_input(_event):
     $VertEditPanel/Frame/VertEditViewport.handle_input_locally = false
     
@@ -662,6 +664,7 @@ func _unhandled_input(_event):
     else:
         input_pick_mode = false
         if Input.is_action_just_pressed(main):
+            main_just_pressed = true
             draw_mode = true
             $Voxels.start_operation()
         elif !Input.is_action_pressed(main):
@@ -669,6 +672,7 @@ func _unhandled_input(_event):
             last_collision_point = null
         
         if Input.is_action_just_pressed(sub):
+            sub_just_pressed = true
             erase_mode = true
             $Voxels.start_operation()
         elif !Input.is_action_pressed(sub):
@@ -783,12 +787,12 @@ func _input(_event):
     estimate_viewport_mouse_scale()
     
     if _event is InputEventMouseMotion:
+        var event : InputEventMouseMotion = _event
         if !camera_mode:
             return
-        var event : InputEventMouseMotion = _event
         if event.shift_pressed:
-            var upwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.UP)
-            var rightwards = $CameraHolder/Camera3D.global_transform.basis * (Vector3.RIGHT)
+            var upwards = $CameraHolder/Camera3D.global_transform.basis * Vector3.UP
+            var rightwards = $CameraHolder/Camera3D.global_transform.basis * Vector3.RIGHT
             var speed = camera_intended_scale * estimate_viewport_mouse_scale() * 5.0
             $CameraHolder.global_transform.origin += event.relative.y * upwards * speed
             $CameraHolder.global_transform.origin += event.relative.x * -rightwards * speed
@@ -943,12 +947,21 @@ func show_controls():
 
 # 0 = material, 1 = select, 2 = move, 3 = paste
 var tool_mode = 1
+var selection_start = Vector3()
+var selection_end = Vector3()
+var selection_offset = Vector3()
 
+var f = 1.0
 func _process(delta):
     #print(face_ray_intersection(Vector3(), Vector3(1, 0, 0), Vector3(1, 0, 0), Vector3(-2, 0, 0)))
     if Engine.is_editor_hint():
         return
     update_camera()
+    
+    #if not f is float:
+    #    f = 1.0
+    #f = lerp(f, delta, 1.0 - pow(0.1, delta))
+    #FPS.text = str(snapped(1.0/f, 0.01))
     
     var mod_speed = 0.1
     if Input.is_mouse_button_pressed(1) or Input.is_mouse_button_pressed(2) or Input.is_mouse_button_pressed(3):
@@ -1002,21 +1015,122 @@ func _process(delta):
         $Mat2dTilePicker.think()
         current_mat.current_coord = $Mat2dTilePicker.icon_coord
     
+    tool_mode = 1
+    
     if tool_mode == 0:
         handle_voxel_input()
     
     if $Voxels.operation_active and !draw_mode and !erase_mode:
         $Voxels.end_operation()
     
-    tool_mode = 0
+    if tool_mode != 0:
+        handle_2d_gizmos()
     
-    handle_2d_gizmos()
-    #draw_gizmos()
+    main_just_pressed = false
+    sub_just_pressed = false
 
+func distance_point_line(line_a : Vector2, line_b : Vector2, point : Vector2) -> float:
+    var diff = line_b - line_a
+    var point_offset = point - line_a
+    var top = abs(diff.x * point_offset.y - diff.y * point_offset.x)
+    var bottom = diff.length()
+    return top/bottom
+
+func closest_point_line(line_a : Vector2, line_b : Vector2, point : Vector2):
+    var dist = distance_point_line(line_a, line_b, point)
+    var diff = line_b - line_a
+    var adjust = Vector2(diff.y, -diff.x).normalized() * dist
+    var cand_a = point + adjust
+    var cand_b = point - adjust
+    if cand_a.distance_squared_to(line_a) < cand_b.distance_squared_to(line_a):
+        return cand_a
+    else:
+        return cand_b
+
+var gizmo_drag_dir = Vector3()
 func handle_2d_gizmos():
-    if tool_mode >= 0:
-        var origin = collision_point if collision_point != null else Vector3()
-        $GizmoHelper.inform_gizmos([[origin + Vector3(0.5, 0, 0), Color.ORANGE]])
+    var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
+    var mouse_pos = $GizmoHelper.get_local_mouse_position()
+    
+    var aabb = AABB(selection_start, Vector3())
+    aabb = aabb.abs()
+    aabb = aabb.expand(selection_end)
+    aabb.position -= Vector3.ONE * 0.5
+    aabb.end += Vector3.ONE
+    aabb = aabb.abs()
+    var start = aabb.position
+    var end = aabb.end
+    
+    var dirs = directions.duplicate()
+    var gizmos = []
+    for dir in dirs:
+        var t = dir*0.5 + Vector3(0.5, 0.5, 0.5)
+        var pos_x = lerp(start.x, end.x, t.x)
+        var pos_y = lerp(start.y, end.y, t.y)
+        var pos_z = lerp(start.z, end.z, t.z)
+        
+        var coord = Vector3(pos_x, pos_y, pos_z)
+        
+        var pos = cam.unproject_position(coord)
+        var pos_dist = mouse_pos.distance_to(pos)
+        
+        var cam_pos = cam.global_position
+        var cam_rot = cam.global_transform.basis.get_euler()
+        var xform = Transform3D(Basis.from_euler(cam_rot), cam_pos)
+        var depth = -(coord * xform).z
+        gizmos.push_back([coord, pos_dist, pos, depth, Color.ORANGE, dir])
+    
+    gizmos.sort_custom(func compare(a, b): return a[1] < b[1])
+    
+    if !draw_mode:
+        gizmo_drag_dir = Vector3()
+    
+    if gizmos[0][1] < 8.0:
+        if main_just_pressed:
+            gizmo_drag_dir = gizmos[0][5]
+        gizmos[0][4] = Color.YELLOW
+    
+    var gizmos_dict = {}
+    for gizmo in gizmos:
+        gizmos_dict[gizmo[5]] = gizmo
+    if gizmo_drag_dir in gizmos_dict:
+        var pos = gizmos_dict[gizmo_drag_dir][2]
+        var old_pos = pos
+        var pos2 = cam.unproject_position(gizmos_dict[gizmo_drag_dir][0] + gizmo_drag_dir)
+        var depth = gizmos_dict[gizmo_drag_dir][3]
+        pos = closest_point_line(old_pos, pos2, $GizmoHelper.get_local_mouse_position())
+        var rect = $GizmoHelper.get_rect()
+        
+        var old_coord = gizmos_dict[gizmo_drag_dir][0]
+        var new_coord : Vector3 = cam.project_position(pos, depth)
+        new_coord = old_coord + (new_coord - old_coord).project(gizmo_drag_dir)
+        var opposite_coord = gizmos_dict[-gizmo_drag_dir][0]
+        if (new_coord - opposite_coord).dot(gizmo_drag_dir) > 0.99:
+            gizmos_dict[gizmo_drag_dir][0] = new_coord
+        else:
+            gizmos_dict[gizmo_drag_dir][0] = opposite_coord + gizmo_drag_dir
+        gizmos_dict[gizmo_drag_dir][4] = Color.CYAN
+    
+    var new_aabb = AABB(gizmos[0][0], Vector3())
+    for info in gizmos:
+        new_aabb = new_aabb.expand(info[0])
+    new_aabb.position += Vector3.ONE * 0.5
+    new_aabb.end -= Vector3.ONE
+    new_aabb = new_aabb.abs()
+    #print("-----")
+    #print(aabb)
+    #print(new_aabb)
+    selection_start = new_aabb.position.round()
+    selection_end = new_aabb.end.round()
+    
+    gizmos.sort_custom(func compare(a, b): return a[3] > b[3])
+    gizmos = gizmos.map(func f(f): return [f[0], f[4]])
+    
+    $GizmoHelper.inform_gizmos(gizmos)
+    
+    $CursorBox.global_position = (selection_start + selection_end) / 2.0
+    $CursorBox.scale = selection_end - selection_start + Vector3(0.1, 0.1, 0.1) + Vector3.ONE
+    $CursorBox.visible = true
 
 func draw_gizmos():
     var target : ImmediateMesh = mesh as ImmediateMesh
@@ -1133,14 +1247,14 @@ func handle_voxel_input():
         #var normal = collision_normal if ref_normal == null else ref_normal
         
         $CursorBox.show()
-        $CursorBox.global_transform.origin = collision_point
+        $CursorBox.scale = Vector3(1.1, 1.1, 1.1)
+        $CursorBox.global_position = collision_point
         if alt_offset and ref_point != null:
             $CursorBox.global_transform.origin += collision_normal
-        $CursorBox.scale = Vector3.ONE
         if current_mat is DecalMat and not current_mat is ModelMat:
             var positive = collision_normal.abs()
             var negative : Vector3 = Vector3.ONE - positive
-            $CursorBox.scale = negative.lerp(Vector3.ONE, 0.2)
+            $CursorBox.scale *= negative.lerp(Vector3.ONE, 0.2)
             $CursorBox.global_transform.origin -= collision_normal*0.4
         
         if $ButtonGrid.selected == 0 or ($ButtonGrid.selected == 2 and draw_mode):

@@ -1,8 +1,9 @@
-[gd_scene load_steps=39 format=3 uid="uid://dohn0cg0a1l80"]
+[gd_scene load_steps=41 format=3 uid="uid://dohn0cg0a1l80"]
 
 [ext_resource type="Script" path="res://src/World.gd" id="1_72pa5"]
 [ext_resource type="Script" path="res://src/GizmoHelper.gd" id="2_2uu1h"]
 [ext_resource type="PackedScene" path="res://src/Voxels.tscn" id="2_653mq"]
+[ext_resource type="Shader" path="res://src/PostEffectCanvas.gdshader" id="2_b63f2"]
 [ext_resource type="Shader" path="res://src/PostEffect.gdshader" id="2_sbdt1"]
 [ext_resource type="Texture2D" uid="uid://dl8ct5wy2tu0c" path="res://art/brickwall.png" id="5_f680v"]
 [ext_resource type="Texture2D" uid="uid://cst2tj17o8fg1" path="res://art/grid.png" id="6_3fypg"]
@@ -27,6 +28,12 @@ vertex_color_use_as_albedo = true
 albedo_color = Color(1, 1, 1, 0.490196)
 
 [sub_resource type="ImmediateMesh" id="ImmediateMesh_g8lg4"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_hcdps"]
+shader = ExtResource("2_b63f2")
+shader_parameter/LumaLikenessThreshold = 0.15
+shader_parameter/Range = 5
+shader_parameter/Gamma = 2.2
 
 [sub_resource type="FastNoiseLite" id="FastNoiseLite_x624e"]
 noise_type = 2
@@ -185,12 +192,21 @@ material_override = SubResource("StandardMaterial3D_8w840")
 mesh = SubResource("ImmediateMesh_g8lg4")
 script = ExtResource("1_72pa5")
 
-[node name="GizmoHelper" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 0
+[node name="PostEffect2" type="ColorRect" parent="."]
+visible = false
+material = SubResource("ShaderMaterial_hcdps")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="FPS" type="Label" parent="."]
+visible = false
+z_index = 671
 offset_right = 40.0
-offset_bottom = 40.0
-script = ExtResource("2_2uu1h")
+offset_bottom = 17.0
+text = "69.18"
 
 [node name="ShaderTestCubeKeepHidden" type="MeshInstance3D" parent="."]
 visible = false
@@ -206,8 +222,21 @@ mesh = SubResource("CylinderMesh_fs0dq")
 visible = false
 material_override = SubResource("ShaderMaterial_2nfeu")
 cast_shadow = 0
+extra_cull_margin = 16384.0
+ignore_occlusion_culling = true
 gi_mode = 0
 mesh = SubResource("QuadMesh_my40a")
+
+[node name="GizmoHelper" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = -1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_2uu1h")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["Sun"]]
 transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5)
@@ -296,8 +325,6 @@ HINT: Middle click drag to turn. Shift middle click drag to pan/translate.
 HINT: Press j to toggle between orthographic preview modes/angles."
 
 [node name="CursorBox" type="CSGBox3D" parent="."]
-visible = false
-size = Vector3(1.1, 1.1, 1.1)
 material = SubResource("7")
 
 [node name="Grid" type="Sprite3D" parent="."]
