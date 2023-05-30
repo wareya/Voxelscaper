@@ -198,7 +198,10 @@ func get_default_voxmat():
 var current_mat = mats[0]
 
 func set_current_mat(new_current):
+    tool_mode = TOOL_MODE_MAT
     current_mat = new_current
+    selection_start = null
+    selection_end = null
 
 func modify_mat(mat):
     if mat is VoxMat:
@@ -468,6 +471,15 @@ func _ready():
     $ModelMatchFloor.add_item("yes (tilt)", 2)
     $ModelMatchFloor.add_item("yes (warp)", 3)
     $ModelMatchFloor.selected = 0
+    
+    $ButtonSelect.pressed.connect(self.start_select)
+    $ButtonMove.pressed.connect(self.start_move)
+
+func start_select():
+    tool_mode = TOOL_MODE_NEW_SELECT
+
+func start_move():
+    tool_mode = TOOL_MODE_MOVE_SELECT
 
 func default_save():
     if prev_save_target != "":
@@ -555,7 +567,7 @@ func do_pick_material():
         return
     
     var raw_collision_point = null
-    var collision_point = null
+    var hit_collision_point = null
     var collision_normal = null
     
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
@@ -563,8 +575,8 @@ func do_pick_material():
     if collision_data:
         collision_normal = collision_data[1]
         raw_collision_point = collision_data[0]
-        collision_point = (raw_collision_point - collision_normal*0.5).round()
-        collision_point = collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
+        hit_collision_point = (raw_collision_point - collision_normal*0.5).round()
+        hit_collision_point = hit_collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
         
         var check_order = []
         if current_mat is VoxMat:
@@ -575,8 +587,8 @@ func do_pick_material():
             check_order = [$Voxels.decals, $Voxels.voxels, $Voxels.models]
         
         for pool in check_order:
-            if collision_point in pool:
-                var hit = pool[collision_point]
+            if hit_collision_point in pool:
+                var hit = pool[hit_collision_point]
                 if pool == $Voxels.voxels:
                     current_mat = hit
                     break
@@ -615,7 +627,7 @@ func do_pick_vert_warp():
         return
     
     var raw_collision_point = null
-    var collision_point = null
+    var hit_collision_point = null
     var collision_normal = null
     
     var collision_data = raycast_voxels(cast_start, cast_normal * 100.0, 1)
@@ -623,12 +635,12 @@ func do_pick_vert_warp():
     if collision_data:
         collision_normal = collision_data[1]
         raw_collision_point = collision_data[0]
-        collision_point = (raw_collision_point - collision_normal*0.5).round()
-        collision_point = collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
+        hit_collision_point = (raw_collision_point - collision_normal*0.5).round()
+        hit_collision_point = hit_collision_point + Vector3.ONE - Vector3.ONE # flush unsigned zeroes
         
-        if collision_point in $Voxels.voxels:
-            if collision_point in $Voxels.voxel_corners:
-                $VertEditPanel.set_overrides($Voxels.voxel_corners[collision_point])
+        if hit_collision_point in $Voxels.voxels:
+            if hit_collision_point in $Voxels.voxel_corners:
+                $VertEditPanel.set_overrides($Voxels.voxel_corners[hit_collision_point])
             else:
                 $VertEditPanel.set_overrides({})
 
@@ -645,9 +657,9 @@ func _unhandled_input(_event):
     
     if _event is InputEventMouseButton:
         emit_signal("hide_menus")
-        var f = $Mats.get_viewport().gui_get_focus_owner()
-        if f:
-            f.release_focus()
+        var f2 = $Mats.get_viewport().gui_get_focus_owner()
+        if f2:
+            f2.release_focus()
     
     var main = "m1"
     var sub = "m2"
@@ -945,8 +957,15 @@ func raycast_voxels(ray_origin : Vector3, ray_normal : Vector3, hit_mode : int =
 func show_controls():
     $ControlsExplanation.modulate.a = 1.0
 
-# 0 = material, 1 = select, 2 = move, 3 = paste
-var tool_mode = 1
+# 0 = material, 1 = new selection, 2 = tweak selection, 3 = move, 4 = paste
+enum {
+    TOOL_MODE_MAT,
+    TOOL_MODE_NEW_SELECT,
+    TOOL_MODE_SELECT,
+    TOOL_MODE_MOVE_SELECT,
+    TOOL_MODE_PASTE_SELECT,
+}
+var tool_mode = TOOL_MODE_NEW_SELECT
 var selection_start = Vector3()
 var selection_end = Vector3()
 var selection_offset = Vector3()
@@ -957,6 +976,7 @@ func _process(delta):
     if Engine.is_editor_hint():
         return
     update_camera()
+    $GizmoHelper.inform_gizmos([])
     
     #if not f is float:
     #    f = 1.0
@@ -1015,16 +1035,32 @@ func _process(delta):
         $Mat2dTilePicker.think()
         current_mat.current_coord = $Mat2dTilePicker.icon_coord
     
-    tool_mode = 1
+    #tool_mode = TOOL_MODE_NEW_SELECT
     
-    if tool_mode == 0:
+    if tool_mode == TOOL_MODE_MAT:
         handle_voxel_input()
     
     if $Voxels.operation_active and !draw_mode and !erase_mode:
         $Voxels.end_operation()
     
-    if tool_mode != 0:
-        handle_2d_gizmos()
+    if tool_mode == TOOL_MODE_NEW_SELECT:
+        $ButtonSelect.button_pressed = true
+        handle_new_selection()
+        if Input.is_action_just_pressed("ui_cancel"):
+            start_select()
+    elif tool_mode == TOOL_MODE_SELECT:
+        $ButtonSelect.button_pressed = true
+        handle_adjust_selection()
+        if Input.is_action_just_pressed("ui_cancel"):
+            start_select()
+    else:
+        $ButtonSelect.button_pressed = false
+    
+    if tool_mode == TOOL_MODE_MOVE_SELECT:
+        handle_adjust_selection(true) 
+        $ButtonMove.button_pressed = true
+    else:
+        $ButtonMove.button_pressed = false
     
     main_just_pressed = false
     sub_just_pressed = false
@@ -1047,9 +1083,42 @@ func closest_point_line(line_a : Vector2, line_b : Vector2, point : Vector2):
     else:
         return cand_b
 
+func handle_new_selection():
+    #var alt_offset = !(current_mat is VoxMat or current_mat is ModelMat)
+    var info = fully_handle_raycast(false, true)
+    if info == null:
+        return
+    #var cast_start = info[0]
+    #var cast_normal = info[1]
+    #var raw_collision_point = info[2]
+    var collision_normal = info[3]
+    #var m_pos = info[4]
+    if main_just_pressed:
+        selection_start = collision_point
+        selection_end = collision_point
+        ref_point = collision_point
+        ref_normal = collision_normal
+    elif draw_mode:
+        selection_end = collision_point
+    else:
+        if selection_start != null and selection_end != null:
+            var aabb = AABB(selection_start, Vector3())
+            aabb.end = selection_end
+            aabb = aabb.abs()
+            selection_start = aabb.position
+            selection_end = aabb.end
+            tool_mode = TOOL_MODE_SELECT
+    
+    if selection_start != null:
+        $CursorBox.show()
+        $CursorBox.global_position = (selection_start + selection_end) / 2.0
+        $CursorBox.scale = (selection_end - selection_start).abs() + Vector3(0.1, 0.1, 0.1) + Vector3.ONE
+    else:
+        $CursorBox.hide()
+
 var gizmo_drag_dir = Vector3()
 var gizmo_drag_dir_unrounded = null
-func handle_2d_gizmos():
+func handle_adjust_selection(move_not_adjust : bool = false):
     var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
     var mouse_pos = $GizmoHelper.get_local_mouse_position()
     
@@ -1075,6 +1144,7 @@ func handle_2d_gizmos():
         var pos_z = lerp(start.z, end.z, t.z)
         
         var coord = Vector3(pos_x, pos_y, pos_z)
+        var raw_coord = coord
         if gizmo_drag_dir_unrounded != null and dir == gizmo_drag_dir:
             coord = gizmo_drag_dir_unrounded
         
@@ -1085,7 +1155,7 @@ func handle_2d_gizmos():
         var cam_rot = cam.global_transform.basis.get_euler()
         var xform = Transform3D(Basis.from_euler(cam_rot), cam_pos)
         var depth = -(coord * xform).z
-        gizmos.push_back([coord, pos_dist, pos, depth, Color.ORANGE, dir])
+        gizmos.push_back([coord, pos_dist, pos, depth, Color.ORANGE, dir, raw_coord])
     
     gizmos.sort_custom(func compare(a, b): return a[1] < b[1])
     
@@ -1094,37 +1164,58 @@ func handle_2d_gizmos():
             gizmo_drag_dir = gizmos[0][5]
         gizmos[0][4] = Color.YELLOW
     
+    var did_adjust = false
+    
     var gizmos_dict = {}
     for gizmo in gizmos:
         gizmos_dict[gizmo[5]] = gizmo
     if gizmo_drag_dir in gizmos_dict:
-        gizmos_dict[gizmo_drag_dir][4] = Color.CYAN
+        var gizmo = gizmos_dict[gizmo_drag_dir]
+        gizmo[4] = Color.CYAN
         
-        var pos = gizmos_dict[gizmo_drag_dir][2]
+        var affected_dir = gizmo_drag_dir
+        var pos = gizmo[2]
         var old_pos = pos
-        var pos2 = cam.unproject_position(gizmos_dict[gizmo_drag_dir][0] + gizmo_drag_dir)
-        var depth = gizmos_dict[gizmo_drag_dir][3]
+        var pos2 = cam.unproject_position(gizmo[0] + gizmo_drag_dir)
+        var depth = gizmo[3]
         pos = closest_point_line(old_pos, pos2, $GizmoHelper.get_local_mouse_position())
         var rect = $GizmoHelper.get_rect()
         
-        var old_coord = gizmos_dict[gizmo_drag_dir][0]
+        var old_coord = gizmo[0]
+        var old_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
         var new_coord : Vector3 = cam.project_position(pos, depth)
         # limit movement to only the handle's direction component
         new_coord = old_coord + (new_coord - old_coord).project(gizmo_drag_dir)
-        var opposite_coord = gizmos_dict[-gizmo_drag_dir][0]
-        var n = (new_coord - opposite_coord - gizmo_drag_dir).normalized()
-        if n.dot(gizmo_drag_dir) > 0.99:
-            gizmos_dict[gizmo_drag_dir][0] = new_coord
-        else:
-            gizmos_dict[gizmo_drag_dir][0] = opposite_coord + gizmo_drag_dir
-        gizmo_drag_dir_unrounded = new_coord
+        # apply movement if it wouldn't put the node behind the camera
+        if !cam.is_position_behind(new_coord):
+            var opposite_gizmo = gizmos_dict[-gizmo_drag_dir]
+            var opposite_coord = opposite_gizmo[0]
+            var n = (new_coord - opposite_coord - gizmo_drag_dir).normalized()
+            if n.dot(gizmo_drag_dir) > 0.99 or move_not_adjust:
+                gizmo[0] = new_coord
+            gizmo_drag_dir_unrounded = gizmo[0]
+            #gizmo[0] = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
+            var temp_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
+            gizmo[0] = gizmo[0] * (Vector3.ONE-gizmo_drag_dir.abs()) + temp_rounded*gizmo_drag_dir.abs()
+            var diff = (gizmo[0] - old_rounded) * (gizmo_drag_dir.abs())
+            if diff.length() != 0:
+                print(diff)
+                print(round(-0.5))
+                print((Vector3.ONE * -0.5).round())
+                did_adjust = true
+            if move_not_adjust:
+                opposite_gizmo[0] += diff
     
     var new_aabb = AABB(gizmos[0][0], Vector3())
     for info in gizmos:
         new_aabb = new_aabb.expand(info[0])
-    new_aabb.position += Vector3.ONE * 0.5
-    new_aabb.end -= Vector3.ONE
+    new_aabb.end -= Vector3.ONE * 1.1
+    new_aabb.position += Vector3.ONE * 0.51
     new_aabb = new_aabb.abs()
+    
+    if did_adjust:
+        print(aabb)
+        print(new_aabb)
     
     selection_start = new_aabb.position.round()
     selection_end = new_aabb.end.round()
@@ -1137,35 +1228,6 @@ func handle_2d_gizmos():
     $CursorBox.global_position = (selection_start + selection_end) / 2.0
     $CursorBox.scale = selection_end - selection_start + Vector3(0.1, 0.1, 0.1) + Vector3.ONE
     $CursorBox.visible = true
-
-func draw_gizmos():
-    var target : ImmediateMesh = mesh as ImmediateMesh
-    target.clear_surfaces()
-    if tool_mode >= 0:
-        var parts = 4
-        var origin = collision_point if collision_point != null else Vector3()
-        target.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
-        var slice_verts : Array[Vector3] = [Vector3(0, 0.35, 0), Vector3(0, 0.35, 2), Vector3(0, 0.85, 2), Vector3(0, 0, 3.5)]
-        var verts : Array[Vector3] = []
-        for i in parts:
-            for vert in slice_verts:
-                verts.push_back(vert.rotated(Vector3(0, 0, 1), (i+0.5)/parts*2.0*PI)*0.2 + origin + Vector3(0, 0, 0.5))
-        for i in parts:
-            for j in slice_verts.size()-1:
-                var base = i*slice_verts.size() + j
-                var next = i*slice_verts.size() + j + slice_verts.size()
-                var a = verts[(base + 0) % verts.size()]
-                var b = verts[(base + 1) % verts.size()]
-                var c = verts[(next + 0) % verts.size()]
-                var d = verts[(next + 1) % verts.size()]
-                target.surface_set_color(Color.BLUE)
-                target.surface_add_vertex(a)
-                target.surface_add_vertex(b)
-                target.surface_add_vertex(c)
-                target.surface_add_vertex(c)
-                target.surface_add_vertex(b)
-                target.surface_add_vertex(d)
-        target.surface_end()
 
 func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
     if mat is VoxMat:
@@ -1191,16 +1253,14 @@ func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
         var idx = $Mat2dOrientation.selected
         voxels.place_decal(point, normal, mat, idx)
 
-var collision_point = null
-var last_collision_point = null
-func handle_voxel_input():
+func fully_handle_raycast(alt_offset : bool, always_succeed : bool = false):
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
     var cast_start : Vector3 = $CameraHolder/Camera3D.project_ray_origin(m_pos)
     var cast_normal : Vector3 = $CameraHolder/Camera3D.project_ray_normal(m_pos)
     
     if !view_rect.has_point(m_pos):
-        return
+        return null
     
     var raw_collision_point = null
     collision_point = null
@@ -1226,11 +1286,7 @@ func handle_voxel_input():
         ref_point = null
         ref_normal = null
         draw_use_offset = false
-        #if m_warp_amount != Vector2():
-        #    get_viewport().warp_mouse(m_pos - m_warp_amount)
-        #    m_warp_amount = Vector2()
     
-    var alt_offset = !(current_mat is VoxMat or current_mat is ModelMat)
     if ref_point:
         var offset = ref_normal*0.5
         if draw_use_offset and !alt_offset:
@@ -1244,14 +1300,26 @@ func handle_voxel_input():
             collision_point = null
             collision_normal = null
     
+    return [cast_start, cast_normal, raw_collision_point, collision_normal, m_pos]
+
+var collision_point = null
+var last_collision_point = null
+func handle_voxel_input():
+    var alt_offset = !(current_mat is VoxMat or current_mat is ModelMat)
+    var info = fully_handle_raycast(alt_offset)
+    if info == null:
+        return
+    #var cast_start = info[0]
+    var cast_normal = info[1]
+    var raw_collision_point = info[2]
+    var collision_normal = info[3]
+    var m_pos = info[4]
+    
     var draw_type = $ButtonMode.selected
     if alt_offset:
         draw_type = 0
     
     if collision_point != null:
-        #var origin = collision_point if ref_point == null else ref_point
-        #var normal = collision_normal if ref_normal == null else ref_normal
-        
         $CursorBox.show()
         $CursorBox.scale = Vector3(1.1, 1.1, 1.1)
         $CursorBox.global_position = collision_point
