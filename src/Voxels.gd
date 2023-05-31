@@ -12,12 +12,12 @@ func array_to_vec(array : Array) -> Vector3:
 @onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
 func occluding_voxel_exists(position, source_mat):
-    if position in voxels:
-        if (voxels[position] == source_mat
+    if has_voxel(position):
+        if (get_voxel(position) == source_mat
         and source_mat.transparent_mode != 0
         and source_mat.transparent_inner_face_mode == 1):
             return true
-        if voxels[position].transparent_mode == 0:
+        if get_voxel(position).transparent_mode == 0:
             return true
     return false
 
@@ -368,7 +368,7 @@ func get_voxel_corner(coord : Vector3):
 func has_decal(coord : Vector3, dir : Vector3):
     return ("decals" in selection_data and coord in selection_data.decals and dir in selection_data.decals[coord]) or (coord in decals and dir in decals[coord])
 func get_decal(coord : Vector3, dir : Vector3):
-    if "decals" in selection_data and coord in selection_data.decals and dir in decals[coord]:
+    if "decals" in selection_data and coord in selection_data.decals and dir in selection_data.decals[coord]:
         return selection_data.decals.get(coord)[dir]
     else:
         return decals.get(coord)[dir]
@@ -410,11 +410,13 @@ func get_decal_coords():
 
 func get_decal_dirs(coord : Vector3):
     var keys = {}
-    for key in decals[coord]:
-        keys[key] = null
-    if "decals" in selection_data:
-        for key in selection_data.decals[coord]:
+    if coord in decals:
+        for key in decals[coord]:
             keys[key] = null
+    if "decals" in selection_data:
+        if coord in selection_data.decals:
+            for key in selection_data.decals[coord]:
+                keys[key] = null
     return keys.keys()
 
 func get_model_coords():
@@ -457,13 +459,31 @@ var selection_data = {}
 var selection_start = null
 var selection_end = null
 func inform_selection(new_start, new_end, source = null):
+    var old_start = selection_start
+    var old_end = selection_end
     if selection_start != new_start or selection_end != new_end:
+        start_operation()
         apply_selection()
         selection_start = new_start
         selection_end = new_end
-        collect_selection_data()
+        if selection_start != null and selection_end != null:
+            lift_selection_data()
+        end_operation()
+        dirtify_bitmask_range
+        if selection_start == null or selection_end == null:
+            if old_start != null and old_end != null:
+                var old_aabb = AABB(old_start, old_end - old_start)
+                dirtify_bitmask_range(old_aabb)
+        elif old_start != null and old_end != null:
+            var old_aabb = AABB(old_start, old_end - old_start)
+            var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
+            dirtify_bitmask_range(new_aabb)
+        else:
+            var aabb = AABB(selection_start, selection_end - selection_start)
+            dirtify_bitmask_range(aabb)
 
 func move_selection(offset : Vector3):
+    var old_aabb = AABB(selection_start, selection_end - selection_start)
     var new_tables = {}
     for table_name in selection_data:
         var table = selection_data[table_name]
@@ -472,8 +492,10 @@ func move_selection(offset : Vector3):
             new_tables[table_name][coord + offset] = table[coord]
     selection_data = new_tables
     is_dirty = true
+    var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
+    dirtify_bitmask_range(new_aabb)
 
-func collect_selection_data():
+func lift_selection_data():
     selection_data = {}
     for z in range(selection_start.z, selection_end.z+1):
         for y in range(selection_start.y, selection_end.y+1):
@@ -494,7 +516,7 @@ func collect_selection_data():
                         selection_data["decals"] = {}
                     selection_data.decals[coord] = decals[coord]
                     decals.erase(coord)
-                if coord in decals:
+                if coord in models:
                     if not "models" in selection_data:
                         selection_data["models"] = {}
                     selection_data.models[coord] = models[coord]
@@ -505,20 +527,20 @@ func apply_selection():
     for table_name in selection_data:
         var table = selection_data[table_name]
         if table_name == "voxels":
-            for coord in table.voxels:
-                voxels[coord] = table.voxels[coord]
+            for coord in table:
+                voxels[coord] = table[coord]
         elif table_name == "decals":
-            for coord in table.decals:
-                for dir in table.decals[coord]:
+            for coord in table:
+                for dir in table[coord]:
                     if not coord in decals:
                         decals[coord] = {}
-                    decals[coord][dir] = table.decals[coord][dir]
+                    decals[coord][dir] = table[coord][dir]
         elif table_name == "models":
-            for coord in table.models:
-                models[coord] = table.models[coord]
+            for coord in table:
+                models[coord] = table[coord]
         elif table_name == "voxel_corners":
-            for coord in table.voxel_corners:
-                voxel_corners[coord] = table.voxel_corners[coord]
+            for coord in table:
+                voxel_corners[coord] = table[coord]
     selection_data = {}
     is_dirty = true
 
@@ -750,6 +772,15 @@ func dirtify_bitmask(position : Vector3):
                 var key = (position + Vector3(x, y, z)).round()
                 if key in uv_data_cache:
                     uv_data_cache.erase(key)
+
+func dirtify_bitmask_range(position_range : AABB):
+    position_range = position_range.grow(1.0)
+    var start = position_range.position
+    var end = position_range.end + Vector3.ONE
+    for pos_z in range(start.z, end.z):
+        for pos_y in range(start.y, end.y):
+            for pos_x in range(start.x, end.x):
+                dirtify_bitmask(Vector3(pos_x, pos_y, pos_z))
 
 func face_is_shifted(pos, face_normal):
     if !has_voxel_corner(pos):

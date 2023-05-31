@@ -202,6 +202,7 @@ func set_current_mat(new_current):
     current_mat = new_current
     selection_start = null
     selection_end = null
+    $Voxels.inform_selection(selection_start, selection_end)
 
 func modify_mat(mat):
     if mat is VoxMat:
@@ -1111,6 +1112,7 @@ func handle_new_selection():
             selection_start = aabb.position
             selection_end = aabb.end
             tool_mode = TOOL_MODE_SELECT
+            $Voxels.inform_selection(selection_start, selection_end)
     
     if selection_start != null:
         $CursorBox.show()
@@ -1122,12 +1124,16 @@ func handle_new_selection():
 var gizmo_drag_dir = Vector3()
 var gizmo_drag_dir_unrounded = null
 func handle_adjust_selection(move_not_adjust : bool = false):
+    if selection_start == null or selection_end == null:
+        return
     var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
     var mouse_pos = $GizmoHelper.get_local_mouse_position()
     
     if !draw_mode:
         gizmo_drag_dir = Vector3()
         gizmo_drag_dir_unrounded = null
+    
+    var old_selection_start = selection_start
     
     var aabb = AABB(selection_start, Vector3())
     aabb = aabb.abs()
@@ -1214,6 +1220,11 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     
     selection_start = new_aabb.position.round()
     selection_end = new_aabb.end.round()
+    
+    if !move_not_adjust:
+        $Voxels.inform_selection(selection_start, selection_end)
+    else:
+        $Voxels.move_selection(selection_start - old_selection_start)
     
     gizmos.sort_custom(func compare(a, b): return a[3] > b[3])
     gizmos = gizmos.map(func f(f): return [f[0], f[4]])
