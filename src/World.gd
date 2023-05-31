@@ -973,10 +973,9 @@ enum {
     TOOL_MODE_MOVE_SELECT,
     TOOL_MODE_PASTE_SELECT,
 }
-var tool_mode = TOOL_MODE_NEW_SELECT
-var selection_start = Vector3()
-var selection_end = Vector3()
-var selection_offset = Vector3()
+var tool_mode = TOOL_MODE_MAT
+var selection_start = null
+var selection_end = null
 
 func reset_selection():
     selection_start = null
@@ -1148,11 +1147,11 @@ func handle_adjust_selection(move_not_adjust : bool = false):
         start_operation()
     
     if !draw_mode:
-        end_operation()
         gizmo_drag_dir = Vector3()
         gizmo_drag_dir_unrounded = null
     
     var old_selection_start = selection_start
+    var old_selection_end = selection_end
     
     var aabb = AABB(selection_start, Vector3())
     aabb = aabb.abs()
@@ -1240,10 +1239,14 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     selection_start = new_aabb.position.round()
     selection_end = new_aabb.end.round()
     
-    if !move_not_adjust:
-        $Voxels.inform_selection(selection_start, selection_end)
-    else:
-        $Voxels.move_selection(selection_start - old_selection_start)
+    if old_selection_start != selection_start or old_selection_end != selection_end:
+        if !move_not_adjust:
+            $Voxels.inform_selection(selection_start, selection_end)
+        else:
+            $Voxels.move_selection(selection_start - old_selection_start)
+    
+    if !draw_mode:
+        end_operation()
     
     gizmos.sort_custom(func compare(a, b): return a[3] > b[3])
     gizmos = gizmos.map(func f(f): return [f[0], f[4]])
