@@ -83,6 +83,12 @@ func perform_undo():
         apply_diff_left(models, info.models)
     if "voxel_corners" in info:
         apply_diff_left(voxel_corners, info.voxel_corners)
+    if "selection_data" in info:
+        apply_diff_left(selection_data, info.selection_data)
+    if "selection_start" in info:
+        selection_start = info.selection_start[0]
+    if "selection_end" in info:
+        selection_end = info.selection_end[0]
     
     redo_buffer.push_back(info)
     full_remesh()
@@ -101,6 +107,12 @@ func perform_redo():
         apply_diff_right(models, info.models)
     if "voxel_corners" in info:
         apply_diff_right(voxel_corners, info.voxel_corners)
+    if "selection_data" in info:
+        apply_diff_right(selection_data, info.selection_data)
+    if "selection_start" in info:
+        selection_start = info.selection_start[1]
+    if "selection_end" in info:
+        selection_end = info.selection_end[1]
     
     undo_buffer.push_back(info)
     full_remesh()
@@ -112,6 +124,9 @@ func start_operation():
     temp_world["decals"] = decals.duplicate(false)
     temp_world["models"] = models.duplicate(false)
     temp_world["voxel_corners"] = voxel_corners.duplicate(false)
+    temp_world["selection_data"] = selection_data.duplicate(false)
+    temp_world["selection_start"] = selection_start
+    temp_world["selection_end"] = selection_end
     operation_active = true
 
 func end_operation():
@@ -135,6 +150,16 @@ func end_operation():
     diff = dict_diff(temp_world.voxel_corners, voxel_corners)
     if diff.size() > 0:
         changed["voxel_corners"] = diff
+    
+    diff = dict_diff(temp_world.selection_data, selection_data)
+    if diff.size() > 0:
+        changed["selection_data"] = diff
+    
+    if temp_world.selection_start != selection_start:
+        changed["selection_start"] = [temp_world.selection_start, selection_start]
+    
+    if temp_world.selection_end != selection_end:
+        changed["selection_end"] = [temp_world.selection_end, selection_end]
     
     if changed.size() > 0:
         undo_buffer.push_back(changed)
@@ -324,34 +349,178 @@ var unsides = [
     Vector3.DOWN,
 ]
 
+func has_voxel(coord : Vector3):
+    return ("voxels" in selection_data and coord in selection_data.voxels) or coord in voxels
+func get_voxel(coord : Vector3):
+    if "voxels" in selection_data and coord in selection_data.voxels:
+        return selection_data.voxels.get(coord)
+    else:
+        return voxels.get(coord)
+
+func has_voxel_corner(coord : Vector3):
+    return ("voxel_corners" in selection_data and coord in selection_data.voxel_corners) or coord in voxel_corners
+func get_voxel_corner(coord : Vector3):
+    if "voxel_corners" in selection_data and coord in selection_data.voxel_corners:
+        return selection_data.voxel_corners.get(coord)
+    else:
+        return voxel_corners.get(coord)
+
+func has_decal(coord : Vector3, dir : Vector3):
+    return ("decals" in selection_data and coord in selection_data.decals and dir in selection_data.decals[coord]) or (coord in decals and dir in decals[coord])
+func get_decal(coord : Vector3, dir : Vector3):
+    if "decals" in selection_data and coord in selection_data.decals and dir in decals[coord]:
+        return selection_data.decals.get(coord)[dir]
+    else:
+        return decals.get(coord)[dir]
+
+func has_model(coord : Vector3):
+    return ("models" in selection_data and coord in selection_data.models) or coord in models
+func get_model(coord : Vector3):
+    if "models" in selection_data and coord in selection_data.models:
+        return selection_data.models.get(coord)
+    else:
+        return models.get(coord)
+
+func get_voxel_coords():
+    var keys = {}
+    for key in voxels:
+        keys[key] = null
+    if "voxels" in selection_data:
+        for key in selection_data.voxels:
+            keys[key] = null
+    return keys.keys()
+
+func get_voxel_corner_coords():
+    var keys = {}
+    for key in voxel_corners:
+        keys[key] = null
+    if "voxel_corners" in selection_data:
+        for key in selection_data.voxel_corners:
+            keys[key] = null
+    return keys.keys()
+
+func get_decal_coords():
+    var keys = {}
+    for key in decals:
+        keys[key] = null
+    if "decals" in selection_data:
+        for key in selection_data.decals:
+            keys[key] = null
+    return keys.keys()
+
+func get_decal_dirs(coord : Vector3):
+    var keys = {}
+    for key in decals[coord]:
+        keys[key] = null
+    if "decals" in selection_data:
+        for key in selection_data.decals[coord]:
+            keys[key] = null
+    return keys.keys()
+
+func get_model_coords():
+    var keys = {}
+    for key in models:
+        keys[key] = null
+    if "models" in selection_data:
+        for key in selection_data.models:
+            keys[key] = null
+    return keys.keys()
+
 var decals_by_mat = {}
 var models_by_mat = {}
 var voxels_by_mat = {}
 func refresh_surface_mapping():
     voxels_by_mat = {}
-    for pos in voxels.keys():
-        var mat = voxels[pos]
-        
+    for pos in get_voxel_coords():
+        var mat = get_voxel(pos)
         if not voxels_by_mat.has(mat):
             voxels_by_mat[mat] = []
         voxels_by_mat[mat].push_back(pos)
     
     decals_by_mat = {}
-    for pos in decals.keys():
-        for dir in decals[pos].keys():
-            var decal = decals[pos][dir][0]
+    for pos in get_decal_coords():
+        for dir in get_decal_dirs(pos):
+            var decal = get_decal(pos, dir)[0]
             if not decals_by_mat.has(decal):
                 decals_by_mat[decal] = []
-        
             decals_by_mat[decal].push_back([pos, dir])
     
     models_by_mat = {}
-    for pos in models.keys():
-        var mat = models[pos][0]
+    for pos in get_model_coords():
+        var mat = get_model(pos)[0]
         if not models_by_mat.has(mat):
             models_by_mat[mat] = []
-        
         models_by_mat[mat].push_back(pos)
+
+
+var selection_data = {}
+var selection_start = null
+var selection_end = null
+func inform_selection(new_start, new_end, source = null):
+    if selection_start != new_start or selection_end != new_end:
+        apply_selection()
+        selection_start = new_start
+        selection_end = new_end
+        collect_selection_data()
+
+func move_selection(offset : Vector3):
+    var new_tables = {}
+    for table_name in selection_data:
+        var table = selection_data[table_name]
+        new_tables[table_name] = {}
+        for coord in table:
+            new_tables[table_name][coord + offset] = table[coord]
+    selection_data = new_tables
+    is_dirty = true
+
+func collect_selection_data():
+    selection_data = {}
+    for z in range(selection_start.z, selection_end.z+1):
+        for y in range(selection_start.y, selection_end.y+1):
+            for x in range(selection_start.x, selection_end.x+1):
+                var coord = Vector3(x, y, z).round()
+                if coord in voxels:
+                    if not "voxels" in selection_data:
+                        selection_data["voxels"] = {}
+                    selection_data.voxels[coord] = voxels[coord]
+                    voxels.erase(coord)
+                if coord in voxel_corners:
+                    if not "voxel_corners" in selection_data:
+                        selection_data["voxel_corners"] = {}
+                    selection_data.voxel_corners[coord] = voxel_corners[coord]
+                    voxel_corners.erase(coord)
+                if coord in decals:
+                    if not "decals" in selection_data:
+                        selection_data["decals"] = {}
+                    selection_data.decals[coord] = decals[coord]
+                    decals.erase(coord)
+                if coord in decals:
+                    if not "models" in selection_data:
+                        selection_data["models"] = {}
+                    selection_data.models[coord] = models[coord]
+                    models.erase(coord)
+    is_dirty = true
+
+func apply_selection():
+    for table_name in selection_data:
+        var table = selection_data[table_name]
+        if table_name == "voxels":
+            for coord in table.voxels:
+                voxels[coord] = table.voxels[coord]
+        elif table_name == "decals":
+            for coord in table.decals:
+                for dir in table.decals[coord]:
+                    if not coord in decals:
+                        decals[coord] = {}
+                    decals[coord][dir] = table.decals[coord][dir]
+        elif table_name == "models":
+            for coord in table.models:
+                models[coord] = table.models[coord]
+        elif table_name == "voxel_corners":
+            for coord in table.voxel_corners:
+                voxel_corners[coord] = table.voxel_corners[coord]
+    selection_data = {}
+    is_dirty = true
 
 var ref_verts = [
     Vector3(-0.5, -0.5, -0.5),
@@ -583,19 +752,19 @@ func dirtify_bitmask(position : Vector3):
                     uv_data_cache.erase(key)
 
 func face_is_shifted(pos, face_normal):
-    if !pos in voxel_corners:
+    if !has_voxel_corner(pos):
         return false
-    for corner in voxel_corners[pos]:
+    for corner in get_voxel_corner(pos):
         if corner.dot(face_normal) > 0.0:
             return true
     return false
 
 func face_is_disconnected(pos, face_normal, test_dir):
-    if !pos in voxel_corners:
+    if !has_voxel_corner(pos):
         return false
-    for corner in voxel_corners[pos]:
+    for corner in get_voxel_corner(pos):
         if corner.dot(test_dir) > 0.0:
-            var new = voxel_corners[pos][corner]
+            var new = get_voxel_corner(pos)[corner]
             var offset = new - corner
             if (offset * face_normal).length_squared() == 0.0:
                 return true
@@ -620,11 +789,11 @@ var top_corners = [
 ]
 
 func get_effective_vert(pos, vert):
-    if !pos in voxel_corners:
+    if !has_voxel_corner(pos):
         return vert
-    for corner in voxel_corners[pos]:
+    for corner in get_voxel_corner(pos):
         if vert.round() == corner:
-            return voxel_corners[pos][corner]
+            return get_voxel_corner(pos)[corner]
     return vert
 
 func axialize(n : Vector3) -> Vector3:
@@ -724,8 +893,9 @@ func add_decals(mesh):
             var pos = decal[0]
             var dir = decal[1]
             
-            var tile_coord = decals[pos][dir][1]
-            var orientation_id = decals[pos][dir][2]
+            var decal_data = get_decal(pos, dir)
+            var tile_coord = decal_data[1]
+            var orientation_id = decal_data[2]
             var uv_xform = get_decal_uv_scale(orientation_id)
             #print(uv_xform)
             #print(orientation_id)
@@ -735,7 +905,7 @@ func add_decals(mesh):
             
             var index_base = verts.size()
             
-            var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
+            var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             
             for i in range(uvs.size()):
                 uvs[i] = uv_xform * (uvs[i])
@@ -857,12 +1027,13 @@ func add_models(mesh):
         
         for model in models_by_mat[mat]:
             var pos = model
-            var tile_coord = models[pos][1]
-            var mode_id = models[pos][2]
-            var floor_mode = models[pos][3]
-            var offset_x = models[pos][4]
-            var offset_y = models[pos][5]
-            var offset_z = models[pos][6]
+            var model_data = get_model(pos)
+            var tile_coord = model_data[1]
+            var mode_id = model_data[2]
+            var floor_mode = model_data[3]
+            var offset_x = model_data[4]
+            var offset_y = model_data[5]
+            var offset_z = model_data[6]
             
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
@@ -870,7 +1041,7 @@ func add_models(mesh):
             var index_base = verts.size()
             
             var below = pos + Vector3(0, -1, 0)
-            var vox_corners = voxel_corners[below] if below in voxel_corners else {}
+            var vox_corners = get_voxel_corner(below) if has_voxel_corner(below) else {}
             
             var pure_offset = Vector3()
             var normal = Vector3.UP
@@ -1015,8 +1186,8 @@ func add_voxels(mesh):
         var start = Time.get_ticks_usec()
         
         for pos in list:
-            var vox = voxels[pos]
-            var vox_corners = voxel_corners[pos] if pos in voxel_corners else []
+            var vox = get_voxel(pos)
+            var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             for dir in dirs:
                 if occluding_voxel_exists(pos+dir, vox):
                     var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
@@ -1039,7 +1210,7 @@ func add_voxels(mesh):
                         if test_dir == Vector3():
                             continue
                         var neighbor_pos = pos + test_dir
-                        var neighbor = voxels.get(neighbor_pos)
+                        var neighbor = get_voxel(neighbor_pos)
                         var neighbor_test = neighbor and (neighbor.sides if is_side else neighbor.top) == (vox.sides if is_side else vox.top)
                         
                         var is_match = false
@@ -1048,7 +1219,7 @@ func add_voxels(mesh):
                         
                         if neighbor_test and is_match:
                             bitmask |= bit
-                        if voxels.get(neighbor_pos + dir) and occluding_voxel_exists(neighbor_pos + dir, vox):
+                        if get_voxel(neighbor_pos + dir) and occluding_voxel_exists(neighbor_pos + dir, vox):
                             bitmask &= ~bit
                     
                     bitmask |= BIND_CENTER

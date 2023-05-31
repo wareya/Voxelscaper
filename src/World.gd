@@ -388,6 +388,11 @@ func perform_undo():
 func perform_redo():
     $Voxels.perform_redo()
 
+func start_operation():
+    $Voxels.start_operation()
+func end_operation():
+    $Voxels.end_operation()
+
 func get_sun():
     return $DirectionalLight3D
 func get_env():
@@ -644,8 +649,6 @@ func do_pick_vert_warp():
             else:
                 $VertEditPanel.set_overrides({})
 
-var must_end_operation = false
-
 var lock_mode = 0
 var input_pick_mode = false
 signal hide_menus
@@ -678,7 +681,7 @@ func _unhandled_input(_event):
         if Input.is_action_just_pressed(main):
             main_just_pressed = true
             draw_mode = true
-            $Voxels.start_operation()
+            start_operation()
         elif !Input.is_action_pressed(main):
             draw_mode = false
             last_collision_point = null
@@ -686,7 +689,7 @@ func _unhandled_input(_event):
         if Input.is_action_just_pressed(sub):
             sub_just_pressed = true
             erase_mode = true
-            $Voxels.start_operation()
+            start_operation()
         elif !Input.is_action_pressed(sub):
             erase_mode = false
             last_collision_point = null
@@ -1041,7 +1044,7 @@ func _process(delta):
         handle_voxel_input()
     
     if $Voxels.operation_active and !draw_mode and !erase_mode:
-        $Voxels.end_operation()
+        end_operation()
     
     if tool_mode == TOOL_MODE_NEW_SELECT:
         $ButtonSelect.button_pressed = true
@@ -1194,14 +1197,10 @@ func handle_adjust_selection(move_not_adjust : bool = false):
             if n.dot(gizmo_drag_dir) > 0.99 or move_not_adjust:
                 gizmo[0] = new_coord
             gizmo_drag_dir_unrounded = gizmo[0]
-            #gizmo[0] = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
             var temp_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
             gizmo[0] = gizmo[0] * (Vector3.ONE-gizmo_drag_dir.abs()) + temp_rounded*gizmo_drag_dir.abs()
             var diff = (gizmo[0] - old_rounded) * (gizmo_drag_dir.abs())
             if diff.length() != 0:
-                print(diff)
-                print(round(-0.5))
-                print((Vector3.ONE * -0.5).round())
                 did_adjust = true
             if move_not_adjust:
                 opposite_gizmo[0] += diff
@@ -1212,10 +1211,6 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     new_aabb.end -= Vector3.ONE * 1.1
     new_aabb.position += Vector3.ONE * 0.51
     new_aabb = new_aabb.abs()
-    
-    if did_adjust:
-        print(aabb)
-        print(new_aabb)
     
     selection_start = new_aabb.position.round()
     selection_end = new_aabb.end.round()
