@@ -978,6 +978,12 @@ var selection_start = Vector3()
 var selection_end = Vector3()
 var selection_offset = Vector3()
 
+func reset_selection():
+    selection_start = null
+    selection_end = null
+    tool_mode = TOOL_MODE_NEW_SELECT
+    $Voxels.inform_selection(selection_start, selection_end)
+
 var f = 1.0
 func _process(delta):
     #print(face_ray_intersection(Vector3(), Vector3(1, 0, 0), Vector3(1, 0, 0), Vector3(-2, 0, 0)))
@@ -1055,18 +1061,20 @@ func _process(delta):
         $ButtonSelect.button_pressed = true
         handle_new_selection()
         if Input.is_action_just_pressed("ui_cancel"):
-            start_select()
+            reset_selection()
     elif tool_mode == TOOL_MODE_SELECT:
         $ButtonSelect.button_pressed = true
         handle_adjust_selection()
         if Input.is_action_just_pressed("ui_cancel"):
-            start_select()
+            reset_selection()
     else:
         $ButtonSelect.button_pressed = false
     
     if tool_mode == TOOL_MODE_MOVE_SELECT:
         handle_adjust_selection(true) 
         $ButtonMove.button_pressed = true
+        if Input.is_action_just_pressed("ui_cancel"):
+            reset_selection()
     else:
         $ButtonMove.button_pressed = false
     
