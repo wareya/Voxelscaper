@@ -483,6 +483,8 @@ func inform_selection(new_start, new_end, source = null):
             dirtify_bitmask_range(aabb)
 
 func move_selection(offset : Vector3):
+    if offset == Vector3():
+        return
     var old_aabb = AABB(selection_start, selection_end - selection_start)
     var new_tables = {}
     for table_name in selection_data:

@@ -386,8 +386,12 @@ func save_map_gltf():
 
 func perform_undo():
     $Voxels.perform_undo()
+    selection_start = $Voxels.selection_start
+    selection_end = $Voxels.selection_end
 func perform_redo():
     $Voxels.perform_redo()
+    selection_start = $Voxels.selection_start
+    selection_end = $Voxels.selection_end
 
 func start_operation():
     $Voxels.start_operation()
@@ -1098,6 +1102,7 @@ func handle_new_selection():
     var collision_normal = info[3]
     #var m_pos = info[4]
     if main_just_pressed:
+        start_operation()
         selection_start = collision_point
         selection_end = collision_point
         ref_point = collision_point
@@ -1113,6 +1118,7 @@ func handle_new_selection():
             selection_end = aabb.end
             tool_mode = TOOL_MODE_SELECT
             $Voxels.inform_selection(selection_start, selection_end)
+            end_operation()
     
     if selection_start != null:
         $CursorBox.show()
@@ -1126,10 +1132,15 @@ var gizmo_drag_dir_unrounded = null
 func handle_adjust_selection(move_not_adjust : bool = false):
     if selection_start == null or selection_end == null:
         return
+    
     var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
     var mouse_pos = $GizmoHelper.get_local_mouse_position()
     
+    if main_just_pressed:
+        start_operation()
+    
     if !draw_mode:
+        end_operation()
         gizmo_drag_dir = Vector3()
         gizmo_drag_dir_unrounded = null
     
