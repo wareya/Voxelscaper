@@ -145,6 +145,14 @@ func get_subdivide():
 func get_subdivide_offset():
     return Vector2($UI/Images/GridContainer/SubdivideXOffset.value, $UI/Images/GridContainer/SubdivideYOffset.value)
 
+func get_mat_info():
+    var v1 = $UI/Images/Transparent.selected
+    var v2 = $UI/Images/TransparentMode.selected
+    var v3 = $UI/Images/TilingMode.selected
+    var v4 = get_subdivide()
+    var v5 = get_subdivide_offset()
+    return [v1, v2, v3, v4, v5]
+
 func get_mat():
     var v1 = $UI/Images/Transparent.selected
     var v2 = $UI/Images/TransparentMode.selected
@@ -192,5 +200,11 @@ func _input(_event):
             else:
                 cancel()
 
-func _process(_delta):
+
+var prev_info = []
+func _process(delta):
+    var mat_info = get_mat_info()
+    if mat_info != prev_info:
+        update_display()
+    prev_info = mat_info
     $UI/Images/Done.visible = side != null and top != null and bottom != null
