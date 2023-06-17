@@ -820,7 +820,11 @@ func _input(_event):
             $CameraHolder.global_transform.origin += event.relative.x * -rightwards * speed
         else:
             $CameraHolder.rotation_degrees.y -= 0.22 * event.relative.x
-            $CameraHolder.rotation_degrees.x -= 0.22 * event.relative.y
+            $CameraHolder.rotation_degrees.y = fposmod($CameraHolder.rotation_degrees.y, 360)
+            var new_x = $CameraHolder.rotation_degrees.x - 0.22 * event.relative.y
+            new_x = clamp(new_x, -90, 90)
+            $CameraHolder.rotation_degrees.x = new_x
+            print($CameraHolder.rotation_degrees)
 
 var prev_fps_mode = false
 
