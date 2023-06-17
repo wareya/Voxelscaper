@@ -16,12 +16,12 @@ func set_side(image):
         side = image
         var tex = ImageTexture.create_from_image(image)
         $UI/Images/SideI.texture = tex
-        side_mat = make_mat(tex.duplicate())
+        side_mat = MatConfig.make_mat(tex.duplicate())
     elif image is Texture2D:
         var tex = ImageTexture.create_from_image(image.get_image())
         $UI/Images/SideI.texture = tex
         side = $UI/Images/SideI.texture.get_image()
-        side_mat = make_mat(image)
+        side_mat = MatConfig.make_mat(image)
     update_display()
 
 var top = null
@@ -31,12 +31,12 @@ func set_top(image):
         top = image
         var tex = ImageTexture.create_from_image(image)
         $UI/Images/TopI.texture = tex
-        top_mat = make_mat(tex.duplicate())
+        top_mat = MatConfig.make_mat(tex.duplicate())
     elif image is Texture2D:
         var tex = ImageTexture.create_from_image(image.get_image())
         $UI/Images/TopI.texture = tex
         top = $UI/Images/TopI.texture.get_image()
-        top_mat = make_mat(image)
+        top_mat = MatConfig.make_mat(image)
     update_display()
 
 var bottom = null
@@ -46,12 +46,12 @@ func set_bottom(image):
         bottom = image
         var tex = ImageTexture.create_from_image(image)
         $UI/Images/BottomI.texture = tex
-        bottom_mat = make_mat(tex.duplicate())
+        bottom_mat = MatConfig.make_mat(tex.duplicate())
     elif image is Texture2D:
         var tex = ImageTexture.create_from_image(image.get_image())
         $UI/Images/BottomI.texture = tex
         bottom = $UI/Images/BottomI.texture.get_image()
-        bottom_mat = make_mat(image)
+        bottom_mat = MatConfig.make_mat(image)
     update_display()
 
 func set_mat(mat):
@@ -202,7 +202,7 @@ func _input(_event):
 
 
 var prev_info = []
-func _process(delta):
+func _process(_delta):
     var mat_info = get_mat_info()
     if mat_info != prev_info:
         update_display()

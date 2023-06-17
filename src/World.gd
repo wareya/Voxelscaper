@@ -25,8 +25,6 @@ class VoxMat extends RefCounted:
         MODE_1x1_WORLD,
     }
     
-    var textures : Array[Texture2D]
-    
     var sides  : Texture2D
     var top    : Texture2D
     var bottom : Texture2D
@@ -50,11 +48,6 @@ class VoxMat extends RefCounted:
             _top = _sides
             print("deduplicating texture...")
         
-        textures.push_back(_sides)
-        if _top != _sides:
-            textures.push_back(_top)
-        if _bottom != _top and _bottom != _sides:
-            textures.push_back(_bottom)
         sides = _sides
         top = _top
         bottom = _bottom
@@ -67,11 +60,20 @@ class VoxMat extends RefCounted:
     
     func encode() -> Dictionary:
         var pngs = []
-        for tex in textures:
-            pngs.push_back(Marshalls.raw_to_base64(tex.get_image().save_png_to_buffer()))
-        var top_idx = textures.find(top)
-        var sides_idx = textures.find(sides)
-        var bottom_idx = textures.find(bottom)
+        var sides_png = Marshalls.raw_to_base64(sides.get_image().save_png_to_buffer())
+        var top_png = Marshalls.raw_to_base64(top.get_image().save_png_to_buffer())
+        var bottom_png = Marshalls.raw_to_base64(bottom.get_image().save_png_to_buffer())
+        if pngs.find(sides_png) < 0:
+            pngs.push_back(sides_png)
+        if pngs.find(top_png) < 0:
+            pngs.push_back(top_png)
+        if pngs.find(bottom_png) < 0:
+            pngs.push_back(bottom_png)
+        
+        var top_idx = pngs.find(top_png)
+        var sides_idx = pngs.find(sides_png)
+        var bottom_idx = pngs.find(bottom_png)
+        
         var vec_a = Helpers.vec2_to_array(subdivide_amount)
         var vec_b = Helpers.vec2_to_array(subdivide_coord)
         return {"type": "voxel", "pngs": pngs, "top_id" : top_idx, "sides_id": sides_idx, "bottom_id": bottom_idx, "transparent_mode" : transparent_mode, "transparent_inner_face_mode" : transparent_inner_face_mode, "tiling_mode" : tiling_mode, "subdivide_amount" : vec_a, "subdivide_coord" : vec_b}
