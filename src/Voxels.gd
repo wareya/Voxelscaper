@@ -89,9 +89,13 @@ func perform_undo():
         selection_start = info.selection_start[0]
     if "selection_end" in info:
         selection_end = info.selection_end[0]
+    if "uv_data_cache" in info:
+        apply_diff_left(uv_data_cache, info.uv_data_cache)
+    if "voxel_data_cache" in info:
+        apply_diff_left(voxel_data_cache, info.voxel_data_cache)
     
     redo_buffer.push_back(info)
-    full_remesh()
+    hinted_remesh()
 
 func perform_redo():
     if redo_buffer.size() == 0:
@@ -113,9 +117,13 @@ func perform_redo():
         selection_start = info.selection_start[1]
     if "selection_end" in info:
         selection_end = info.selection_end[1]
+    if "uv_data_cache" in info:
+        apply_diff_right(uv_data_cache, info.uv_data_cache)
+    if "voxel_data_cache" in info:
+        apply_diff_right(voxel_data_cache, info.voxel_data_cache)
     
     undo_buffer.push_back(info)
-    full_remesh()
+    hinted_remesh()
 
 var temp_world = {}
 var operation_active = false
@@ -127,11 +135,16 @@ func start_operation():
     temp_world["selection_data"] = selection_data.duplicate(false)
     temp_world["selection_start"] = selection_start
     temp_world["selection_end"] = selection_end
+    temp_world["uv_data_cache"] = uv_data_cache.duplicate(false)
+    temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(false)
     operation_active = true
 
 func end_operation():
     if !operation_active:
         return
+    
+    # need to remesh to update caches
+    hinted_remesh()
     
     var changed = {}
     
@@ -160,6 +173,14 @@ func end_operation():
     
     if temp_world.selection_end != selection_end:
         changed["selection_end"] = [temp_world.selection_end, selection_end]
+    
+    diff = dict_diff(temp_world.uv_data_cache, uv_data_cache)
+    if diff.size() > 0:
+        changed["uv_data_cache"] = diff
+    
+    diff = dict_diff(temp_world.voxel_data_cache, voxel_data_cache)
+    if diff.size() > 0:
+        changed["voxel_data_cache"] = diff
     
     if changed.size() > 0:
         undo_buffer.push_back(changed)
@@ -327,7 +348,7 @@ func _process(_delta):
         end = Time.get_ticks_usec()
         
         time = (end-start)/1000000.0
-        if time > 0.1:
+        if time > 0.01:
             print("remesh time: ", time)
             var blocks = voxels.size() + decals.size() + models.size()
             print("block count: ", blocks)
@@ -576,14 +597,14 @@ func inform_selection(new_start, new_end, _source = null):
         if selection_start == null or selection_end == null:
             if old_start != null and old_end != null:
                 var old_aabb = AABB(old_start, old_end - old_start)
-                dirtify_bitmask_range(old_aabb)
+                dirtify_cache_range(old_aabb)
         elif old_start != null and old_end != null:
             var old_aabb = AABB(old_start, old_end - old_start)
             var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
-            dirtify_bitmask_range(new_aabb)
+            dirtify_cache_range(new_aabb)
         else:
             var aabb = AABB(selection_start, selection_end - selection_start)
-            dirtify_bitmask_range(aabb)
+            dirtify_cache_range(aabb)
 
 func move_selection(offset : Vector3):
     if offset == Vector3():
@@ -598,7 +619,7 @@ func move_selection(offset : Vector3):
     selection_data = new_tables
     is_dirty = true
     var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
-    dirtify_bitmask_range(new_aabb)
+    dirtify_cache_range(new_aabb)
 
 func lift_selection_data():
     selection_data = {}
@@ -777,7 +798,7 @@ func place_voxel(p_position : Vector3, material : VoxEditor.VoxMat, ramp_corners
         voxel_corners.erase(p_position)
     is_dirty = true
     
-    dirtify_bitmask(p_position)
+    dirtify_cache(p_position)
 
 func erase_voxel(p_position : Vector3):
     if voxels.size() <= 1:
@@ -788,24 +809,28 @@ func erase_voxel(p_position : Vector3):
         voxel_corners.erase(p_position.round())
     is_dirty = true
     
-    dirtify_bitmask(p_position)
+    dirtify_cache(p_position)
 
-func dirtify_bitmask(p_position : Vector3):
+func dirtify_cache(p_position : Vector3):
     for z in [-1, 0, 1]:
         for y in [-1, 0, 1]:
             for x in [-1, 0, 1]:
-                var key = (p_position + Vector3(x, y, z)).round()
-                if key in uv_data_cache:
-                    uv_data_cache.erase(key)
+                var pos = (p_position + Vector3(x, y, z)).round()
+                for dir in directions:
+                    var key = [pos, dir]
+                    if key in uv_data_cache:
+                        uv_data_cache.erase(key)
+                    if key in voxel_data_cache:
+                        voxel_data_cache.erase(key)
 
-func dirtify_bitmask_range(position_range : AABB):
+func dirtify_cache_range(position_range : AABB):
     position_range = position_range.grow(1.0)
     var start = position_range.position
     var end = position_range.end + Vector3.ONE
     for pos_z in range(start.z, end.z):
         for pos_y in range(start.y, end.y):
             for pos_x in range(start.x, end.x):
-                dirtify_bitmask(Vector3(pos_x, pos_y, pos_z))
+                dirtify_cache(Vector3(pos_x, pos_y, pos_z))
 
 func face_is_shifted(pos, face_normal):
     if !has_voxel_corner(pos):
@@ -874,11 +899,16 @@ func matching_edges_match(pos, next_pos, dir):
         
         return near_a.distance_squared_to(far_a) < 0.001 and near_b.distance_squared_to(far_b) < 0.001
     
-
 var uv_data_cache = {}
+var voxel_data_cache = {}
 
 func full_remesh():
     uv_data_cache = {}
+    voxel_data_cache = {}
+    refresh_surface_mapping()
+    remesh()
+
+func hinted_remesh():
     refresh_surface_mapping()
     remesh()
 
@@ -1227,6 +1257,30 @@ func add_voxels(p_mesh):
         var start = Time.get_ticks_usec()
         
         for pos in list:
+            var found_cache = false
+            for dir in dirs:
+                var key = [pos, dir]
+                if key in voxel_data_cache:
+                    var data = voxel_data_cache[key]
+                    var self_verts = data[0]
+                    var self_normals = data[1]
+                    var self_tex_uvs = data[2]
+                    var self_indexes = data[3]
+                    
+                    var index_base = verts.size()
+                    
+                    verts.append_array(self_verts)
+                    normals.append_array(self_normals)
+                    tex_uvs.append_array(self_tex_uvs)
+                    
+                    for val in self_indexes:
+                        indexes.push_back(val + index_base)
+                    
+                    found_cache = true
+            
+            if found_cache:
+                continue
+            
             var vox = get_voxel(pos)
             var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             for dir in dirs:
@@ -1240,10 +1294,12 @@ func add_voxels(p_mesh):
                     if matches:
                         continue
                 
-                var uvs = ref_uvs.duplicate()
-                if pos in uv_data_cache and dir in uv_data_cache[pos]:
-                    uvs = uv_data_cache[pos][dir]
+                var uvs
+                var uv_key = [pos, dir]
+                if uv_key in uv_data_cache:
+                    uvs = uv_data_cache[uv_key]
                 else:
+                    uvs = ref_uvs.duplicate()
                     var bitmask = 0
                     
                     for bit in bitmask_bindings:
@@ -1303,9 +1359,7 @@ func add_voxels(p_mesh):
                         uvs[i] /= mat.subdivide_amount
                         uvs[i] += mat.subdivide_coord/mat.subdivide_amount
                     
-                    if not pos in uv_data_cache:
-                        uv_data_cache[pos] = {}
-                    uv_data_cache[pos][dir] = uvs
+                    uv_data_cache[uv_key] = uvs
                 
                 # swap triangulation order if we're warped and need to swap to connect-shortest
                 # also recalculate normal for warped faces
@@ -1331,6 +1385,11 @@ func add_voxels(p_mesh):
                     normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
                 
                 var index_base = verts.size()
+                
+                var self_verts = PackedVector3Array()
+                var self_tex_uvs = PackedVector2Array()
+                var self_normals = PackedVector3Array()
+                var self_indexes = PackedInt32Array()
                 
                 for i in [0, 1, 2, 3]:
                     var uv = uvs[i]
@@ -1361,12 +1420,19 @@ func add_voxels(p_mesh):
                         uv /= mat.subdivide_amount
                         uv += mat.subdivide_coord/mat.subdivide_amount
                     
-                    verts.push_back(vert + pos)
-                    normals.push_back(normal)
-                    tex_uvs.push_back(uv)
+                    self_verts.push_back(vert + pos)
+                    self_normals.push_back(normal)
+                    self_tex_uvs.push_back(uv)
+                
+                verts.append_array(self_verts)
+                normals.append_array(self_normals)
+                tex_uvs.append_array(self_tex_uvs)
                 
                 for i in order:
                     indexes.push_back(i + index_base)
+                    self_indexes.push_back(i)
+                
+                voxel_data_cache[[pos, dir]] = [self_verts, self_normals, self_tex_uvs, self_indexes]
         
         var end = Time.get_ticks_usec()
         
