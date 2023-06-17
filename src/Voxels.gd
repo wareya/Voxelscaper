@@ -823,26 +823,29 @@ func erase_voxel(p_position : Vector3):
     
     dirtify_cache(p_position)
 
+func dirtify_at_exact(pos : Vector3):
+    for dir in directions:
+        var key = [pos, dir]
+        if key in uv_data_cache:
+            uv_data_cache.erase(key)
+        if key in voxel_data_cache:
+            voxel_data_cache.erase(key)
+
 func dirtify_cache(p_position : Vector3):
     for z in [-1, 0, 1]:
         for y in [-1, 0, 1]:
             for x in [-1, 0, 1]:
                 var pos = (p_position + Vector3(x, y, z)).round()
-                for dir in directions:
-                    var key = [pos, dir]
-                    if key in uv_data_cache:
-                        uv_data_cache.erase(key)
-                    if key in voxel_data_cache:
-                        voxel_data_cache.erase(key)
+                dirtify_at_exact(pos)
 
 func dirtify_cache_range(position_range : AABB):
-    position_range = position_range.grow(1.0)
+    position_range = position_range.grow(2.0)
     var start = position_range.position
     var end = position_range.end + Vector3.ONE
     for pos_z in range(start.z, end.z):
         for pos_y in range(start.y, end.y):
             for pos_x in range(start.x, end.x):
-                dirtify_cache(Vector3(pos_x, pos_y, pos_z))
+                dirtify_at_exact(Vector3(pos_x, pos_y, pos_z))
 
 func face_is_shifted(pos, face_normal):
     if !has_voxel_corner(pos):
