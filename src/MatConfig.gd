@@ -187,7 +187,8 @@ func trigger_picker(tex):
     elif which == "side":
         set_side(tex)
     
-    picker.queue_free()
+    if picker:
+        picker.queue_free()
     picker = null
 
 func _input(_event):
