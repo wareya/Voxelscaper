@@ -1270,22 +1270,22 @@ func add_voxels(p_mesh):
             for dir in dirs:
                 var key = [pos, dir]
                 if key in voxel_data_cache:
-                    var data = voxel_data_cache[key]
-                    var self_verts = data[0]
-                    var self_normals = data[1]
-                    var self_tex_uvs = data[2]
-                    var self_indexes = data[3]
-                    
-                    var index_base = verts.size()
-                    
-                    verts.append_array(self_verts)
-                    normals.append_array(self_normals)
-                    tex_uvs.append_array(self_tex_uvs)
-                    
-                    for val in self_indexes:
-                        indexes.push_back(val + index_base)
-                    
                     found_cache = true
+                    if voxel_data_cache[key] != null:
+                        var data = voxel_data_cache[key]
+                        var self_verts = data[0]
+                        var self_normals = data[1]
+                        var self_tex_uvs = data[2]
+                        var self_indexes = data[3]
+                        
+                        var index_base = verts.size()
+                        
+                        verts.append_array(self_verts)
+                        normals.append_array(self_normals)
+                        tex_uvs.append_array(self_tex_uvs)
+                        
+                        for val in self_indexes:
+                            indexes.push_back(val + index_base)
             
             if found_cache:
                 continue
@@ -1293,13 +1293,14 @@ func add_voxels(p_mesh):
             var vox = get_voxel(pos)
             var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             for dir in dirs:
+                var cache_key = [pos, dir]
                 if occluding_face_exists(pos, pos+dir, vox):
+                    voxel_data_cache[cache_key] = null
                     continue
                 
-                var uvs
-                var uv_key = [pos, dir]
-                if uv_key in uv_data_cache:
-                    uvs = uv_data_cache[uv_key]
+                var uvs : Array[Vector2] = []
+                if cache_key in uv_data_cache:
+                    uvs = uv_data_cache[cache_key]
                 else:
                     uvs = ref_uvs.duplicate()
                     var bitmask = 0
@@ -1361,7 +1362,7 @@ func add_voxels(p_mesh):
                         uvs[i] /= mat.subdivide_amount
                         uvs[i] += mat.subdivide_coord/mat.subdivide_amount
                     
-                    uv_data_cache[uv_key] = uvs
+                    uv_data_cache[cache_key] = uvs
                 
                 # swap triangulation order if we're warped and need to swap to connect-shortest
                 # also recalculate normal for warped faces
@@ -1434,7 +1435,7 @@ func add_voxels(p_mesh):
                     indexes.push_back(i + index_base)
                     self_indexes.push_back(i)
                 
-                voxel_data_cache[[pos, dir]] = [self_verts, self_normals, self_tex_uvs, self_indexes]
+                voxel_data_cache[cache_key] = [self_verts, self_normals, self_tex_uvs, self_indexes]
         
         var end = Time.get_ticks_usec()
         
