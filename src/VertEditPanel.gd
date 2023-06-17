@@ -132,7 +132,7 @@ var camera_mode = false
 func trigger_remesh():
     var voxels = $Frame/VertEditViewport/Voxel
     voxels.voxel_corners[Vector3()] = prepared_overrides.duplicate(true)
-    voxels.remesh()
+    voxels.full_remesh()
 
 func _indirect_input(_event):
     if !visible:

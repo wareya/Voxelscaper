@@ -21,6 +21,18 @@ func occluding_voxel_exists(p_position, source_mat):
             return true
     return false
 
+func occluding_face_exists(origin, p_position, source_mat):
+    if !occluding_voxel_exists(p_position, source_mat):
+        return false
+    var dir = p_position - origin
+    var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
+    var other_b = dir.cross(other_a)
+    var matches = matching_edges_match(origin, p_position, other_a)
+    matches = matches and matching_edges_match(origin, p_position, -other_a)
+    matches = matches and matching_edges_match(origin, p_position,  other_b)
+    matches = matches and matching_edges_match(origin, p_position, -other_b)
+    return matches
+
 @onready var decals = {}
 @onready var models = {}
 
@@ -1229,13 +1241,10 @@ func add_voxels(p_mesh):
         material.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         
-        #var inner_faces = false
         if mat.transparent_mode == 1:
             material.params_use_alpha_scissor = true
-            #inner_faces = mat.transparent_inner_face_mode != 0
         elif mat.transparent_mode == 2:
             material.flags_transparent = true
-            #inner_faces = mat.transparent_inner_face_mode != 0
         
         var dirs = []
         if info[1] == "side":
@@ -1284,15 +1293,8 @@ func add_voxels(p_mesh):
             var vox = get_voxel(pos)
             var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             for dir in dirs:
-                if occluding_voxel_exists(pos+dir, vox):
-                    var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
-                    var other_b = dir.cross(other_a)
-                    var matches = matching_edges_match(pos, pos+dir, other_a)
-                    matches = matches and matching_edges_match(pos, pos+dir, -other_a)
-                    matches = matches and matching_edges_match(pos, pos+dir,  other_b)
-                    matches = matches and matching_edges_match(pos, pos+dir, -other_b)
-                    if matches:
-                        continue
+                if occluding_face_exists(pos, pos+dir, vox):
+                    continue
                 
                 var uvs
                 var uv_key = [pos, dir]
@@ -1316,7 +1318,7 @@ func add_voxels(p_mesh):
                         
                         if neighbor_test and is_match:
                             bitmask |= bit
-                        if get_voxel(neighbor_pos + dir) and occluding_voxel_exists(neighbor_pos + dir, vox):
+                        if get_voxel(neighbor_pos + dir) and occluding_face_exists(neighbor_pos, neighbor_pos + dir, vox):
                             bitmask &= ~bit
                     
                     bitmask |= BIND_CENTER
