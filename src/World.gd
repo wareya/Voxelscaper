@@ -1432,6 +1432,16 @@ func handle_voxel_input():
                     ref_normal = Vector3(0, 0, sign(-cast_normal.z))
             if draw_type == 3:
                 ref_normal = Vector3(0, -sign(cast_normal.y), 0)
+            if (draw_type == 2 or draw_type == 3) and $ButtonWarp.selected == 1 and collision_normal != ref_normal:
+                var norm = ref_normal.abs()
+                var un_norm = Vector3.ONE - norm
+                var offset_point_centered = new_point + ref_normal * 0.5
+                var offset_point = offset_point_centered * norm + raw_collision_point * un_norm
+                offset_point = offset_point.lerp(offset_point_centered, 0.1)
+                var pos_1 = $CameraHolder/Camera3D.unproject_position(raw_collision_point)
+                var pos_2 = $CameraHolder/Camera3D.unproject_position(offset_point)
+                m_warp_amount = pos_2 - pos_1
+                get_viewport().warp_mouse(m_pos + m_warp_amount)
     
     if erase_mode and collision_normal != null and collision_point != null:
         var new_point = collision_point
