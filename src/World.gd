@@ -61,7 +61,7 @@ class VoxMat extends RefCounted:
         
         transparent_mode = _transparent_mode
         transparent_inner_face_mode = _transparent_inner_face_mode
-        tiling_mode = _tiling_mode
+        tiling_mode = _tiling_mode as TileMode
         subdivide_amount = _subdivide_amount
         subdivide_coord = _subdivide_coord
     
@@ -997,7 +997,7 @@ func _process(delta):
     #FPS.text = str(snapped(1.0/f, 0.01))
     
     var mod_speed = 0.1
-    if Input.is_mouse_button_pressed(1) or Input.is_mouse_button_pressed(2) or Input.is_mouse_button_pressed(3):
+    if Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_RIGHT) or Input.is_mouse_button_pressed(MOUSE_BUTTON_MIDDLE):
         mod_speed = 1.0
     
     $ControlsExplanation.modulate.a = move_toward($ControlsExplanation.modulate.a, 0.0, delta*mod_speed)
@@ -1191,7 +1191,7 @@ func handle_adjust_selection(move_not_adjust : bool = false):
             gizmo_drag_dir = gizmos[0][5]
         gizmos[0][4] = Color.YELLOW
     
-    var did_adjust = false
+    #var did_adjust = false
     
     var gizmos_dict = {}
     for gizmo in gizmos:
@@ -1200,13 +1200,13 @@ func handle_adjust_selection(move_not_adjust : bool = false):
         var gizmo = gizmos_dict[gizmo_drag_dir]
         gizmo[4] = Color.CYAN
         
-        var affected_dir = gizmo_drag_dir
+        #var affected_dir = gizmo_drag_dir
         var pos = gizmo[2]
         var old_pos = pos
         var pos2 = cam.unproject_position(gizmo[0] + gizmo_drag_dir)
         var depth = gizmo[3]
         pos = closest_point_line(old_pos, pos2, $GizmoHelper.get_local_mouse_position())
-        var rect = $GizmoHelper.get_rect()
+        #var rect = $GizmoHelper.get_rect()
         
         var old_coord = gizmo[0]
         var old_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
@@ -1224,8 +1224,8 @@ func handle_adjust_selection(move_not_adjust : bool = false):
             var temp_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
             gizmo[0] = gizmo[0] * (Vector3.ONE-gizmo_drag_dir.abs()) + temp_rounded*gizmo_drag_dir.abs()
             var diff = (gizmo[0] - old_rounded) * (gizmo_drag_dir.abs())
-            if diff.length() != 0:
-                did_adjust = true
+            #if diff.length() != 0:
+            #    did_adjust = true
             if move_not_adjust:
                 opposite_gizmo[0] += diff
     
@@ -1249,7 +1249,7 @@ func handle_adjust_selection(move_not_adjust : bool = false):
         end_operation()
     
     gizmos.sort_custom(func compare(a, b): return a[3] > b[3])
-    gizmos = gizmos.map(func f(f): return [f[0], f[4]])
+    gizmos = gizmos.map(func f(x): return [x[0], x[4]])
     
     $GizmoHelper.inform_gizmos(gizmos)
     
@@ -1281,7 +1281,7 @@ func place_mat_at(voxels, mat, point, normal, use_overrides : bool = true):
         var idx = $Mat2dOrientation.selected
         voxels.place_decal(point, normal, mat, idx)
 
-func fully_handle_raycast(alt_offset : bool, always_succeed : bool = false):
+func fully_handle_raycast(alt_offset : bool, _always_succeed : bool = false):
     var view_rect : Rect2 = get_viewport().get_visible_rect()
     var m_pos : Vector2 = get_viewport().get_mouse_position()
     var cast_start : Vector3 = $CameraHolder/Camera3D.project_ray_origin(m_pos)

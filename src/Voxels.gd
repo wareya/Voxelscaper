@@ -11,13 +11,13 @@ func array_to_vec(array : Array) -> Vector3:
 
 @onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
-func occluding_voxel_exists(position, source_mat):
-    if has_voxel(position):
-        if (get_voxel(position) == source_mat
+func occluding_voxel_exists(p_position, source_mat):
+    if has_voxel(p_position):
+        if (get_voxel(p_position) == source_mat
         and source_mat.transparent_mode != 0
         and source_mat.transparent_inner_face_mode == 1):
             return true
-        if get_voxel(position).transparent_mode == 0:
+        if get_voxel(p_position).transparent_mode == 0:
             return true
     return false
 
@@ -329,8 +329,12 @@ func _process(_delta):
         time = (end-start)/1000000.0
         if time > 0.1:
             print("remesh time: ", time)
+            var blocks = voxels.size() + decals.size() + models.size()
+            print("block count: ", blocks)
+            print("ms per block: ", time/blocks*1000)
+            
 
-var directions = [
+const directions : Array[Vector3] = [
     Vector3.UP,
     Vector3.DOWN,
     Vector3.LEFT,
@@ -338,15 +342,114 @@ var directions = [
     Vector3.FORWARD,
     Vector3.BACK,
 ]
-var sides = [
+const sides : Array[Vector3] = [
     Vector3.LEFT,
     Vector3.RIGHT,
     Vector3.FORWARD,
     Vector3.BACK,
 ]
-var unsides = [
+const unsides : Array[Vector3] = [
     Vector3.UP,
     Vector3.DOWN,
+]
+
+var dir_verts = build_verts()
+
+const bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
+const BIND_TOPLEFT = 1
+const BIND_TOP = 2
+const BIND_TOPRIGHT = 4
+const BIND_LEFT = 8
+const BIND_CENTER = 16
+const BIND_RIGHT = 32
+const BIND_BOTTOMLEFT = 64
+const BIND_BOTTOM = 128
+const BIND_BOTTOMRIGHT = 256
+
+const ref_verts : Array[Vector3] = [
+    Vector3(-0.5, -0.5, -0.5),
+    Vector3( 0.5, -0.5, -0.5),
+    Vector3(-0.5,  0.5, -0.5),
+    Vector3( 0.5,  0.5, -0.5),
+]
+
+const ref_uvs : Array[Vector2] = [
+    Vector2(1.0, 0.0),
+    Vector2(0.0, 0.0),
+    Vector2(1.0, 1.0),
+    Vector2(0.0, 1.0),
+]
+
+var bitmask_dirs = {
+    BIND_TOPLEFT     : Vector2(-1, -1),
+    BIND_LEFT        : Vector2(-1,  0),
+    BIND_BOTTOMLEFT  : Vector2(-1,  1),
+    
+    BIND_TOP         : Vector2( 0, -1),
+    BIND_CENTER      : Vector2( 0,  0),
+    BIND_BOTTOM      : Vector2( 0,  1),
+    
+    BIND_TOPRIGHT    : Vector2( 1, -1),
+    BIND_RIGHT       : Vector2( 1,  0),
+    BIND_BOTTOMRIGHT : Vector2( 1,  1),
+}
+
+const bitmask_stuff_12x4 : Array[int] = [
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,1,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 0,1,1, 0,0,0, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 0,0,0, 1,1,1,
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,0, 0,0,0, 1,1,0,
+
+0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,0, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 0,1,1, 1,1,0,
+
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,0,0, 0,1,0, 0,0,0,
+]
+
+var bitmask_uvs_12x4 = build_uvs_12x4()
+
+const bitmask_stuff_4x4 : Array[int] = [
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+0,1,0, 0,1,1, 1,1,1, 1,1,0,
+0,0,0, 0,0,0, 0,0,0, 0,0,0,
+]
+
+var bitmask_uvs_4x4 = build_uvs_4x4()
+
+const ref_corners : Array[Vector3] = [
+    Vector3(-0.5, -0.5, -0.5),
+    Vector3( 0.5, -0.5, -0.5),
+    Vector3(-0.5,  0.5, -0.5),
+    Vector3( 0.5,  0.5, -0.5),
+    Vector3(-0.5, -0.5,  0.5),
+    Vector3( 0.5, -0.5,  0.5),
+    Vector3(-0.5,  0.5,  0.5),
+    Vector3( 0.5,  0.5,  0.5),
+]
+
+const top_corners : Array[Vector3] = [
+    Vector3(-0.5,  0.5, -0.5),
+    Vector3( 0.5,  0.5, -0.5),
+    Vector3(-0.5,  0.5,  0.5),
+    Vector3( 0.5,  0.5,  0.5),
 ]
 
 func has_voxel(coord : Vector3):
@@ -458,7 +561,7 @@ func refresh_surface_mapping():
 var selection_data = {}
 var selection_start = null
 var selection_end = null
-func inform_selection(new_start, new_end, source = null):
+func inform_selection(new_start, new_end, _source = null):
     var old_start = selection_start
     var old_end = selection_end
     if selection_start != new_start or selection_end != new_end:
@@ -469,7 +572,7 @@ func inform_selection(new_start, new_end, source = null):
         if selection_start != null and selection_end != null:
             lift_selection_data()
         end_operation()
-        dirtify_bitmask_range
+        
         if selection_start == null or selection_end == null:
             if old_start != null and old_end != null:
                 var old_aabb = AABB(old_start, old_end - old_start)
@@ -546,20 +649,6 @@ func apply_selection():
     selection_data = {}
     is_dirty = true
 
-var ref_verts = [
-    Vector3(-0.5, -0.5, -0.5),
-    Vector3( 0.5, -0.5, -0.5),
-    Vector3(-0.5,  0.5, -0.5),
-    Vector3( 0.5,  0.5, -0.5),
-]
-
-var ref_uvs = [
-    Vector2(1.0, 0.0),
-    Vector2(0.0, 0.0),
-    Vector2(1.0, 1.0),
-    Vector2(0.0, 1.0),
-]
-
 var uv_shrink = 0.99
 
 func transform_point_on_cube(vert : Vector3, dir : Vector3) -> Vector3:
@@ -580,35 +669,7 @@ func build_verts():
         verts[dir] = new_face
     return verts
 
-var dir_verts = build_verts()
 
-const bitmask_bindings = [1, 2, 4, 8, 16, 32, 64, 128, 256]
-
-
-const BIND_TOPLEFT = 1
-const BIND_TOP = 2
-const BIND_TOPRIGHT = 4
-const BIND_LEFT = 8
-const BIND_CENTER = 16
-const BIND_RIGHT = 32
-const BIND_BOTTOMLEFT = 64
-const BIND_BOTTOM = 128
-const BIND_BOTTOMRIGHT = 256
-
-
-var bitmask_dirs = {
-    BIND_TOPLEFT     : Vector2(-1, -1),
-    BIND_LEFT        : Vector2(-1,  0),
-    BIND_BOTTOMLEFT  : Vector2(-1,  1),
-    
-    BIND_TOP         : Vector2( 0, -1),
-    BIND_CENTER      : Vector2( 0,  0),
-    BIND_BOTTOM      : Vector2( 0,  1),
-    
-    BIND_TOPRIGHT    : Vector2( 1, -1),
-    BIND_RIGHT       : Vector2( 1,  0),
-    BIND_BOTTOMRIGHT : Vector2( 1,  1),
-}
 
 func generate_bitmask_dirs_by_dir():
     var dirs = {}
@@ -623,6 +684,7 @@ var bitmask_dirs_by_dir = generate_bitmask_dirs_by_dir()
 
 func get_bitmask_bit(tile : Vector2, which : int, pool : Array):
     var bit = tile * 3
+    @warning_ignore("integer_division")
     var stride = pool.size() / 3 / 3 / 4
     if which == BIND_BOTTOM or which == BIND_BOTTOMLEFT or which == BIND_BOTTOMRIGHT:
         bit.y += 2
@@ -634,23 +696,6 @@ func get_bitmask_bit(tile : Vector2, which : int, pool : Array):
         bit.x += 1
     return pool[bit.x + bit.y*stride*3]
 
-var bitmask_stuff_12x4 = [
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,1,0, 0,0,0, 0,0,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 0,1,1, 0,0,0, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 0,0,0, 1,1,1,
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,0, 0,0,0, 1,1,0,
-
-0,1,0, 0,1,0, 0,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,0, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 0,1,1, 1,1,0,
-
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   0,1,0, 0,1,1, 1,1,0, 0,1,0,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,   1,1,1, 1,1,1, 1,1,1, 1,1,1,   0,1,1, 1,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,   1,1,0, 0,0,0, 0,0,0, 0,1,1,   0,0,0, 0,0,0, 0,1,0, 0,0,0,
-]
 
 func get_tile_bitmask_12x4(tile : Vector2):
     var bitmask = 0
@@ -666,26 +711,6 @@ func build_uvs_12x4():
             uvs[get_tile_bitmask_12x4(Vector2(x, y))] = Vector2(x, y)
     return uvs
 
-var bitmask_uvs_12x4 = build_uvs_12x4()
-
-var bitmask_stuff_4x4 = [
-0,0,0, 0,0,0, 0,0,0, 0,0,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,
-
-0,0,0, 0,0,0, 0,0,0, 0,0,0,
-0,1,0, 0,1,1, 1,1,1, 1,1,0,
-0,0,0, 0,0,0, 0,0,0, 0,0,0,
-]
-
 func get_tile_bitmask_4x4(tile : Vector2):
     var bitmask = 0
     for bit in bitmask_bindings:
@@ -700,8 +725,6 @@ func build_uvs_4x4():
             uvs[get_tile_bitmask_4x4(Vector2(x, y))] = Vector2(x, y)
     return uvs
 
-var bitmask_uvs_4x4 = build_uvs_4x4()
-
 func get_decal_uv_scale(i : int) -> Transform2D:
     var ret : Transform2D = Transform2D.IDENTITY
     
@@ -714,64 +737,64 @@ func get_decal_uv_scale(i : int) -> Transform2D:
     
     return ret
 
-func place_decal(position : Vector3, dir : Vector3, material : VoxEditor.DecalMat, scale_id : int):
-    position = position.round()
-    if not position in decals:
-        decals[position] = {}
+func place_decal(p_position : Vector3, dir : Vector3, material : VoxEditor.DecalMat, scale_id : int):
+    p_position = p_position.round()
+    if not p_position in decals:
+        decals[p_position] = {}
     
-    decals[position] = decals[position].duplicate(false)
-    decals[position][dir] = [material, material.current_coord, scale_id%8]
+    decals[p_position] = decals[p_position].duplicate(false)
+    decals[p_position][dir] = [material, material.current_coord, scale_id%8]
     is_dirty = true
 
-func erase_decal(position : Vector3, dir : Vector3):
-    position = position.round()
-    if position in decals:
-        decals[position] = decals[position].duplicate(false)
-        decals[position].erase(dir.round())
-        if decals[position].size() == 0:
-            decals.erase(position)
+func erase_decal(p_position : Vector3, dir : Vector3):
+    p_position = p_position.round()
+    if p_position in decals:
+        decals[p_position] = decals[p_position].duplicate(false)
+        decals[p_position].erase(dir.round())
+        if decals[p_position].size() == 0:
+            decals.erase(p_position)
     
     is_dirty = true
 
-func place_model(position : Vector3, material : VoxEditor.DecalMat, mode_id : int, floor_mode : int, offset_x : int, offset_y : int, offset_z : int):
-    position = position.round()
-    if not position in models:
-        models[position] = {}
+func place_model(p_position : Vector3, material : VoxEditor.DecalMat, mode_id : int, floor_mode : int, offset_x : int, offset_y : int, offset_z : int):
+    p_position = p_position.round()
+    if not p_position in models:
+        models[p_position] = {}
     
-    models[position] = [material, material.current_coord, mode_id, floor_mode, offset_x, offset_y, offset_z]
+    models[p_position] = [material, material.current_coord, mode_id, floor_mode, offset_x, offset_y, offset_z]
     is_dirty = true
 
-func erase_model(position : Vector3):
-    models.erase(position.round())
+func erase_model(p_position : Vector3):
+    models.erase(p_position.round())
     is_dirty = true
 
-func place_voxel(position : Vector3, material : VoxEditor.VoxMat, ramp_corners = {}):
-    position = position.round()
-    voxels[position] = material
+func place_voxel(p_position : Vector3, material : VoxEditor.VoxMat, ramp_corners = {}):
+    p_position = p_position.round()
+    voxels[p_position] = material
     if ramp_corners.size() > 0:
-        voxel_corners[position] = ramp_corners.duplicate(true)
-    elif voxel_corners.has(position):
-        voxel_corners.erase(position)
+        voxel_corners[p_position] = ramp_corners.duplicate(true)
+    elif voxel_corners.has(p_position):
+        voxel_corners.erase(p_position)
     is_dirty = true
     
-    dirtify_bitmask(position)
+    dirtify_bitmask(p_position)
 
-func erase_voxel(position : Vector3):
+func erase_voxel(p_position : Vector3):
     if voxels.size() <= 1:
         print("can't erase the last voxel!")
         return
-    voxels.erase(position.round())
-    if voxel_corners.has(position.round()):
-        voxel_corners.erase(position.round())
+    voxels.erase(p_position.round())
+    if voxel_corners.has(p_position.round()):
+        voxel_corners.erase(p_position.round())
     is_dirty = true
     
-    dirtify_bitmask(position)
+    dirtify_bitmask(p_position)
 
-func dirtify_bitmask(position : Vector3):
+func dirtify_bitmask(p_position : Vector3):
     for z in [-1, 0, 1]:
         for y in [-1, 0, 1]:
             for x in [-1, 0, 1]:
-                var key = (position + Vector3(x, y, z)).round()
+                var key = (p_position + Vector3(x, y, z)).round()
                 if key in uv_data_cache:
                     uv_data_cache.erase(key)
 
@@ -803,23 +826,6 @@ func face_is_disconnected(pos, face_normal, test_dir):
                 return true
     return false
 
-var ref_corners = [
-    Vector3(-0.5, -0.5, -0.5),
-    Vector3( 0.5, -0.5, -0.5),
-    Vector3(-0.5,  0.5, -0.5),
-    Vector3( 0.5,  0.5, -0.5),
-    Vector3(-0.5, -0.5,  0.5),
-    Vector3( 0.5, -0.5,  0.5),
-    Vector3(-0.5,  0.5,  0.5),
-    Vector3( 0.5,  0.5,  0.5),
-]
-
-var top_corners = [
-    Vector3(-0.5,  0.5, -0.5),
-    Vector3( 0.5,  0.5, -0.5),
-    Vector3(-0.5,  0.5,  0.5),
-    Vector3( 0.5,  0.5,  0.5),
-]
 
 func get_effective_vert(pos, vert):
     if !has_voxel_corner(pos):
@@ -904,7 +910,7 @@ func undistort_array_quads(verts, tex_uvs, normals, indexes):
         face_count += 1
     return indexes
 
-func add_decals(mesh):
+func add_decals(p_mesh):
     for mat in decals_by_mat.keys():
         var texture = mat.tex
         var tex_size = texture.get_size()
@@ -993,8 +999,8 @@ func add_decals(mesh):
         arrays[Mesh.ARRAY_NORMAL] = normals
         arrays[Mesh.ARRAY_INDEX]  = indexes
         if arrays[Mesh.ARRAY_VERTEX].size() > 0:
-            mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-            mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+            p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+            p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
 
 func _add_model_quad(verts, uvs, normals, normal_sign = 1.0, angle = 0.0, x_scale = 1.0, z_offset = 0.0):
     for i in [0, 1, 2, 3]:
@@ -1039,7 +1045,7 @@ func model_get_verts_etc(mode_id : int):
     
     return [verts, uvs, normals, indexes]
 
-func add_models(mesh):
+func add_models(p_mesh):
     for mat in models_by_mat.keys():
         var texture = mat.tex
         var tex_size = texture.get_size()
@@ -1065,11 +1071,11 @@ func add_models(mesh):
             var mode_id = model_data[2]
             var floor_mode = model_data[3]
             var offset_x = model_data[4]
-            var offset_y = model_data[5]
+            #var offset_y = model_data[5]
             var offset_z = model_data[6]
             
             var unit_uv = grid_size/tex_size
-            var uvs = ref_uvs.duplicate()
+            #var uvs = ref_uvs.duplicate()
             
             var index_base = verts.size()
             
@@ -1156,7 +1162,9 @@ func add_models(mesh):
                 tex_uvs.push_back(uv)
             
             for i in verts_temp.size():
+                @warning_ignore("integer_division")
                 var a = verts_temp[i/4*4 + 0] - verts_temp[i/4*4 + 3]
+                @warning_ignore("integer_division")
                 var b = verts_temp[i/4*4 + 1] - verts_temp[i/4*4 + 2]
                 var model_normal = -a.cross(b).normalized()
                 normals.push_back(model_normal)
@@ -1171,10 +1179,10 @@ func add_models(mesh):
         arrays[Mesh.ARRAY_NORMAL] = normals
         arrays[Mesh.ARRAY_INDEX]  = indexes
         if arrays[Mesh.ARRAY_VERTEX].size() > 0:
-            mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-            mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+            p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+            p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
 
-func add_voxels(mesh):
+func add_voxels(p_mesh):
     var face_tex = []
     for mat in voxels_by_mat.keys():
         face_tex.push_back([[mat.sides, mat], "side", voxels_by_mat[mat]])
@@ -1191,13 +1199,13 @@ func add_voxels(mesh):
         material.diffuse_mode = BaseMaterial3D.DIFFUSE_LAMBERT
         material.albedo_texture = texture
         
-        var inner_faces = false
+        #var inner_faces = false
         if mat.transparent_mode == 1:
             material.params_use_alpha_scissor = true
-            inner_faces = mat.transparent_inner_face_mode != 0
+            #inner_faces = mat.transparent_inner_face_mode != 0
         elif mat.transparent_mode == 2:
             material.flags_transparent = true
-            inner_faces = mat.transparent_inner_face_mode != 0
+            #inner_faces = mat.transparent_inner_face_mode != 0
         
         var dirs = []
         if info[1] == "side":
@@ -1372,8 +1380,8 @@ func add_voxels(mesh):
         arrays[Mesh.ARRAY_NORMAL] = normals
         arrays[Mesh.ARRAY_INDEX]  = indexes
         if arrays[Mesh.ARRAY_VERTEX].size() > 0:
-            mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-            mesh.surface_set_material(mesh.get_surface_count() - 1, material)
+            p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+            p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
         
         var time = (end-start)/1000000.0
         if time > 0.01:
