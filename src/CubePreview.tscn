@@ -10,7 +10,7 @@ ambient_light_color = Color(0.376471, 0.376471, 0.376471, 1)
 [sub_resource type="World3D" id="World3D_6w3v8"]
 environment = SubResource("Environment_3lx66")
 
-[sub_resource type="ArrayMesh" id="ArrayMesh_7sh8r"]
+[sub_resource type="ArrayMesh" id="ArrayMesh_yvlml"]
 
 [sub_resource type="QuadMesh" id="3"]
 size = Vector2(2, 2)
@@ -43,7 +43,7 @@ fov = 30.0
 size = 3.3
 
 [node name="Voxels" parent="SubViewport" instance=ExtResource("2_crmsp")]
-mesh = SubResource("ArrayMesh_7sh8r")
+mesh = SubResource("ArrayMesh_yvlml")
 
 [node name="SideA" type="MeshInstance3D" parent="SubViewport"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1)

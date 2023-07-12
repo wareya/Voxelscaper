@@ -9,10 +9,13 @@ void vertex()
 
 // exposed uniforms
 uniform float DepthThreshold : hint_range(0.0, 10.0) = 0.1;
-uniform float LumaLikenessThreshold : hint_range(0.0, 1.0) = 0.15;
+uniform float ColorThreshold : hint_range(0.0, 1.0) = 0.15;
 uniform float NormalThreshold : hint_range(-0.99, 0.99) = 0.9;
-uniform int Range : hint_range(0, 32) = 5;
+uniform int Range : hint_range(0, 32, 1) = 5;
 uniform float Gamma : hint_range(1.0, 2.2) = 2.2;
+uniform bool DoSkipping = false;
+uniform bool DoSkipDither = false;
+uniform bool KeepCornersSharp = false;
 
 #define NORMAL_LIKENESS_THRESHOLD 0.05
 #define DEPTH_DISABLED_VALUE 0.0
@@ -101,7 +104,7 @@ float color_compare(vec2 texcoord, vec3 color_b)
 }
 bool is_similar_color(float color_diff)
 {
-    return color_diff < (LumaLikenessThreshold*LumaLikenessThreshold);
+    return color_diff < (ColorThreshold*ColorThreshold);
 }
 float is_similar_color_f(float color_diff)
 {
@@ -152,6 +155,9 @@ edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, fl
     vec2 b_plus = vec2(0.0, -1.0) * to_px_2;
     vec2 a_plus_raw = vec2(1.0, 0.0) * to_px_2;
     
+    vec2 left_last_coord = vec2(0.0, 0.0);
+    vec2 right_last_coord = vec2(0.0, 0.0);
+    
     const int start = -1;
     const int end = 1;
     for(int xsign = start; xsign <= end; xsign += end-start)
@@ -160,9 +166,20 @@ edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, fl
         
         int left_plus  = int(xsign < 0);
         int right_plus = int(xsign > 0);
+        int prev_offset = 0;
         for(int x = 1; x <= range; x += 1)
         {
-            vec2 coord_a = texcoord + a_plus*float(x);
+            // world's worst RNG
+            int z_ = int(texcoord.x*20000.0) ^ int(texcoord.y*20000.0) ^ int(TIME*1001.0);
+            z_ ^= z_>>8;
+            z_ ^= z_>>16;
+            z_ = DoSkipping ? z_ : 0;
+            float z = float(z_&0xFF)/255.0;
+            z = DoSkipDither ? round(z) : 0.0;
+            float jump_factor_lo = float(max(1, x-2+0));
+            float jump_factor_hi = float(max(1, x-2+1));
+            int offset = DoSkipping ? int(float(x)*mix(jump_factor_lo, jump_factor_hi, z)) : x;
+            vec2 coord_a = texcoord + a_plus*float(offset);
             vec2 coord_b = coord_a + b_plus;
             sample_info info = sample_offset(coord_a, coord_b, aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color);
             // set closed ends appropriately if closed
@@ -170,12 +187,46 @@ edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, fl
             right_open = right_open && (info.b || info.a || xsign == -1);
             // break on end
             if (info.b || !info.a)
+            {
+                if (xsign < 0)
+                    left_last_coord = coord_a;
+                else
+                    right_last_coord = coord_a;
                 break;
+            }
             // otherwise continue following edge
-            left_like  += left_plus;
-            right_like += right_plus;
+            left_like  += left_plus * (offset - prev_offset);
+            right_like += right_plus * (offset - prev_offset);
+            
+            prev_offset = offset;
         }
     }
+    
+    if (KeepCornersSharp)
+    {
+        vec2 l_end_near = left_last_coord - a_plus_raw;
+        vec2 r_end_near = right_last_coord + a_plus_raw;
+        sample_info end_info_near = sample_offset(l_end_near, r_end_near, aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color);
+        
+        vec2 l_end_far = left_last_coord - b_plus;
+        vec2 r_end_far = right_last_coord - b_plus;
+        sample_info end_info = sample_offset(l_end_far, r_end_far, aa_mode, center, view_dot, mat, sqrt_far, center_normal, center_color);
+        if (right_last_coord.x == 0.0 && right_last_coord.y == 0.0)
+        {
+            end_info.b = true;
+            end_info_near.b = true;
+        }
+        if (left_last_coord.x == 0.0 && left_last_coord.y == 0.0)
+        {
+            end_info.a = true;
+            end_info_near.a = true;
+        }
+        if (!end_info.b && !end_info_near.b && end_info_near.a)
+            left_like = 0;
+        if (!end_info.a && !end_info_near.a && end_info_near.b)
+            right_like = 0;
+    }
+    
     return edge_info(float(left_like), float(right_like), left_open, right_open);
 }
 
@@ -233,7 +284,7 @@ void fragment()
         if (!is_similar_normal(min(min(top, bottom), min(left, right))))
             aa_mode = 2;
     }
-    if (aa_mode == 0 && LumaLikenessThreshold != COLORS_DISABLED_VALUE)
+    if (aa_mode == 0 && ColorThreshold != COLORS_DISABLED_VALUE)
     {
         center_color = sqrt(base_color.rgb);
         top    = color_compare(texcoord - res_y, center_color);
