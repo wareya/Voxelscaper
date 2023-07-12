@@ -332,6 +332,10 @@ func deserialize(data : Dictionary):
             
             models[coord] = stuff
     
+    selection_start = null
+    selection_end = null
+    selection_data = {}
+    
     full_remesh()
     
     editor.current_mat = editor.mats[0]
@@ -361,7 +365,7 @@ func _process(_delta):
         
         time = (end-start)/1000000.0
         if time > 0.01:
-            print("remesh time: ", time)
+            print("remesh time: ", time*1000.0, "ms")
             var blocks = voxels.size() + decals.size() + models.size()
             print("block count: ", blocks)
             print("ms per block: ", time/blocks*1000)
@@ -618,7 +622,8 @@ func inform_selection(new_start, new_end, _source = null):
             var aabb = AABB(selection_start, selection_end - selection_start)
             dirtify_cache_range(aabb)
 
-func move_selection(offset : Vector3):
+func move_selection(new_start : Vector3):
+    var offset = new_start - selection_start
     if offset == Vector3():
         return
     var old_aabb = AABB(selection_start, selection_end - selection_start)
@@ -630,8 +635,14 @@ func move_selection(offset : Vector3):
             new_tables[table_name][coord + offset] = table[coord]
     selection_data = new_tables
     is_dirty = true
+    selection_start = new_start
+    selection_end += offset
     var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
+    print("new aabb... ", new_aabb);
+    var start = Time.get_ticks_usec()
     dirtify_cache_range(new_aabb)
+    var end = Time.get_ticks_usec()
+    print("dirtification time ms... ", (end-start)/1000.0)
 
 func lift_selection_data():
     selection_data = {}

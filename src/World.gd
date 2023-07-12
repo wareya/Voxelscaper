@@ -1249,7 +1249,7 @@ func handle_adjust_selection(move_not_adjust : bool = false):
         if !move_not_adjust:
             $Voxels.inform_selection(selection_start, selection_end)
         else:
-            $Voxels.move_selection(selection_start - old_selection_start)
+            $Voxels.move_selection(selection_start)
     
     if !draw_mode:
         end_operation()
