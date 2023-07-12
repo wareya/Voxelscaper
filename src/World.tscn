@@ -60,13 +60,13 @@ size = Vector3(0.25, 0.25, 0.25)
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_2nfeu"]
 render_priority = -128
 shader = ExtResource("2_sbdt1")
-shader_parameter/DepthThreshold = 0.1
+shader_parameter/DepthThreshold = 0.25
 shader_parameter/ColorThreshold = 0.075
 shader_parameter/NormalThreshold = 0.9
 shader_parameter/Range = 5
 shader_parameter/Gamma = 2.2
 shader_parameter/DoSkipping = true
-shader_parameter/DoSkipDither = true
+shader_parameter/DoSkipDither = false
 shader_parameter/KeepCornersSharp = true
 
 [sub_resource type="QuadMesh" id="QuadMesh_my40a"]

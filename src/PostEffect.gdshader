@@ -8,7 +8,7 @@ void vertex()
 }
 
 // exposed uniforms
-uniform float DepthThreshold : hint_range(0.0, 10.0) = 0.1;
+uniform float DepthThreshold : hint_range(0.0, 10.0) = 0.25;
 uniform float ColorThreshold : hint_range(0.0, 1.0) = 0.15;
 uniform float NormalThreshold : hint_range(-0.99, 0.99) = 0.9;
 uniform int Range : hint_range(0, 32, 1) = 5;

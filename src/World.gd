@@ -536,6 +536,9 @@ func open_data_from(fname):
     var error = test_json_conv.parse(json)
     var result = test_json_conv.get_data()
     if !error:
+        selection_start = null
+        selection_end = null
+        $CursorBox.visible = false
         $Voxels.deserialize(result)
         reset_camera()
     else:
@@ -1140,6 +1143,11 @@ func handle_new_selection():
     else:
         $CursorBox.hide()
 
+func vec_min(a : Vector3, b : Vector3) -> Vector3:
+    return Vector3(min(a.x, b.x), min(a.y, b.y), min(a.z, b.z))
+func vec_max(a : Vector3, b : Vector3) -> Vector3:
+    return Vector3(max(a.x, b.x), max(a.y, b.y), max(a.z, b.z))
+
 var gizmo_drag_dir = Vector3()
 var gizmo_drag_dir_unrounded = null
 func handle_adjust_selection(move_not_adjust : bool = false):
@@ -1155,6 +1163,9 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     if !draw_mode:
         gizmo_drag_dir = Vector3()
         gizmo_drag_dir_unrounded = null
+    
+    #var start = vec_min(selection_start, selection_end)
+    #var end = vec_max(selection_start, selection_end)
     
     var old_selection_start = selection_start
     var old_selection_end = selection_end
@@ -1197,22 +1208,21 @@ func handle_adjust_selection(move_not_adjust : bool = false):
             gizmo_drag_dir = gizmos[0][5]
         gizmos[0][4] = Color.YELLOW
     
-    #var did_adjust = false
-    
     var gizmos_dict = {}
     for gizmo in gizmos:
         gizmos_dict[gizmo[5]] = gizmo
+    
+    var motion = Vector3()
+    
     if gizmo_drag_dir in gizmos_dict:
         var gizmo = gizmos_dict[gizmo_drag_dir]
         gizmo[4] = Color.CYAN
         
-        #var affected_dir = gizmo_drag_dir
         var pos = gizmo[2]
         var old_pos = pos
         var pos2 = cam.unproject_position(gizmo[0] + gizmo_drag_dir)
         var depth = gizmo[3]
         pos = closest_point_line(old_pos, pos2, $GizmoHelper.get_local_mouse_position())
-        #var rect = $GizmoHelper.get_rect()
         
         var old_coord = gizmo[0]
         var old_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
@@ -1229,11 +1239,20 @@ func handle_adjust_selection(move_not_adjust : bool = false):
             gizmo_drag_dir_unrounded = gizmo[0]
             var temp_rounded = (gizmo[0] + gizmo_drag_dir*0.5).round() - gizmo_drag_dir*0.5
             gizmo[0] = gizmo[0] * (Vector3.ONE-gizmo_drag_dir.abs()) + temp_rounded*gizmo_drag_dir.abs()
-            var diff = (gizmo[0] - old_rounded) * (gizmo_drag_dir.abs())
+            motion = (gizmo[0] - old_rounded) * (gizmo_drag_dir.abs())
+            gizmo[0] -= motion
+            
             #if diff.length() != 0:
             #    did_adjust = true
-            if move_not_adjust:
-                opposite_gizmo[0] += diff
+            #if move_not_adjust:
+            #    opposite_gizmo[0] += diff
+    
+    if gizmo_drag_dir:
+        if move_not_adjust:
+            for gizmo in gizmos:
+                gizmo[0] += motion
+        else:
+            gizmos_dict[gizmo_drag_dir][0] += motion
     
     var new_aabb = AABB(gizmos[0][0], Vector3())
     for info in gizmos:

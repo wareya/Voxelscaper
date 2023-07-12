@@ -603,29 +603,25 @@ func inform_selection(new_start, new_end, _source = null):
     var old_end = selection_end
     if selection_start != new_start or selection_end != new_end:
         start_operation()
-        apply_selection()
+        if selection_data != {}:
+            apply_selection()
+            if selection_start == null or selection_end == null:
+                if old_start != null and old_end != null:
+                    var old_aabb = AABB(old_start, old_end - old_start)
+                    dirtify_cache_range(old_aabb)
         selection_start = new_start
         selection_end = new_end
-        if selection_start != null and selection_end != null:
-            lift_selection_data()
         end_operation()
-        
-        if selection_start == null or selection_end == null:
-            if old_start != null and old_end != null:
-                var old_aabb = AABB(old_start, old_end - old_start)
-                dirtify_cache_range(old_aabb)
-        elif old_start != null and old_end != null:
-            var old_aabb = AABB(old_start, old_end - old_start)
-            var new_aabb = AABB(selection_start, selection_end - selection_start).merge(old_aabb)
-            dirtify_cache_range(new_aabb)
-        else:
-            var aabb = AABB(selection_start, selection_end - selection_start)
-            dirtify_cache_range(aabb)
 
 func move_selection(new_start : Vector3):
-    var offset = new_start - selection_start
-    if offset == Vector3():
+    if new_start == selection_start or new_start == null or selection_start == null:
         return
+    
+    var offset = new_start - selection_start
+    
+    if selection_data == {}:
+        lift_selection_data()
+    
     var old_aabb = AABB(selection_start, selection_end - selection_start)
     var new_tables = {}
     for table_name in selection_data:
