@@ -22,7 +22,6 @@ gdscript/warnings/return_value_discarded=false
 [display]
 
 window/subwindows/embed_subwindows=false
-window/vsync/vsync_mode=0
 
 [gui]
 

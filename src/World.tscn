@@ -61,12 +61,12 @@ size = Vector3(0.25, 0.25, 0.25)
 render_priority = -128
 shader = ExtResource("2_sbdt1")
 shader_parameter/DepthThreshold = 0.25
-shader_parameter/ColorThreshold = 0.075
+shader_parameter/ColorThreshold = 0.15
 shader_parameter/NormalThreshold = 0.9
 shader_parameter/Range = 5
 shader_parameter/Gamma = 2.2
 shader_parameter/DoSkipping = true
-shader_parameter/DoSkipDither = false
+shader_parameter/DoSkipDither = true
 shader_parameter/KeepCornersSharp = true
 
 [sub_resource type="QuadMesh" id="QuadMesh_my40a"]
@@ -242,7 +242,7 @@ mouse_filter = 2
 script = ExtResource("2_2uu1h")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="." groups=["Sun"]]
-transform = Transform3D(0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, -0.5, 0.5, -5, 8, 5)
+transform = Transform3D(-0.707107, 0.5, -0.5, 0, 0.707107, 0.707107, 0.707107, 0.5, -0.5, -5, 8, 5)
 shadow_enabled = true
 directional_shadow_blend_splits = true
 
@@ -250,7 +250,7 @@ directional_shadow_blend_splits = true
 environment = SubResource("3")
 
 [node name="CameraHolder" type="Node3D" parent="."]
-transform = Transform3D(0.707107, -0.353553, 0.612372, 0, 0.866025, 0.5, -0.707107, -0.353553, 0.612372, 0, 1, 0)
+transform = Transform3D(0.707107, 0.353553, -0.612372, 0, 0.866025, 0.5, 0.707107, -0.353553, 0.612372, 0, 1, 0)
 
 [node name="Camera3D" type="Camera3D" parent="CameraHolder"]
 transform = Transform3D(1, 0, 0, 0, 1, -8.34465e-07, 0, 8.04663e-07, 1, 0, 0, 10)

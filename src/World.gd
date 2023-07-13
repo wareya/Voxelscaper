@@ -413,6 +413,8 @@ func reset_camera():
     $CameraHolder.position = Vector3(0, 1, 0)
     $ButtonPerspective.selected = 0
 
+
+var default_save_data = {}
 func _ready():
     if Engine.is_editor_hint():
         return
@@ -462,11 +464,14 @@ func _ready():
         ]:
         $Voxels.place_voxel(vox[0], vox[1])
     
+    default_save_data = $Voxels.serialize()
+    
     $MenuBar.connect("file_save", Callable(self, "default_save"))
     $MenuBar.connect("file_save_as", Callable(self, "save_map"))
     $MenuBar.connect("file_export_resource", Callable(self, "save_map_resource"))
     $MenuBar.connect("file_export_gltf", Callable(self, "save_map_gltf"))
     $MenuBar.connect("file_open", Callable(self, "open_map"))
+    $MenuBar.connect("file_new", Callable(self, "new_map"))
     
     $Mat2dOrientation.add_item("0 deg", 0)
     $Mat2dOrientation.add_item("90 deg", 1)
@@ -525,6 +530,16 @@ func save_map():
     await dialog.visibility_changed
     dialog.queue_free()
 
+func new_map():
+    open_data_from_dict(default_save_data)
+
+func open_data_from_dict(dict):
+    selection_start = null
+    selection_end = null
+    $CursorBox.visible = false
+    $Voxels.deserialize(dict)
+    reset_camera()
+
 func open_data_from(fname):
     #print("bieueaf")
     prev_save_target = fname
@@ -532,15 +547,12 @@ func open_data_from(fname):
     var file = FileAccess.open(fname, FileAccess.READ)
     var json = file.get_as_text()
     file.close()
+    
     var test_json_conv = JSON.new()
     var error = test_json_conv.parse(json)
     var result = test_json_conv.get_data()
     if !error:
-        selection_start = null
-        selection_end = null
-        $CursorBox.visible = false
-        $Voxels.deserialize(result)
-        reset_camera()
+        open_data_from_dict(result)
     else:
         var dialog = AcceptDialog.new()
         dialog.dialog_text = "File is malformed, failed to open."

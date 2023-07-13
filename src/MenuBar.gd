@@ -7,6 +7,7 @@ func button_factory(text : String, which_signal : String, data : Array = []) -> 
     self.emit_signal.bindv([which_signal] + data)
     return button
 
+signal file_new
 signal file_open
 signal file_save
 signal file_save_as
@@ -16,7 +17,9 @@ signal file_export_gltf
 func pressed(id : int, which : PopupMenu):
     var selection = which.get_item_text(id)
     
-    if which == $File.get_popup() and selection == "Open":
+    if which == $File.get_popup() and selection == "New":
+        emit_signal("file_new")
+    elif which == $File.get_popup() and selection == "Open":
         emit_signal("file_open")
     elif which == $File.get_popup() and selection == "Save":
         emit_signal("file_save")
@@ -82,6 +85,7 @@ func pressed(id : int, which : PopupMenu):
 @onready var editor = get_tree().get_nodes_in_group("VoxEditor")[0]
 func _ready():
     var file_popup : PopupMenu = $File.get_popup()
+    file_popup.add_item("New", 100)
     file_popup.add_item("Save", 0)
     file_popup.add_item("Save As", 1)
     file_popup.add_item("Open", 2)

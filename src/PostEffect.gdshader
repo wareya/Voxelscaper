@@ -169,13 +169,15 @@ edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, fl
         int prev_offset = 0;
         for(int x = 1; x <= range; x += 1)
         {
+            // dithering factor for skipping
             // world's worst RNG
-            int z_ = int(texcoord.x*20000.0) ^ int(texcoord.y*20000.0) ^ int(TIME*1001.0);
-            z_ ^= z_>>8;
-            z_ ^= z_>>16;
+            int z_ = int(texcoord.x*31511.72) ^ (int(texcoord.y*12113.51)) + x*xsign;
+            z_ ^= DoSkipDither ? int(fract(TIME)*17041.05)*77 : 6231;
+            z_ *= 77;
+            z_ ^= z_*6/5;
             z_ = DoSkipping ? z_ : 0;
             float z = float(z_&0xFF)/255.0;
-            z = DoSkipDither ? round(z) : 0.0;
+            
             float jump_factor_lo = float(max(1, x-2+0));
             float jump_factor_hi = float(max(1, x-2+1));
             int offset = DoSkipping ? int(float(x)*mix(jump_factor_lo, jump_factor_hi, z)) : x;
@@ -221,9 +223,9 @@ edge_info follow_edge(vec2 texcoord, mat2 to_px_2, int aa_mode, float center, fl
             end_info.a = true;
             end_info_near.a = true;
         }
-        if (!end_info.b && !end_info_near.b && end_info_near.a)
+        if (!end_info.b && !end_info_near.b)
             left_like = 0;
-        if (!end_info.a && !end_info_near.a && end_info_near.b)
+        if (!end_info.a && !end_info_near.a)
             right_like = 0;
     }
     
