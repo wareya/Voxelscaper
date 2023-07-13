@@ -827,7 +827,7 @@ func _input(_event):
             var new_x = $CameraHolder.rotation_degrees.x - 0.22 * event.relative.y
             new_x = clamp(new_x, -90, 90)
             $CameraHolder.rotation_degrees.x = new_x
-            print($CameraHolder.rotation_degrees)
+            #print($CameraHolder.rotation_degrees)
 
 var prev_fps_mode = false
 

@@ -147,8 +147,8 @@ func start_operation():
     temp_world["selection_data"] = selection_data.duplicate(false)
     temp_world["selection_start"] = selection_start
     temp_world["selection_end"] = selection_end
-    temp_world["uv_data_cache"] = uv_data_cache.duplicate(false)
-    temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(false)
+    temp_world["uv_data_cache"] = uv_data_cache.duplicate(true)
+    temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(true)
     operation_active = true
 
 func end_operation():
@@ -207,6 +207,13 @@ func serialize() -> Dictionary:
     var mats = {}
     var save_mats = {}
     var mat_counter = 0
+    
+    if selection_data != {}:
+        start_operation()
+        apply_selection()
+        if selection_start == null or selection_end == null:
+            dirtify_cache_range(AABB(selection_start, selection_end - selection_start))
+        end_operation()
     
     for mat in editor.mats:
         if not mat in mats:
@@ -364,11 +371,14 @@ func _process(_delta):
         end = Time.get_ticks_usec()
         
         time = (end-start)/1000000.0
+        print("... ", cached_voxel_count)
+        print("... ", uncached_voxel_count)
         if time > 0.01:
             print("remesh time: ", time*1000.0, "ms")
             var blocks = voxels.size() + decals.size() + models.size()
             print("block count: ", blocks)
             print("ms per block: ", time/blocks*1000)
+            print("ms per uncached voxel: ", time/(uncached_voxel_count/6)*1000)
             
 
 const directions : Array[Vector3] = [
@@ -831,12 +841,10 @@ func erase_voxel(p_position : Vector3):
     dirtify_cache(p_position)
 
 func dirtify_at_exact(pos : Vector3):
-    for dir in directions:
-        var key = [pos, dir]
-        if key in uv_data_cache:
-            uv_data_cache.erase(key)
-        if key in voxel_data_cache:
-            voxel_data_cache.erase(key)
+    if pos in uv_data_cache:
+        uv_data_cache.erase(pos)
+    if pos in voxel_data_cache:
+        voxel_data_cache.erase(pos)
 
 func dirtify_cache(p_position : Vector3):
     for z in [-1, 0, 1]:
@@ -846,7 +854,7 @@ func dirtify_cache(p_position : Vector3):
                 dirtify_at_exact(pos)
 
 func dirtify_cache_range(position_range : AABB):
-    position_range = position_range.grow(2.0)
+    position_range = position_range.grow(1.0)
     var start = position_range.position
     var end = position_range.end + Vector3.ONE
     for pos_z in range(start.z, end.z):
@@ -1234,12 +1242,24 @@ func add_models(p_mesh):
             p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
 
+
+var cached_voxel_count = 0
+var uncached_voxel_count = 0
+
 func add_voxels(p_mesh):
+    var startup_start = Time.get_ticks_usec()
+    
+    cached_voxel_count = 0
+    uncached_voxel_count = 0
     var face_tex = []
     for mat in voxels_by_mat.keys():
         face_tex.push_back([[mat.sides, mat], "side", voxels_by_mat[mat]])
         face_tex.push_back([[mat.top, mat], "top", voxels_by_mat[mat]])
         face_tex.push_back([[mat.bottom, mat], "bottom", voxels_by_mat[mat]])
+    
+    print("startup ms... ", (Time.get_ticks_usec()-startup_start)/1000.0)
+    
+    var cache_access_time = 0
     
     for info in face_tex:
         var texture = info[0][0]
@@ -1270,19 +1290,20 @@ func add_voxels(p_mesh):
         var indexes = PackedInt32Array()
         
         var is_side = info[1]
-        
         var list = info[2]
-        
         var start = Time.get_ticks_usec()
         
         for pos in list:
             var found_cache = false
-            for dir in dirs:
-                var key = [pos, dir]
-                if key in voxel_data_cache:
-                    found_cache = true
-                    if voxel_data_cache[key] != null:
-                        var data = voxel_data_cache[key]
+            
+            var cache_start = Time.get_ticks_usec()
+            if pos in voxel_data_cache:
+                for dir in dirs:
+                    var cached = voxel_data_cache[pos]
+                    if dir in cached:
+                        found_cache = true
+                    if dir in cached and cached[dir] != null:
+                        var data = cached[dir]
                         var self_verts = data[0]
                         var self_normals = data[1]
                         var self_tex_uvs = data[2]
@@ -1297,20 +1318,28 @@ func add_voxels(p_mesh):
                         for val in self_indexes:
                             indexes.push_back(val + index_base)
             
+            cache_access_time += Time.get_ticks_usec() - cache_start
+            
             if found_cache:
+                cached_voxel_count += 1
                 continue
+            uncached_voxel_count += 1
+            
+            if not pos in voxel_data_cache:
+                voxel_data_cache[pos] = {}
+            if not pos in uv_data_cache:
+                uv_data_cache[pos] = {}
             
             var vox = get_voxel(pos)
             var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
             for dir in dirs:
-                var cache_key = [pos, dir]
                 if occluding_face_exists(pos, pos+dir, vox):
-                    voxel_data_cache[cache_key] = null
+                    voxel_data_cache[pos][dir] = null
                     continue
                 
                 var uvs : Array[Vector2] = []
-                if cache_key in uv_data_cache:
-                    uvs = uv_data_cache[cache_key]
+                if dir in uv_data_cache[pos]:
+                    uvs = uv_data_cache[pos][dir]
                 else:
                     uvs = ref_uvs.duplicate()
                     var bitmask = 0
@@ -1372,7 +1401,7 @@ func add_voxels(p_mesh):
                         uvs[i] /= mat.subdivide_amount
                         uvs[i] += mat.subdivide_coord/mat.subdivide_amount
                     
-                    uv_data_cache[cache_key] = uvs
+                    uv_data_cache[pos][dir] = uvs
                 
                 # swap triangulation order if we're warped and need to swap to connect-shortest
                 # also recalculate normal for warped faces
@@ -1400,8 +1429,8 @@ func add_voxels(p_mesh):
                 var index_base = verts.size()
                 
                 var self_verts = PackedVector3Array()
-                var self_tex_uvs = PackedVector2Array()
                 var self_normals = PackedVector3Array()
+                var self_tex_uvs = PackedVector2Array()
                 var self_indexes = PackedInt32Array()
                 
                 for i in [0, 1, 2, 3]:
@@ -1445,7 +1474,7 @@ func add_voxels(p_mesh):
                     indexes.push_back(i + index_base)
                     self_indexes.push_back(i)
                 
-                voxel_data_cache[cache_key] = [self_verts, self_normals, self_tex_uvs, self_indexes]
+                voxel_data_cache[pos][dir] = [self_verts, self_normals, self_tex_uvs, self_indexes]
         
         var end = Time.get_ticks_usec()
         
@@ -1465,6 +1494,7 @@ func add_voxels(p_mesh):
         var time = (end-start)/1000000.0
         if time > 0.01:
             print("dummy  time: ", time)
+    print("cache time ms: ", cache_access_time/1000.0)
     
 
 func remesh():
