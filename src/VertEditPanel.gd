@@ -150,8 +150,8 @@ func _indirect_input(_event):
             var pos = cam.unproject_position(vert)
             var pos_dist = get_local_mouse_position().distance_to(pos)
             if pos_dist < dist and pos_dist < 8.0:
-                #var depth = -(vert) * cam.global_transform.z
-                var depth = -(vert * cam.global_transform.inverse()).z
+                var depth = -(vert * cam.global_transform).z
+                #var depth = -(vert * cam.global_transform.inverse()).z
                 dist = pos_dist
                 drag_target = _vert
                 drag_depth = depth
@@ -196,11 +196,9 @@ func _indirect_input(_event):
             var new_vert : Vector3 = cam.project_position(pos, depth)
             var cam_normal = cam.project_ray_normal(pos)
             
-            if $Frame/VertEditViewport/PlaneLock.pressed:
+            if $Frame/VertEditViewport/PlaneLock.button_pressed:
                 var front : Vector3 = axialize(cam.global_transform.basis * (Vector3.FORWARD))
-                #var positive = front.abs()
                 var diff = drag_initial_value*front - new_vert*front
-                
                 # positive = on screen side of intended plane, negative = opposite
                 var dist = diff.x + diff.y + diff.z
                 

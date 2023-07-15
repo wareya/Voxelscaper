@@ -396,6 +396,7 @@ script = ExtResource("9_oq18w")
 
 [node name="PlaneLock" type="Button" parent="VertEditPanel/Frame/VertEditViewport"]
 toggle_mode = true
+button_pressed = true
 text = "Plane Lock"
 
 [node name="Buttons" type="HBoxContainer" parent="VertEditPanel"]
@@ -501,7 +502,8 @@ script = ExtResource("12_6ud1y")
 
 [node name="Panel" type="Panel" parent="Mat2dTilePicker"]
 show_behind_parent = true
-layout_mode = 0
+layout_mode = 1
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 
