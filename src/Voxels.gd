@@ -946,27 +946,19 @@ func _matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
         
         if near_a.distance_squared_to(far_a) >= 0.001:
             return false
-        if axis.x != 0.0 and not matching_edges_match(pos + Vector3(axis.x, 0.0, 0.0), next_pos, dir):
-            return false
-        if axis.y != 0.0 and not matching_edges_match(pos + Vector3(0.0, axis.y, 0.0), next_pos, dir):
-            return false
-        if axis.z != 0.0 and not matching_edges_match(pos + Vector3(0.0, 0.0, axis.z), next_pos, dir):
-            return false
+        
         return true
     else:
         # axial case
         var cross = axis.cross(dir)
+        
         var near_a = get_effective_vert(pos, dir + axis + cross)
         var far_a = get_effective_vert(next_pos, dir - axis + cross) + axis*2.0
-        print(near_a, far_a)
-        
         if near_a.distance_squared_to(far_a) >= 0.001:
             return false
         
         var near_b = get_effective_vert(pos, dir + axis - cross)
         var far_b = get_effective_vert(next_pos, dir - axis - cross) + axis*2.0
-        print(near_b, far_b)
-        
         if near_b.distance_squared_to(far_b) >= 0.001:
             return false
         
@@ -975,7 +967,7 @@ func _matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
 # memoizer
 func matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
     var key = [pos, next_pos, dir]
-    var key_inverse = [next_pos, pos, -dir]
+    var key_inverse = [next_pos, pos, dir]
     if key in edge_match_cache:
         return edge_match_cache[key]
     
