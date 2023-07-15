@@ -11,32 +11,80 @@ func array_to_vec(array : Array) -> Vector3:
 
 @onready var voxels = {Vector3(0, 0, 0) : editor.get_default_voxmat()}
 
-func occluding_voxel_exists(p_position, source_mat):
-    if has_voxel(p_position):
-        if (get_voxel(p_position) == source_mat
-        and source_mat.transparent_mode != 0
-        and source_mat.transparent_inner_face_mode == 1):
-            return true
-        if get_voxel(p_position).transparent_mode == 0:
-            return true
+func occluding_voxel_exists(pos : Vector3, source_mat : VoxEditor.VoxMat):
+    var mat = get_voxel(pos)
+    if (mat == source_mat
+    and source_mat.transparent_mode != 0
+    and source_mat.transparent_inner_face_mode == 1):
+        return true
+    if mat && mat.transparent_mode == 0:
+        return true
     return false
 
-func occluding_face_exists(origin, p_position, source_mat):
-    if !occluding_voxel_exists(p_position, source_mat):
+func generate_possible_vec3s(length : float):
+    var array : Array = []
+    for z in [-1, 0, 1]:
+        for y in [-1, 0, 1]:
+            for x in [-1, 0, 1]:
+                if abs(x) + abs(y) + abs(z) != length:
+                    continue
+                var dir : Vector3 = Vector3(x, y, z)
+                array.push_back(dir)
+    return array
+
+@onready var possible_corners = generate_possible_vec3s(3.0)
+@onready var possible_edges = generate_possible_vec3s(2.0)
+@onready var possible_dirs = generate_possible_vec3s(1.0)
+
+func generate_corner_mapping():
+    var mapping = {}
+    for dir in possible_dirs:
+        var corners = []
+        for corner in possible_corners:
+            if dir.dot(corner) > 0.0:
+                corners.push_back(corner)
+        mapping[dir] = corners
+    return mapping
+
+@onready var corner_mapping = generate_corner_mapping()
+
+func occluding_face_exists(pos : Vector3, next_pos : Vector3, source_mat : VoxEditor.VoxMat):
+    if !occluding_voxel_exists(next_pos, source_mat):
         return false
-    var dir = p_position - origin
-    var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
-    var other_b = dir.cross(other_a)
-    var matches = matching_edges_match(origin, p_position, other_a)
-    matches = matches and matching_edges_match(origin, p_position, -other_a)
-    matches = matches and matching_edges_match(origin, p_position,  other_b)
-    matches = matches and matching_edges_match(origin, p_position, -other_b)
-    return matches
+    var dir = next_pos - pos
+    
+    var dir_corners = corner_mapping[dir]
+    var corners_a = get_voxel_corner(pos)
+    var corners_b = get_voxel_corner(next_pos)
+    
+    #var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
+    #var other_b = dir.cross(other_a)
+    #var matches = matching_edges_match(pos, next_pos, other_a)
+    #matches = matches and matching_edges_match(pos, next_pos, -other_a)
+    #matches = matches and matching_edges_match(pos, next_pos,  other_b)
+    #matches = matches and matching_edges_match(pos, next_pos, -other_b)
+    #return matches
 
-@onready var decals = {}
-@onready var models = {}
+    for corner_a in dir_corners:
+        var corner_b = corner_a - dir*2.0
+        var has_a = corner_a in corners_a
+        var has_b = corner_b in corners_b
+        if has_a != has_b:
+            return false
+        if !has_a and !has_b:
+            continue
+        
+        corner_a = corners_a[corner_a]
+        corner_b = corners_b[corner_b] + dir*2.0
+        if corner_a != corner_b:
+            return false
+    
+    return true
 
-@onready var voxel_corners = {
+@onready var decals : Dictionary = {}
+@onready var models : Dictionary = {}
+
+@onready var voxel_corners : Dictionary = {
 }
 
 func clear():
@@ -78,8 +126,8 @@ func apply_diff_left(a : Dictionary, diff : Dictionary):
         else:
             a[key] = old
 
-var undo_buffer = []
-var redo_buffer = []
+var undo_buffer : Array = []
+var redo_buffer : Array = []
 
 func perform_undo():
     if undo_buffer.size() == 0:
@@ -147,16 +195,17 @@ func start_operation():
     temp_world["selection_data"] = selection_data.duplicate(false)
     temp_world["selection_start"] = selection_start
     temp_world["selection_end"] = selection_end
-    temp_world["uv_data_cache"] = uv_data_cache.duplicate(true)
-    temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(true)
+    temp_world["uv_data_cache"] = uv_data_cache.duplicate(false)
+    temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(false)
     operation_active = true
 
-func end_operation():
+func end_operation(no_remesh : bool = false):
     if !operation_active:
         return
     
     # need to remesh to update caches
-    hinted_remesh()
+    if !no_remesh:
+        hinted_remesh()
     
     var changed = {}
     
@@ -204,9 +253,9 @@ func end_operation():
     operation_active = false
 
 func serialize() -> Dictionary:
-    var mats = {}
-    var save_mats = {}
-    var mat_counter = 0
+    var mats : Dictionary = {}
+    var save_mats : Dictionary = {}
+    var mat_counter : int = 0
     
     if selection_data != {}:
         start_operation()
@@ -350,6 +399,9 @@ func deserialize(data : Dictionary):
     editor.rebuild_mat_buttons()
 
 func _ready():
+    if Engine.is_editor_hint():
+        return
+    
     refresh_surface_mapping()
     remesh()
 
@@ -363,8 +415,7 @@ func _process(_delta):
         var end = Time.get_ticks_usec()
         
         var time = (end-start)/1000000.0
-        if time > 0.1:
-            print("refresh time: ", time)
+        print("refresh time: ", time)
         
         start = Time.get_ticks_usec()
         remesh()
@@ -504,32 +555,24 @@ func has_voxel(coord : Vector3):
 func get_voxel(coord : Vector3):
     if "voxels" in selection_data and coord in selection_data.voxels:
         return selection_data.voxels.get(coord)
-    else:
-        return voxels.get(coord)
+    return voxels.get(coord)
 
-func has_voxel_corner(coord : Vector3):
-    return ("voxel_corners" in selection_data and coord in selection_data.voxel_corners) or coord in voxel_corners
 func get_voxel_corner(coord : Vector3):
-    if "voxel_corners" in selection_data and coord in selection_data.voxel_corners:
-        return selection_data.voxel_corners.get(coord)
-    else:
-        return voxel_corners.get(coord)
+    if "voxel_corners" in selection_data:
+        var ret = selection_data.voxel_corners.get(coord, {})
+        if ret.size() > 0:
+            return ret
+    return voxel_corners.get(coord, {})
 
-func has_decal(coord : Vector3, dir : Vector3):
-    return ("decals" in selection_data and coord in selection_data.decals and dir in selection_data.decals[coord]) or (coord in decals and dir in decals[coord])
 func get_decal(coord : Vector3, dir : Vector3):
     if "decals" in selection_data and coord in selection_data.decals and dir in selection_data.decals[coord]:
         return selection_data.decals.get(coord)[dir]
-    else:
-        return decals.get(coord)[dir]
+    return decals.get(coord)[dir]
 
-func has_model(coord : Vector3):
-    return ("models" in selection_data and coord in selection_data.models) or coord in models
 func get_model(coord : Vector3):
     if "models" in selection_data and coord in selection_data.models:
         return selection_data.models.get(coord)
-    else:
-        return models.get(coord)
+    return models.get(coord)
 
 func get_voxel_coords():
     var keys = {}
@@ -537,15 +580,6 @@ func get_voxel_coords():
         keys[key] = null
     if "voxels" in selection_data:
         for key in selection_data.voxels:
-            keys[key] = null
-    return keys.keys()
-
-func get_voxel_corner_coords():
-    var keys = {}
-    for key in voxel_corners:
-        keys[key] = null
-    if "voxel_corners" in selection_data:
-        for key in selection_data.voxel_corners:
             keys[key] = null
     return keys.keys()
 
@@ -612,8 +646,10 @@ func inform_selection(new_start, new_end, _source = null):
     var old_start = selection_start
     var old_end = selection_end
     if selection_start != new_start or selection_end != new_end:
+        var start = Time.get_ticks_usec()
         start_operation()
         if selection_data != {}:
+            print("applying selection")
             apply_selection()
             if selection_start == null or selection_end == null:
                 if old_start != null and old_end != null:
@@ -621,7 +657,8 @@ func inform_selection(new_start, new_end, _source = null):
                     dirtify_cache_range(old_aabb)
         selection_start = new_start
         selection_end = new_end
-        end_operation()
+        end_operation(true)
+        print("selection operation time ms... ", (Time.get_ticks_usec()-start)/1000.0)
 
 func move_selection(new_start : Vector3):
     if new_start == selection_start or new_start == null or selection_start == null:
@@ -863,16 +900,13 @@ func dirtify_cache_range(position_range : AABB):
                 dirtify_at_exact(Vector3(pos_x, pos_y, pos_z))
 
 func face_is_shifted(pos, face_normal):
-    if !has_voxel_corner(pos):
-        return false
+    var c = get_voxel_corner(pos)
     for corner in get_voxel_corner(pos):
         if corner.dot(face_normal) > 0.0:
             return true
     return false
 
 func face_is_disconnected(pos, face_normal, test_dir):
-    if !has_voxel_corner(pos):
-        return false
     for corner in get_voxel_corner(pos):
         if corner.dot(test_dir) > 0.0:
             var new = get_voxel_corner(pos)[corner]
@@ -883,11 +917,9 @@ func face_is_disconnected(pos, face_normal, test_dir):
 
 
 func get_effective_vert(pos, vert):
-    if !has_voxel_corner(pos):
-        return vert
-    for corner in get_voxel_corner(pos):
-        if vert.round() == corner:
-            return get_voxel_corner(pos)[corner]
+    var corners = get_voxel_corner(pos)
+    if vert in corners:
+        return corners[vert]
     return vert
 
 func axialize(n : Vector3) -> Vector3:
@@ -901,40 +933,67 @@ func axialize(n : Vector3) -> Vector3:
             ret = dir
     return ret
 
-func matching_edges_match(pos, next_pos, dir):
+func _matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
     var axis = next_pos - pos
-    var cross = axis.cross(dir)
     
-    if axis.length() > 1:
+    if get_voxel_corner(pos).size() == 0 and get_voxel_corner(next_pos).size() == 0:
+        return true
+    
+    if axis.length_squared() > 1:
         # diagonal case
-        var near_a = pos + get_effective_vert(pos, dir + axis)
-        var far_a = next_pos + get_effective_vert(next_pos, dir - axis) + axis
+        var near_a = get_effective_vert(pos, dir + axis)
+        var far_a = get_effective_vert(next_pos, dir - axis) + axis + (next_pos - pos)
         
-        if not near_a.distance_squared_to(far_a) < 0.001:
+        if near_a.distance_squared_to(far_a) >= 0.001:
             return false
-        
-        var axis_a = axialize(axis)
-        var axis_b = axis - axis_a
-        if not matching_edges_match(pos + axis_a, next_pos, dir):
+        if axis.x != 0.0 and not matching_edges_match(pos + Vector3(axis.x, 0.0, 0.0), next_pos, dir):
             return false
-        if not matching_edges_match(pos + axis_b, next_pos, dir):
+        if axis.y != 0.0 and not matching_edges_match(pos + Vector3(0.0, axis.y, 0.0), next_pos, dir):
+            return false
+        if axis.z != 0.0 and not matching_edges_match(pos + Vector3(0.0, 0.0, axis.z), next_pos, dir):
             return false
         return true
     else:
         # axial case
+        var cross = axis.cross(dir)
         var near_a = get_effective_vert(pos, dir + axis + cross)
-        var near_b = get_effective_vert(pos, dir + axis - cross)
         var far_a = get_effective_vert(next_pos, dir - axis + cross) + axis*2.0
-        var far_b = get_effective_vert(next_pos, dir - axis - cross) + axis*2.0
+        print(near_a, far_a)
         
-        return near_a.distance_squared_to(far_a) < 0.001 and near_b.distance_squared_to(far_b) < 0.001
+        if near_a.distance_squared_to(far_a) >= 0.001:
+            return false
+        
+        var near_b = get_effective_vert(pos, dir + axis - cross)
+        var far_b = get_effective_vert(next_pos, dir - axis - cross) + axis*2.0
+        print(near_b, far_b)
+        
+        if near_b.distance_squared_to(far_b) >= 0.001:
+            return false
+        
+        return true
+
+# memoizer
+func matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
+    var key = [pos, next_pos, dir]
+    var key_inverse = [next_pos, pos, -dir]
+    if key in edge_match_cache:
+        return edge_match_cache[key]
     
+    var ret = _matching_edges_match(pos, next_pos, dir)
+    edge_match_cache[key] = ret
+    edge_match_cache[key_inverse] = ret
+    
+    return ret
+
+
 var uv_data_cache = {}
 var voxel_data_cache = {}
+var edge_match_cache = {}
 
 func full_remesh():
     uv_data_cache = {}
     voxel_data_cache = {}
+    edge_match_cache = {}
     refresh_surface_mapping()
     remesh()
 
@@ -1004,7 +1063,7 @@ func add_decals(p_mesh):
             
             var index_base = verts.size()
             
-            var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
+            var vox_corners = get_voxel_corner(pos)
             
             for i in range(uvs.size()):
                 uvs[i] = uv_xform * (uvs[i])
@@ -1140,7 +1199,7 @@ func add_models(p_mesh):
             var index_base = verts.size()
             
             var below = pos + Vector3(0, -1, 0)
-            var vox_corners = get_voxel_corner(below) if has_voxel_corner(below) else {}
+            var vox_corners = get_voxel_corner(below)
             
             var pure_offset = Vector3()
             var normal = Vector3.UP
@@ -1150,8 +1209,8 @@ func add_models(p_mesh):
                 for i in 4:
                     corners[i] = get_effective_vert(below, corners[i]*2.0)
                 
-                var dist_a = (corners[0] - corners[3]).length()
-                var dist_b = (corners[1] - corners[2]).length()
+                var dist_a = corners[0].distance_squared_to(corners[3])
+                var dist_b = corners[1].distance_squared_to(corners[2])
                 var mid = ((corners[0] + corners[3]) if dist_b > dist_a else (corners[1] + corners[2]))/2.0
                 
                 if floor_mode == 2:
@@ -1242,12 +1301,13 @@ func add_models(p_mesh):
             p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
 
-
 var cached_voxel_count = 0
 var uncached_voxel_count = 0
 
 func add_voxels(p_mesh):
     var startup_start = Time.get_ticks_usec()
+    
+    edge_match_cache = {}
     
     cached_voxel_count = 0
     uncached_voxel_count = 0
@@ -1259,9 +1319,15 @@ func add_voxels(p_mesh):
     
     print("startup ms... ", (Time.get_ticks_usec()-startup_start)/1000.0)
     
-    var cache_access_time = 0
+    var cache_access_time = 0.0
+    var uncache_access_time = 0.0
+    var upload_time = 0.0
+    var material_time = 0.0
+    var num_uncached_bitmasks = 0
     
     for info in face_tex:
+        var mat_start = Time.get_ticks_usec()
+        
         var texture = info[0][0]
         var mat : VoxEditor.VoxMat = info[0][1]
         
@@ -1278,7 +1344,7 @@ func add_voxels(p_mesh):
         
         var dirs = []
         if info[1] == "side":
-            dirs = sides.duplicate()
+            dirs = sides
         elif info[1] == "top":
             dirs = [Vector3.UP]
         else:
@@ -1291,7 +1357,8 @@ func add_voxels(p_mesh):
         
         var is_side = info[1]
         var list = info[2]
-        var start = Time.get_ticks_usec()
+        
+        material_time += Time.get_ticks_usec() - mat_start
         
         for pos in list:
             var found_cache = false
@@ -1307,18 +1374,21 @@ func add_voxels(p_mesh):
                         var self_verts = data[0]
                         var self_normals = data[1]
                         var self_tex_uvs = data[2]
-                        var self_indexes = data[3]
-                        
-                        var index_base = verts.size()
+                        var self_indexes : PackedInt32Array = data[3]
                         
                         verts.append_array(self_verts)
                         normals.append_array(self_normals)
                         tex_uvs.append_array(self_tex_uvs)
                         
-                        for val in self_indexes:
-                            indexes.push_back(val + index_base)
+                        var index_base = verts.size() - self_verts.size()
+                        self_indexes = self_indexes.duplicate()
+                        for i in self_indexes.size():
+                            self_indexes[i] += index_base
+                        indexes.append_array(self_indexes)
             
             cache_access_time += Time.get_ticks_usec() - cache_start
+            
+            var start = Time.get_ticks_usec()
             
             if found_cache:
                 cached_voxel_count += 1
@@ -1331,7 +1401,7 @@ func add_voxels(p_mesh):
                 uv_data_cache[pos] = {}
             
             var vox = get_voxel(pos)
-            var vox_corners = get_voxel_corner(pos) if has_voxel_corner(pos) else {}
+            var vox_corners = get_voxel_corner(pos)
             for dir in dirs:
                 if occluding_face_exists(pos, pos+dir, vox):
                     voxel_data_cache[pos][dir] = null
@@ -1341,6 +1411,7 @@ func add_voxels(p_mesh):
                 if dir in uv_data_cache[pos]:
                     uvs = uv_data_cache[pos][dir]
                 else:
+                    num_uncached_bitmasks += 1
                     uvs = ref_uvs.duplicate()
                     var bitmask = 0
                     
@@ -1401,6 +1472,7 @@ func add_voxels(p_mesh):
                         uvs[i] /= mat.subdivide_amount
                         uvs[i] += mat.subdivide_coord/mat.subdivide_amount
                     
+                    uv_data_cache[pos] = uv_data_cache[pos].duplicate(true)
                     uv_data_cache[pos][dir] = uvs
                 
                 # swap triangulation order if we're warped and need to swap to connect-shortest
@@ -1474,9 +1546,12 @@ func add_voxels(p_mesh):
                     indexes.push_back(i + index_base)
                     self_indexes.push_back(i)
                 
+                voxel_data_cache[pos] = voxel_data_cache[pos].duplicate(true)
                 voxel_data_cache[pos][dir] = [self_verts, self_normals, self_tex_uvs, self_indexes]
         
-        var end = Time.get_ticks_usec()
+            uncache_access_time += Time.get_ticks_usec() - start
+        
+        var upload_start = Time.get_ticks_usec()
         
         if editor.low_distortion_meshing:
             indexes = undistort_array_quads(verts, tex_uvs, normals, indexes)
@@ -1491,15 +1566,21 @@ func add_voxels(p_mesh):
             p_mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
             p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
         
-        var time = (end-start)/1000000.0
-        if time > 0.01:
-            print("dummy  time: ", time)
+        upload_time += Time.get_ticks_usec() - upload_start
+        
+        
     print("cache time ms: ", cache_access_time/1000.0)
+    print("non-cache time ms: ", uncache_access_time/1000.0)
+    print("mat time ms: ", material_time/1000.0)
+    print("upload time ms: ", upload_time/1000.0)
     
 
 func remesh():
     mesh = ArrayMesh.new()
     
+    var prop_start = Time.get_ticks_usec()
     add_decals(mesh)
     add_models(mesh)
+    print("prop time ms: ", (Time.get_ticks_usec() - prop_start)/1000.0)
+    
     add_voxels(mesh)
