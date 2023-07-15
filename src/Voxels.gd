@@ -57,13 +57,8 @@ func occluding_face_exists(pos : Vector3, next_pos : Vector3, source_mat : VoxEd
     var corners_a = get_voxel_corner(pos)
     var corners_b = get_voxel_corner(next_pos)
     
-    #var other_a = Vector3.RIGHT if dir.abs() != Vector3.RIGHT else Vector3.UP
-    #var other_b = dir.cross(other_a)
-    #var matches = matching_edges_match(pos, next_pos, other_a)
-    #matches = matches and matching_edges_match(pos, next_pos, -other_a)
-    #matches = matches and matching_edges_match(pos, next_pos,  other_b)
-    #matches = matches and matching_edges_match(pos, next_pos, -other_b)
-    #return matches
+    if corners_a.size() == 0 and corners_b.size() == 0:
+        return true
 
     for corner_a in dir_corners:
         var corner_b = corner_a - dir*2.0
@@ -153,6 +148,10 @@ func perform_undo():
         apply_diff_left(uv_data_cache, info.uv_data_cache)
     if "voxel_data_cache" in info:
         apply_diff_left(voxel_data_cache, info.voxel_data_cache)
+    if "model_data_cache" in info:
+        apply_diff_left(model_data_cache, info.model_data_cache)
+    if "decal_data_cache" in info:
+        apply_diff_left(decal_data_cache, info.decal_data_cache)
     
     redo_buffer.push_back(info)
     hinted_remesh()
@@ -181,6 +180,10 @@ func perform_redo():
         apply_diff_right(uv_data_cache, info.uv_data_cache)
     if "voxel_data_cache" in info:
         apply_diff_right(voxel_data_cache, info.voxel_data_cache)
+    if "model_data_cache" in info:
+        apply_diff_right(model_data_cache, info.model_data_cache)
+    if "decal_data_cache" in info:
+        apply_diff_right(decal_data_cache, info.decal_data_cache)
     
     undo_buffer.push_back(info)
     hinted_remesh()
@@ -197,6 +200,8 @@ func start_operation():
     temp_world["selection_end"] = selection_end
     temp_world["uv_data_cache"] = uv_data_cache.duplicate(false)
     temp_world["voxel_data_cache"] = voxel_data_cache.duplicate(false)
+    temp_world["decal_data_cache"] = decal_data_cache.duplicate(false)
+    temp_world["model_data_cache"] = model_data_cache.duplicate(false)
     operation_active = true
 
 func end_operation(no_remesh : bool = false):
@@ -242,6 +247,14 @@ func end_operation(no_remesh : bool = false):
     diff = dict_diff(temp_world.voxel_data_cache, voxel_data_cache)
     if diff.size() > 0:
         changed["voxel_data_cache"] = diff
+    
+    diff = dict_diff(temp_world.model_data_cache, model_data_cache)
+    if diff.size() > 0:
+        changed["model_data_cache"] = diff
+    
+    diff = dict_diff(temp_world.decal_data_cache, decal_data_cache)
+    if diff.size() > 0:
+        changed["decal_data_cache"] = diff
     
     if changed.size() > 0:
         undo_buffer.push_back(changed)
@@ -429,6 +442,7 @@ func _process(_delta):
             var blocks = voxels.size() + decals.size() + models.size()
             print("block count: ", blocks)
             print("ms per block: ", time/blocks*1000)
+            @warning_ignore("integer_division")
             print("ms per uncached voxel: ", time/(uncached_voxel_count/6)*1000)
             
 
@@ -882,6 +896,10 @@ func dirtify_at_exact(pos : Vector3):
         uv_data_cache.erase(pos)
     if pos in voxel_data_cache:
         voxel_data_cache.erase(pos)
+    if pos in model_data_cache:
+        model_data_cache.erase(pos)
+    if pos in decal_data_cache:
+        decal_data_cache.erase(pos)
 
 func dirtify_cache(p_position : Vector3):
     for z in [-1, 0, 1]:
@@ -900,7 +918,6 @@ func dirtify_cache_range(position_range : AABB):
                 dirtify_at_exact(Vector3(pos_x, pos_y, pos_z))
 
 func face_is_shifted(pos, face_normal):
-    var c = get_voxel_corner(pos)
     for corner in get_voxel_corner(pos):
         if corner.dot(face_normal) > 0.0:
             return true
@@ -978,8 +995,10 @@ func matching_edges_match(pos : Vector3, next_pos : Vector3, dir : Vector3):
     return ret
 
 
-var uv_data_cache = {}
+var model_data_cache = {}
+var decal_data_cache = {}
 var voxel_data_cache = {}
+var uv_data_cache = {}
 var edge_match_cache = {}
 
 func full_remesh():
@@ -993,8 +1012,8 @@ func hinted_remesh():
     refresh_surface_mapping()
     remesh()
 
-func undistort_array_quads(verts, tex_uvs, normals, indexes):
-    var old_indexes = indexes
+func undistort_array_quads(verts : PackedVector3Array, tex_uvs : PackedVector2Array, normals : PackedVector3Array, indexes : PackedInt32Array):
+    var old_indexes = indexes.duplicate()
     indexes = PackedInt32Array()
     var i = 0
     var face_count = 0
@@ -1043,17 +1062,50 @@ func add_decals(p_mesh):
             var pos = decal[0]
             var dir = decal[1]
             
+            var found_cache = false
+            
+            var cache_start = Time.get_ticks_usec()
+            if pos in decal_data_cache:
+                var cached = decal_data_cache[pos]
+                if dir in cached:
+                    found_cache = true
+                if dir in cached and cached[dir] != null:
+                    var data = cached[dir]
+                    var self_verts = data[0]
+                    var self_normals = data[1]
+                    var self_tex_uvs = data[2]
+                    var self_indexes : PackedInt32Array = data[3]
+                    
+                    verts.append_array(self_verts)
+                    normals.append_array(self_normals)
+                    tex_uvs.append_array(self_tex_uvs)
+                    
+                    var index_base = verts.size() - self_verts.size()
+                    self_indexes = self_indexes.duplicate()
+                    for i in self_indexes.size():
+                        self_indexes[i] += index_base
+                    indexes.append_array(self_indexes)
+            
+            if found_cache:
+                continue
+            
+            if not pos in decal_data_cache:
+                decal_data_cache[pos] = {}
+            
             var decal_data = get_decal(pos, dir)
             var tile_coord = decal_data[1]
             var orientation_id = decal_data[2]
             var uv_xform = get_decal_uv_scale(orientation_id)
-            #print(uv_xform)
-            #print(orientation_id)
             
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
             
             var index_base = verts.size()
+            
+            var self_verts = PackedVector3Array()
+            var self_normals = PackedVector3Array()
+            var self_tex_uvs = PackedVector2Array()
+            var self_indexes = PackedInt32Array()
             
             var vox_corners = get_voxel_corner(pos)
             
@@ -1087,18 +1139,26 @@ func add_decals(p_mesh):
                 normal = -(temp[3] - temp[0]).cross(temp[2] - temp[1])
             
             for i in [0, 1, 2, 3]:
-                tex_uvs.push_back(uvs[i])
+                self_tex_uvs.push_back(uvs[i])
                 var vert = dir_verts[dir][i]
                  
                 var b = (vert*2.0).round()
                 if b in vox_corners:
                     vert = vox_corners[b]/2.0
                 
-                verts.push_back(vert + pos + normal*0.0005)
-                normals.push_back(normal)
-                
+                self_verts.push_back(vert + pos + normal*0.0005)
+                self_normals.push_back(normal)
+            
+            verts.append_array(self_verts)
+            normals.append_array(self_normals)
+            tex_uvs.append_array(self_tex_uvs)
+            
             for i in order:
                 indexes.push_back(i + index_base)
+                self_indexes.push_back(i)
+            
+            decal_data_cache[pos] = decal_data_cache[pos].duplicate(true)
+            decal_data_cache[pos][dir] = [self_verts, self_normals, self_tex_uvs, self_indexes]
         
         if editor.low_distortion_meshing:
             indexes = undistort_array_quads(verts, tex_uvs, normals, indexes)
@@ -1177,6 +1237,32 @@ func add_models(p_mesh):
         
         for model in models_by_mat[mat]:
             var pos = model
+            
+            var found_cache = false
+            
+            var cache_start = Time.get_ticks_usec()
+            if pos in model_data_cache:
+                found_cache = true
+                
+                var data = model_data_cache[pos]
+                var self_verts = data[0]
+                var self_normals = data[1]
+                var self_tex_uvs = data[2]
+                var self_indexes : PackedInt32Array = data[3]
+                
+                verts.append_array(self_verts)
+                normals.append_array(self_normals)
+                tex_uvs.append_array(self_tex_uvs)
+                
+                var index_base = verts.size() - self_verts.size()
+                self_indexes = self_indexes.duplicate()
+                for i in self_indexes.size():
+                    self_indexes[i] += index_base
+                indexes.append_array(self_indexes)
+            
+            if found_cache:
+                continue
+            
             var model_data = get_model(pos)
             var tile_coord = model_data[1]
             var mode_id = model_data[2]
@@ -1187,8 +1273,6 @@ func add_models(p_mesh):
             
             var unit_uv = grid_size/tex_size
             #var uvs = ref_uvs.duplicate()
-            
-            var index_base = verts.size()
             
             var below = pos + Vector3(0, -1, 0)
             var vox_corners = get_voxel_corner(below)
@@ -1247,6 +1331,13 @@ func add_models(p_mesh):
             
             #print(corners)
             
+            var index_base = verts.size()
+            
+            var self_verts = PackedVector3Array()
+            var self_normals = PackedVector3Array()
+            var self_tex_uvs = PackedVector2Array()
+            var self_indexes = PackedInt32Array()
+            
             var verts_temp = []
             for i in stuff[0].size():
                 var uv = stuff[1][i]
@@ -1269,8 +1360,8 @@ func add_models(p_mesh):
                     vert -= vert_offset
                 vert = vert + pos + pure_offset
                 verts_temp.push_back(vert)
-                verts.push_back(vert)
-                tex_uvs.push_back(uv)
+                self_verts.push_back(vert)
+                self_tex_uvs.push_back(uv)
             
             for i in verts_temp.size():
                 @warning_ignore("integer_division")
@@ -1278,11 +1369,18 @@ func add_models(p_mesh):
                 @warning_ignore("integer_division")
                 var b = verts_temp[i/4*4 + 1] - verts_temp[i/4*4 + 2]
                 var model_normal = -a.cross(b).normalized()
-                normals.push_back(model_normal)
+                self_normals.push_back(model_normal)
+            
+            verts.append_array(self_verts)
+            normals.append_array(self_normals)
+            tex_uvs.append_array(self_tex_uvs)
             
             for i in stuff[3].size():
                 indexes.push_back(stuff[3][i] + index_base)
+                self_indexes.push_back(stuff[3][i])
             
+            model_data_cache[pos] = [self_verts, self_normals, self_tex_uvs, self_indexes]
+        
         var arrays = []
         arrays.resize(Mesh.ARRAY_MAX)
         arrays[Mesh.ARRAY_VERTEX] = verts
@@ -1559,12 +1657,12 @@ func add_voxels(p_mesh):
             p_mesh.surface_set_material(p_mesh.get_surface_count() - 1, material)
         
         upload_time += Time.get_ticks_usec() - upload_start
-        
-        
+    
     print("cache time ms: ", cache_access_time/1000.0)
     print("non-cache time ms: ", uncache_access_time/1000.0)
     print("mat time ms: ", material_time/1000.0)
     print("upload time ms: ", upload_time/1000.0)
+    print("uncached bitmasks: ", num_uncached_bitmasks)
     
 
 func remesh():
