@@ -159,7 +159,44 @@ func rotate_selection(axis : Vector3, heading : Vector3):
                 var _coord2 : Vector3 = ((coord - center).rotated(axis, -PI/2.0) + center)
                 var coord2 = _coord2.round() + offset
                 #print(coord, _coord2, coord2)
-                new_selection_data[type][coord2] = selection_data[type][coord]
+                var data = selection_data[type][coord]
+                if type == "models":
+                    data = data.duplicate()
+                    var mode_id = data[2]
+                    var widen = mode_id & 1
+                    var spacing = (mode_id >> 1) & 7
+                    var turns = ((mode_id >> 4) & 3) + 1
+                    var rot_x = ((mode_id >> 6) & 7)
+                    var rot_y = ((mode_id >> 9) & 7)
+                    var rot_z = ((mode_id >> 12) & 7)
+                    
+                    var off = Vector3(data[4], data[5], data[6])
+                    var rot = Basis.from_euler(Vector3(-rot_x*PI/4.0, -rot_y*PI/4.0, rot_z*PI/4.0))
+                    var xform = Transform3D()
+                    xform = Transform3D(rot, Vector3()) * xform
+                    xform = Transform3D(Basis(), off) * xform
+                    xform = Transform3D(Basis(), Vector3(0, -4, 0)) * xform
+                    xform = xform.rotated(axis, -PI/2.0)
+                    xform = Transform3D(Basis(), Vector3(0, 4, 0)) * xform
+                    var angles = xform.basis.get_euler()/PI*4.0
+                    angles = angles.round()
+                    angles.x = -angles.x
+                    angles.y = -angles.y
+                    angles.z = angles.z
+                    angles = angles.posmod(8.0)
+                    data[4] = round(xform.origin.x)
+                    data[5] = round(xform.origin.y)
+                    data[6] = round(xform.origin.z)
+                    rot_x = int(round(angles.x))
+                    rot_y = int(round(angles.y))
+                    rot_z = int(round(angles.z))
+                    
+                    mode_id = widen | (spacing << 1) | ((turns - 1) << 4) | (rot_x << 6) | (rot_y << 9) | (rot_z << 12)
+                    data[2] = mode_id
+                    print(data)
+                    
+                new_selection_data[type][coord2] = data
+        
         selection_data = new_selection_data
         
         #print("stuff end...", selection_start, selection_end - selection_start)
@@ -944,6 +981,7 @@ func place_decal(p_position : Vector3, dir : Vector3, material : VoxEditor.Decal
     decals[p_position] = decals[p_position].duplicate(false)
     decals[p_position][dir] = [material, material.current_coord, scale_id%8]
     is_dirty = true
+    dirtify_cache(p_position)
 
 func erase_decal(p_position : Vector3, dir : Vector3):
     p_position = p_position.round()
@@ -954,6 +992,7 @@ func erase_decal(p_position : Vector3, dir : Vector3):
             decals.erase(p_position)
     
     is_dirty = true
+    dirtify_cache(p_position)
 
 func place_model(p_position : Vector3, material : VoxEditor.DecalMat, mode_id : int, floor_mode : int, offset_x : int, offset_y : int, offset_z : int):
     p_position = p_position.round()
@@ -962,10 +1001,12 @@ func place_model(p_position : Vector3, material : VoxEditor.DecalMat, mode_id : 
     
     models[p_position] = [material, material.current_coord, mode_id, floor_mode, offset_x, offset_y, offset_z]
     is_dirty = true
+    dirtify_cache(p_position)
 
 func erase_model(p_position : Vector3):
     models.erase(p_position.round())
     is_dirty = true
+    dirtify_cache(p_position)
 
 func place_voxel(p_position : Vector3, material : VoxEditor.VoxMat, ramp_corners = {}):
     p_position = p_position.round()
@@ -1366,7 +1407,7 @@ func add_models(p_mesh):
             var mode_id = model_data[2]
             var floor_mode = model_data[3]
             var offset_x = model_data[4]
-            #var offset_y = model_data[5]
+            var offset_y = model_data[5]
             var offset_z = model_data[6]
             
             var unit_uv = grid_size/tex_size
@@ -1410,6 +1451,7 @@ func add_models(p_mesh):
                 corners[i] *= Vector3(1.0, 1.0, 1.0)
             
             pure_offset.x += offset_x / 8.0 * 0.998
+            pure_offset.y += offset_y / 8.0 * 0.998
             pure_offset.z += offset_z / 8.0 * 0.998
             
             var rot_x = float((mode_id >> 6) & 7) / 4.0 * PI

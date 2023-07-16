@@ -28,8 +28,6 @@ func flush_negative_zero(n : Vector3) -> Vector3:
 func action(which):
     var cam : Camera3D = $Frame/VertEditViewport/CameraHolder/VertEditCamera
     
-    #print()
-    
     var copy = {}
     for vert in ref_verts:
         copy[vert] = get_override(vert)
