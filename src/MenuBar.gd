@@ -1,7 +1,7 @@
 extends HBoxContainer
 
 func button_factory(text : String, which_signal : String, data : Array = []) -> BaseButton:
-    var button = Button.new()
+    var button : Button = Button.new()
     button.flat = true
     button.text = text
     self.emit_signal.bindv([which_signal] + data)
@@ -34,6 +34,12 @@ func pressed(id : int, which : PopupMenu):
         editor.perform_undo()
     elif which == $Edit.get_popup() and id == 1:
         editor.perform_redo()
+    elif which == $Edit.get_popup() and id == 2:
+        editor.perform_cut()
+    elif which == $Edit.get_popup() and id == 3:
+        editor.perform_copy()
+    elif which == $Edit.get_popup() and id == 4:
+        editor.perform_paste()
     
     if which == $Controls.get_popup() and id == 0:
         var idx = which.get_item_index(id)
@@ -100,9 +106,15 @@ func _ready():
     var edit_popup : PopupMenu = $Edit.get_popup()
     edit_popup.add_item("Undo", 0)
     edit_popup.add_item("Redo", 1)
+    edit_popup.add_item("Cut", 2)
+    edit_popup.add_item("Copy", 3)
+    edit_popup.add_item("Paste", 4)
     edit_popup.connect("index_pressed", pressed.bind(edit_popup))
     edit_popup.set_item_accelerator(edit_popup.get_item_index(0), KEY_MASK_CTRL | KEY_Z)
     edit_popup.set_item_accelerator(edit_popup.get_item_index(1), KEY_MASK_CTRL | KEY_MASK_SHIFT | KEY_Z)
+    edit_popup.set_item_accelerator(edit_popup.get_item_index(2), KEY_MASK_CTRL | KEY_X)
+    edit_popup.set_item_accelerator(edit_popup.get_item_index(3), KEY_MASK_CTRL | KEY_C)
+    edit_popup.set_item_accelerator(edit_popup.get_item_index(4), KEY_MASK_CTRL | KEY_V)
     
     var controls_popup : PopupMenu = $Controls.get_popup()
     controls_popup.hide_on_checkable_item_selection = false

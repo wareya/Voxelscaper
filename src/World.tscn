@@ -263,6 +263,27 @@ far = 500.0
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
 mesh = SubResource("ArrayMesh_iqpwo")
 
+[node name="ButtonRotateZ" type="Button" parent="."]
+offset_left = 127.0
+offset_top = 303.0
+offset_right = 183.0
+offset_bottom = 333.0
+text = "↷ Roll"
+
+[node name="ButtonRotateX" type="Button" parent="."]
+offset_left = 68.0
+offset_top = 303.0
+offset_right = 123.0
+offset_bottom = 333.0
+text = "↷ Pitch"
+
+[node name="ButtonRotateY" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 303.0
+offset_right = 64.0
+offset_bottom = 333.0
+text = "↷ Yaw"
+
 [node name="ButtonMove" type="Button" parent="."]
 offset_left = 8.0
 offset_top = 266.0
@@ -506,6 +527,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Mat2dOrientation" type="OptionButton" parent="."]
 visible = false

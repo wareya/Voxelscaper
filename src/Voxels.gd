@@ -78,7 +78,6 @@ func occluding_face_exists(pos : Vector3, next_pos : Vector3, source_mat : VoxEd
 
 @onready var decals : Dictionary = {}
 @onready var models : Dictionary = {}
-
 @onready var voxel_corners : Dictionary = {
 }
 
@@ -87,6 +86,91 @@ func clear():
     decals = {}
     models = {}
     voxel_corners = {}
+
+# FIXME deduplicate with copy (only difference is how lift_selection_data is called)
+func perform_cut():
+    if selection_start != null and selection_end != null:
+        if selection_data != {}:
+            apply_selection()
+        lift_selection_data()
+        copy_buffer = {
+            "data": selection_data,
+            "start": selection_start,
+            "end": selection_end,
+        }
+        selection_data = {}
+        hinted_remesh()
+    else:
+        copy_buffer = {}
+    
+func perform_copy():
+    if selection_start != null and selection_end != null:
+        if selection_data != {}:
+            apply_selection()
+        lift_selection_data(false)
+        copy_buffer = {
+            "data": selection_data,
+            "start": selection_start,
+            "end": selection_end,
+        }
+        selection_data = {}
+        hinted_remesh()
+    else:
+        copy_buffer = {}
+
+func perform_paste():
+    if copy_buffer != {}:
+        if selection_data != {}:
+            apply_selection()
+        if selection_start != null and selection_end != null:
+            dirtify_cache_range(AABB(selection_start, selection_end - selection_start))
+        var copied = copy_buffer.duplicate(true)
+        selection_data = copied.data
+        selection_start = copied.start
+        selection_end = copied.end
+        dirtify_cache_range(AABB(selection_start, selection_end - selection_start))
+        hinted_remesh()
+
+func rotate_selection(axis : Vector3, heading : Vector3):
+    var cross = axis.cross(heading)
+    #print("wah")
+    if selection_start != null and selection_end != null:
+        if selection_data == {}:
+            lift_selection_data()
+        
+        #print(selection_data)
+        var new_selection_data = {}
+        var center : Vector3 = (selection_start/2.0 + selection_end/2.0)
+        var fract_a = fmod((center*heading).length_squared(), 1.0)
+        var fract_b = fmod((center*cross).length_squared(), 1.0)
+        var offset = Vector3()
+        if fract_a != fract_b:
+            center -= cross*0.5
+            if fract_a > 0.0:
+                offset = -heading
+            else:
+                offset = cross
+            pass
+        #print("stuff...", selection_start, selection_end, center)
+        
+        for type in selection_data:
+            new_selection_data[type] = {}
+            for coord in selection_data[type]:
+                var _coord2 : Vector3 = ((coord - center).rotated(axis, -PI/2.0) + center)
+                var coord2 = _coord2.round() + offset
+                #print(coord, _coord2, coord2)
+                new_selection_data[type][coord2] = selection_data[type][coord]
+        selection_data = new_selection_data
+        
+        #print("stuff end...", selection_start, selection_end - selection_start)
+        var old_aabb = AABB(selection_start, selection_end - selection_start).abs()
+        selection_start = ((selection_start - center).rotated(axis, -PI/2.0) + center).round() + offset
+        selection_end = ((selection_end - center).rotated(axis, -PI/2.0) + center).round() + offset
+        var new_aabb = AABB(selection_start, selection_end - selection_start).abs()
+        selection_start = new_aabb.position
+        selection_end = new_aabb.end
+        dirtify_cache_range(new_aabb.merge(old_aabb).abs())
+        hinted_remesh()
 
 func dict_left(a : Dictionary, b : Dictionary) -> Dictionary:
     var ret = {}
@@ -653,9 +737,11 @@ func refresh_surface_mapping():
         models_by_mat[mat].push_back(pos)
 
 
+var copy_buffer = {}
 var selection_data = {}
 var selection_start = null
 var selection_end = null
+
 func inform_selection(new_start, new_end, _source = null):
     var old_start = selection_start
     var old_end = selection_end
@@ -701,7 +787,7 @@ func move_selection(new_start : Vector3):
     var end = Time.get_ticks_usec()
     print("dirtification time ms... ", (end-start)/1000.0)
 
-func lift_selection_data():
+func lift_selection_data(erase : bool = true):
     selection_data = {}
     for z in range(selection_start.z, selection_end.z+1):
         for y in range(selection_start.y, selection_end.y+1):
@@ -710,23 +796,35 @@ func lift_selection_data():
                 if coord in voxels:
                     if not "voxels" in selection_data:
                         selection_data["voxels"] = {}
-                    selection_data.voxels[coord] = voxels[coord]
-                    voxels.erase(coord)
+                    if erase:
+                        selection_data.voxels[coord] = voxels[coord]
+                        voxels.erase(coord)
+                    else:
+                        selection_data.voxels[coord] = voxels[coord]
                 if coord in voxel_corners:
                     if not "voxel_corners" in selection_data:
                         selection_data["voxel_corners"] = {}
-                    selection_data.voxel_corners[coord] = voxel_corners[coord]
-                    voxel_corners.erase(coord)
+                    if erase:
+                        selection_data.voxel_corners[coord] = voxel_corners[coord]
+                        voxel_corners.erase(coord)
+                    else:
+                        selection_data.voxel_corners[coord] = voxel_corners[coord].duplicate()
                 if coord in decals:
                     if not "decals" in selection_data:
                         selection_data["decals"] = {}
-                    selection_data.decals[coord] = decals[coord]
-                    decals.erase(coord)
+                    if erase:
+                        selection_data.decals[coord] = decals[coord]
+                        decals.erase(coord)
+                    else:
+                        selection_data.decals[coord] = decals[coord].duplicate()
                 if coord in models:
                     if not "models" in selection_data:
                         selection_data["models"] = {}
-                    selection_data.models[coord] = models[coord]
-                    models.erase(coord)
+                    if erase:
+                        selection_data.models[coord] = models[coord]
+                        models.erase(coord)
+                    else:
+                        selection_data.models[coord] = models[coord]
     is_dirty = true
 
 func apply_selection():

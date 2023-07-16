@@ -311,6 +311,13 @@ func add_mat_button(mat):
     button.toggle_mode = true
     button.connect("pressed", Callable(self, "set_current_mat").bind(mat))
 
+func rotate_selection(axis : Vector3, heading : Vector3):
+    start_operation()
+    $Voxels.rotate_selection(axis, heading)
+    selection_start = $Voxels.selection_start
+    selection_end = $Voxels.selection_end
+    end_operation()
+
 func rebuild_mat_buttons():
     for child in $Mats/List.get_children():
         child.hide()
@@ -394,6 +401,26 @@ func perform_redo():
     $Voxels.perform_redo()
     selection_start = $Voxels.selection_start
     selection_end = $Voxels.selection_end
+
+func perform_cut():
+    start_operation()
+    $Voxels.perform_cut()
+    end_operation()
+
+func perform_copy():
+    $Voxels.perform_copy()
+
+func perform_paste():
+    start_operation()
+    
+    $Voxels.perform_paste()
+    selection_start = $Voxels.selection_start
+    selection_end = $Voxels.selection_end
+    $ButtonSelect.button_pressed = false
+    $ButtonMove.button_pressed = true
+    tool_mode = TOOL_MODE_MOVE_SELECT
+    
+    end_operation()
 
 func start_operation():
     $Voxels.start_operation()
@@ -491,6 +518,10 @@ func _ready():
     
     $ButtonSelect.pressed.connect(self.start_select)
     $ButtonMove.pressed.connect(self.start_move)
+    
+    $ButtonRotateY.pressed.connect(self.rotate_selection.bind(Vector3.UP, Vector3.RIGHT))
+    $ButtonRotateX.pressed.connect(self.rotate_selection.bind(Vector3.LEFT, Vector3.UP))
+    $ButtonRotateZ.pressed.connect(self.rotate_selection.bind(Vector3.BACK, Vector3.UP))
 
 func start_select():
     tool_mode = TOOL_MODE_NEW_SELECT
@@ -992,7 +1023,6 @@ enum {
     TOOL_MODE_NEW_SELECT,
     TOOL_MODE_SELECT,
     TOOL_MODE_MOVE_SELECT,
-    TOOL_MODE_PASTE_SELECT,
 }
 var tool_mode = TOOL_MODE_MAT
 var selection_start = null
@@ -1093,10 +1123,16 @@ func _process(delta):
     if tool_mode == TOOL_MODE_MOVE_SELECT:
         handle_adjust_selection(true) 
         $ButtonMove.button_pressed = true
+        $ButtonRotateY.visible = true
+        $ButtonRotateX.visible = true
+        $ButtonRotateZ.visible = true
         if Input.is_action_just_pressed("ui_cancel"):
             reset_selection()
     else:
         $ButtonMove.button_pressed = false
+        $ButtonRotateY.visible = false
+        $ButtonRotateX.visible = false
+        $ButtonRotateZ.visible = false
     
     main_just_pressed = false
     sub_just_pressed = false
@@ -1169,9 +1205,6 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     var cam : Camera3D = $CameraHolder/Camera3D as Camera3D
     var mouse_pos = $GizmoHelper.get_local_mouse_position()
     
-    if main_just_pressed:
-        start_operation()
-    
     if !draw_mode:
         gizmo_drag_dir = Vector3()
         gizmo_drag_dir_unrounded = null
@@ -1179,8 +1212,8 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     #var start = vec_min(selection_start, selection_end)
     #var end = vec_max(selection_start, selection_end)
     
-    var old_selection_start = selection_start
-    var old_selection_end = selection_end
+    var old_selection_start = selection_start.round()
+    var old_selection_end = selection_end.round()
     
     var aabb = AABB(selection_start, Vector3())
     aabb = aabb.abs()
@@ -1278,12 +1311,15 @@ func handle_adjust_selection(move_not_adjust : bool = false):
     
     if old_selection_start != selection_start or old_selection_end != selection_end:
         if !move_not_adjust:
+            start_operation()
             $Voxels.inform_selection(selection_start, selection_end)
+            end_operation()
         else:
+            print("!!! gizmos moved...", old_selection_start, selection_start, old_selection_end, selection_end)
+            start_operation()
             $Voxels.move_selection(selection_start)
+            end_operation()
     
-    if !draw_mode:
-        end_operation()
     
     gizmos.sort_custom(func compare(a, b): return a[3] > b[3])
     gizmos = gizmos.map(func f(x): return [x[0], x[4]])
