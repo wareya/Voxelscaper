@@ -263,26 +263,47 @@ far = 500.0
 [node name="Voxels" parent="." instance=ExtResource("2_653mq")]
 mesh = SubResource("ArrayMesh_iqpwo")
 
+[node name="ButtonFlipZ" type="Button" parent="."]
+offset_left = 127.0
+offset_top = 339.0
+offset_right = 183.0
+offset_bottom = 369.0
+text = "↔ Z"
+
+[node name="ButtonFlipY" type="Button" parent="."]
+offset_left = 67.0
+offset_top = 339.0
+offset_right = 123.0
+offset_bottom = 369.0
+text = "↕ Y"
+
+[node name="ButtonFlipX" type="Button" parent="."]
+offset_left = 8.0
+offset_top = 339.0
+offset_right = 63.0
+offset_bottom = 369.0
+text = "↔ X"
+
 [node name="ButtonRotateZ" type="Button" parent="."]
 offset_left = 127.0
 offset_top = 303.0
 offset_right = 183.0
 offset_bottom = 333.0
-text = "↷ Roll"
+text = "↷ Z"
 
-[node name="ButtonRotateX" type="Button" parent="."]
-offset_left = 68.0
+[node name="ButtonRotateY" type="Button" parent="."]
+offset_left = 67.0
 offset_top = 303.0
 offset_right = 123.0
 offset_bottom = 333.0
-text = "↷ Pitch"
+text = "↷ Y"
 
-[node name="ButtonRotateY" type="Button" parent="."]
+[node name="ButtonRotateX" type="Button" parent="."]
 offset_left = 8.0
 offset_top = 303.0
-offset_right = 64.0
+offset_right = 63.0
 offset_bottom = 333.0
-text = "↷ Yaw"
+text = "↷ X"
 
 [node name="ButtonMove" type="Button" parent="."]
 offset_left = 8.0
@@ -362,7 +383,6 @@ pixel_size = 0.0625
 texture = ExtResource("6_3fypg")
 
 [node name="VertEditPanel" type="Control" parent="."]
-visible = false
 clip_contents = true
 layout_mode = 3
 anchors_preset = 1
@@ -385,7 +405,7 @@ stretch = true
 own_world_3d = true
 handle_input_locally = false
 size = Vector2i(256, 256)
-render_target_update_mode = 0
+render_target_update_mode = 4
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="VertEditPanel/Frame/VertEditViewport"]
 transform = Transform3D(-0.0871557, 0.880044, -0.466825, 0, 0.468608, 0.883406, 0.996195, 0.0769939, -0.0408419, 0, 2.26911, 2.99581)
@@ -511,6 +531,7 @@ text = "¬"
 clip_text = true
 
 [node name="Mat2dTilePicker" type="Control" parent="."]
+visible = false
 clip_contents = true
 layout_mode = 3
 anchors_preset = 1
@@ -551,6 +572,7 @@ offset_bottom = 20.0
 text = "Decal Orientation"
 
 [node name="ModelOffsetZ" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -572,6 +594,7 @@ offset_bottom = 20.0
 text = "Offset Z"
 
 [node name="ModelOffsetY" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -593,6 +616,7 @@ offset_bottom = 20.0
 text = "Offset Y"
 
 [node name="ModelOffsetX" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -614,6 +638,7 @@ offset_bottom = 20.0
 text = "Offset X"
 
 [node name="ModelWiden" type="CheckBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -632,6 +657,7 @@ offset_bottom = 20.0
 text = "Widen"
 
 [node name="ModelRotationZ" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -652,6 +678,7 @@ offset_bottom = 20.0
 text = "Roll"
 
 [node name="ModelRotationX" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -672,6 +699,7 @@ offset_bottom = 20.0
 text = "Pitch"
 
 [node name="ModelAdvanced" type="CheckBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -690,6 +718,7 @@ offset_bottom = 20.0
 text = "Advanced"
 
 [node name="ModelRotationY" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -710,6 +739,7 @@ offset_bottom = 20.0
 text = "Yaw"
 
 [node name="ModelSpacing" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -730,6 +760,7 @@ offset_bottom = 20.0
 text = "Spacing"
 
 [node name="ModelTurnCount" type="SpinBox" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
@@ -752,6 +783,7 @@ offset_bottom = 20.0
 text = "Turn Count"
 
 [node name="ModelMatchFloor" type="OptionButton" parent="."]
+visible = false
 anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0

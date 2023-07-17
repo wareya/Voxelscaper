@@ -318,6 +318,13 @@ func rotate_selection(axis : Vector3, heading : Vector3):
     selection_end = $Voxels.selection_end
     end_operation()
 
+func flip_selection(axis : Vector3):
+    start_operation()
+    $Voxels.flip_selection(axis)
+    selection_start = $Voxels.selection_start
+    selection_end = $Voxels.selection_end
+    end_operation()
+
 func rebuild_mat_buttons():
     for child in $Mats/List.get_children():
         child.hide()
@@ -522,6 +529,10 @@ func _ready():
     $ButtonRotateY.pressed.connect(self.rotate_selection.bind(Vector3.UP, Vector3.RIGHT))
     $ButtonRotateX.pressed.connect(self.rotate_selection.bind(Vector3.LEFT, Vector3.UP))
     $ButtonRotateZ.pressed.connect(self.rotate_selection.bind(Vector3.BACK, Vector3.UP))
+    
+    $ButtonFlipY.pressed.connect(self.flip_selection.bind(Vector3.UP))
+    $ButtonFlipX.pressed.connect(self.flip_selection.bind(Vector3.LEFT))
+    $ButtonFlipZ.pressed.connect(self.flip_selection.bind(Vector3.BACK))
 
 func start_select():
     tool_mode = TOOL_MODE_NEW_SELECT

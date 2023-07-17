@@ -131,6 +131,17 @@ func perform_paste():
         dirtify_cache_range(AABB(selection_start, selection_end - selection_start))
         hinted_remesh()
 
+func get_decal_up(dir : Vector3) -> Vector3:
+    if dir == Vector3.UP:
+        return Vector3.FORWARD
+    if dir == Vector3.DOWN:
+        return Vector3.BACK
+    return Vector3.UP
+
+func get_decal_xform(orientation : int, dir : Vector3):
+    var _scale = get_decal_uv_scale(orientation, dir)
+    print(_scale)
+
 func rotate_selection(axis : Vector3, heading : Vector3):
     var cross = axis.cross(heading)
     #print("wah")
@@ -153,14 +164,77 @@ func rotate_selection(axis : Vector3, heading : Vector3):
             pass
         #print("stuff...", selection_start, selection_end, center)
         
+        var voxel_corners = {}
+        if "voxel_corners" in selection_data:
+            voxel_corners = selection_data.voxel_corners
+        
         for type in selection_data:
             new_selection_data[type] = {}
             for coord in selection_data[type]:
                 var _coord2 : Vector3 = ((coord - center).rotated(axis, -PI/2.0) + center)
                 var coord2 = _coord2.round() + offset
-                #print(coord, _coord2, coord2)
                 var data = selection_data[type][coord]
-                if type == "models":
+                if type == "voxels":
+                    var corners = voxel_corners.get(coord, {})
+                    var new_corners = {}
+                    print(corners)
+                    for corner in corners:
+                        var a = (corner*4.0).rotated(axis, -PI/2.0).round()/4.0
+                        var b = (corners[corner]*4.0).rotated(axis, -PI/2.0).round()/4.0
+                        new_corners[a] = b
+                    voxel_corners[coord] = new_corners.duplicate(true)
+                    #var new_data = {}
+                    #for dir in data:
+                    #    new_data[dir.rotated(axis, -PI/2.0).round()] = data[dir]
+                    #data = new_data.duplicate(true)
+                elif type == "decals":
+                    var new_data = {}
+                    for dir in data:
+                        var new_dir = dir.rotated(axis, -PI/2.0).round()
+                        
+                        var flip_dir_pairs = [
+                            [Vector3.FORWARD, Vector3.UP],
+                            [Vector3.BACK, Vector3.DOWN],
+                            [Vector3.RIGHT, Vector3.UP],
+                            [Vector3.BACK, Vector3.LEFT],
+                        ]
+                        
+                        var inner_data = data[dir].duplicate()
+                        var orientation = inner_data[2]
+                        
+                        var angle_part = orientation % 4
+                        var flip_part = -1 if orientation >= 4 else 1
+                        
+                        if axis == dir * flip_part:
+                            angle_part = (angle_part + 1) % 4
+                        elif axis == -dir * flip_part:
+                            angle_part = (angle_part + 3) % 4
+                        else:
+                            match [axis.abs(), dir]:
+                                [Vector3.RIGHT, Vector3.FORWARD], \
+                                [Vector3.RIGHT, Vector3.BACK]:
+                                    angle_part = (angle_part + 2) % 4
+                                    pass
+                                [Vector3.BACK, Vector3.LEFT], \
+                                [Vector3.BACK, Vector3.UP]:
+                                    angle_part = (angle_part + 1) % 4
+                                    pass
+                                [Vector3.BACK, Vector3.RIGHT], \
+                                [Vector3.BACK, Vector3.DOWN]:
+                                    angle_part = (angle_part + 3) % 4
+                                    pass
+                            if axis.abs() == Vector3.BACK and flip_part < 0:
+                                angle_part = (angle_part + 2) % 4
+                        
+                        orientation = angle_part + (0 if flip_part > 0 else 4)
+                        
+                        inner_data[2] = orientation
+                        print("decal... ", inner_data)
+                        
+                        new_data[new_dir] = inner_data
+                    
+                    data = new_data.duplicate(true)
+                elif type == "models":
                     data = data.duplicate()
                     var mode_id = data[2]
                     var widen = mode_id & 1
@@ -179,11 +253,7 @@ func rotate_selection(axis : Vector3, heading : Vector3):
                     xform = xform.rotated(axis, -PI/2.0)
                     xform = Transform3D(Basis(), Vector3(0, 4, 0)) * xform
                     var angles = xform.basis.get_euler()/PI*4.0
-                    angles = angles.round()
-                    angles.x = -angles.x
-                    angles.y = -angles.y
-                    angles.z = angles.z
-                    angles = angles.posmod(8.0)
+                    angles = (angles.round() * Vector3(-1, -1, 1)).posmod(8.0)
                     data[4] = round(xform.origin.x)
                     data[5] = round(xform.origin.y)
                     data[6] = round(xform.origin.z)
@@ -207,6 +277,99 @@ func rotate_selection(axis : Vector3, heading : Vector3):
         selection_start = new_aabb.position
         selection_end = new_aabb.end
         dirtify_cache_range(new_aabb.merge(old_aabb).abs())
+        hinted_remesh()
+
+func flip_selection(axis : Vector3):
+    var multiplier = Vector3.ONE - axis.abs()*2.0 # vector with -1 in the axis direction and 1 elsewhere
+    
+    if selection_start != null and selection_end != null:
+        if selection_data == {}:
+            lift_selection_data()
+        
+        var new_selection_data = {}
+        var center : Vector3 = (selection_start/2.0 + selection_end/2.0)
+        
+        var voxel_corners = {}
+        if "voxel_corners" in selection_data:
+            voxel_corners = selection_data.voxel_corners
+        
+        for type in selection_data:
+            new_selection_data[type] = {}
+            for coord in selection_data[type]:
+                var coord2 : Vector3 = ((coord - center) * multiplier + center).round()
+                var data = selection_data[type][coord]
+                if type == "voxels":
+                    var corners = voxel_corners.get(coord, {})
+                    var new_corners = {}
+                    print(corners)
+                    for corner in corners:
+                        var a = (corner * 4.0 * multiplier).round()/4.0
+                        var b = (corners[corner] * 4.0 * multiplier).round()/4.0
+                        new_corners[a] = b
+                    voxel_corners[coord] = new_corners.duplicate(true)
+                elif type == "decals":
+                    var new_data = {}
+                    for dir in data:
+                        var inner_data = data[dir].duplicate()
+                        var orientation = inner_data[2]
+                        
+                        var angle_part = orientation % 4
+                        var flip_part = -1 if orientation >= 4 else 1
+                        
+                        if axis.abs() == dir.abs():
+                            flip_part = -flip_part
+                        elif axis == Vector3.UP:
+                            flip_part = -flip_part
+                            angle_part = (angle_part + 2) % 4
+                        elif axis.abs() == Vector3.RIGHT:
+                            flip_part = -flip_part
+                        elif axis.abs() == Vector3.BACK:
+                            flip_part = -flip_part
+                            if dir.abs() == Vector3.UP:
+                                angle_part = (angle_part + 2) % 4
+                        
+                        orientation = angle_part + (0 if flip_part > 0 else 4)
+                        
+                        inner_data[2] = orientation
+                        print("decal... ", inner_data)
+                        new_data[(dir * multiplier).round()] = inner_data
+                    data = new_data.duplicate(true)
+                elif type == "models":
+                    data = data.duplicate()
+                    var mode_id = data[2]
+                    var widen = mode_id & 1
+                    var spacing = (mode_id >> 1) & 7
+                    var turns = ((mode_id >> 4) & 3) + 1
+                    var rot_x = ((mode_id >> 6) & 7)
+                    var rot_y = ((mode_id >> 9) & 7)
+                    var rot_z = ((mode_id >> 12) & 7)
+                    var flip_x = ((mode_id >> 15) & 1)
+                    var flip_y = ((mode_id >> 16) & 1)
+                    var flip_z = ((mode_id >> 17) & 1)
+                    var _scale = -(Vector3(flip_x, flip_y, flip_z) * 2.0 - Vector3.ONE)
+                    
+                    var off = Vector3(data[4], data[5], data[6])
+                    off *= multiplier
+                    _scale *= multiplier
+                    _scale = (-_scale + Vector3.ONE) * 0.5
+                    data[4] = round(off.x)
+                    data[5] = round(off.y)
+                    data[6] = round(off.z)
+                    var scale_bits = int(_scale.x) | (int(_scale.y) << 1) | (int(_scale.z) << 2)
+                    
+                    print(scale_bits)
+                    
+                    mode_id = (widen | (spacing << 1) | ((turns - 1) << 4) | (rot_x << 6) | (rot_y << 9) | (rot_z << 12) | (scale_bits << 15))
+                    data[2] = mode_id
+                    print(data)
+                    
+                new_selection_data[type][coord2] = data
+        
+        selection_data = new_selection_data
+        
+        #print("stuff end...", selection_start, selection_end - selection_start)
+        var new_aabb = AABB(selection_start, selection_end - selection_start).abs()
+        dirtify_cache_range(new_aabb.abs())
         hinted_remesh()
 
 func dict_left(a : Dictionary, b : Dictionary) -> Dictionary:
@@ -961,12 +1124,15 @@ func build_uvs_4x4():
             uvs[get_tile_bitmask_4x4(Vector2(x, y))] = Vector2(x, y)
     return uvs
 
-func get_decal_uv_scale(i : int) -> Transform2D:
+func get_decal_uv_scale(orientation : int, dir : Vector3) -> Transform2D:
+    var i = orientation
     var ret : Transform2D = Transform2D.IDENTITY
     
     var trans = Transform2D(0, Vector2(-0.5, -0.5))
     ret = trans * ret
     if i >= 4:
+        ret = ret.scaled(Vector2(-1, 1))
+    if dir == Vector3.RIGHT and dir == Vector3.FORWARD:
         ret = ret.scaled(Vector2(-1, 1))
     ret = ret.rotated(PI*0.5 * (i%4))
     ret = trans.affine_inverse() * ret
@@ -1234,7 +1400,7 @@ func add_decals(p_mesh):
             var decal_data = get_decal(pos, dir)
             var tile_coord = decal_data[1]
             var orientation_id = decal_data[2]
-            var uv_xform = get_decal_uv_scale(orientation_id)
+            var uv_xform = get_decal_uv_scale(orientation_id, dir)
             
             var unit_uv = grid_size/tex_size
             var uvs = ref_uvs.duplicate()
@@ -1336,6 +1502,10 @@ func model_get_verts_etc(mode_id : int):
     #var rot_x = ((mode_id >> 6) & 7)
     #var rot_y = ((mode_id >> 9) & 7)
     #var rot_z = ((mode_id >> 12) & 7)
+    var flip_x = ((mode_id >> 15) & 1)
+    var flip_y = ((mode_id >> 16) & 1)
+    var flip_z = ((mode_id >> 17) & 1)
+    var multiplier = -(Vector3(flip_x, flip_y, flip_z) * 2.0 - Vector3.ONE)
     
     var width = 1.0 if !widen else sqrt(2.0)
     var current_angle = 0.0# + rot_y * PI*0.25
@@ -1353,7 +1523,7 @@ func model_get_verts_etc(mode_id : int):
         
         current_angle += PI / float(turns)
     
-    return [verts, uvs, normals, indexes]
+    return [verts, uvs, normals, indexes, multiplier]
 
 func add_models(p_mesh):
     for mat in models_by_mat.keys():
@@ -1458,6 +1628,9 @@ func add_models(p_mesh):
             var rot_y = float((mode_id >> 9) & 7) / 4.0 * PI
             var rot_z = float((mode_id >> 12) & 7) / 4.0 * PI
             
+            var stuff = model_get_verts_etc(mode_id)
+            var multiplier = stuff[4]
+            
             var bitangent = orthogonal.cross(normal)
             var rot : Transform3D = Transform3D(Basis(bitangent, normal, orthogonal), Vector3())
             var rot2 : Transform3D = Transform3D(Basis.from_euler(Vector3(rot_x, rot_y, rot_z)), Vector3())
@@ -1465,11 +1638,9 @@ func add_models(p_mesh):
             xform = xform * Transform3D(Basis.IDENTITY, Vector3(0, -0.5, 0))
             xform = xform * rot
             xform = xform * rot2
+            xform = Transform3D.IDENTITY.scaled(multiplier) * xform
+            
             xform = xform * Transform3D(Basis.IDENTITY, Vector3(0, 0.5, 0))
-            
-            var stuff = model_get_verts_etc(mode_id)
-            
-            #print(corners)
             
             var index_base = verts.size()
             
